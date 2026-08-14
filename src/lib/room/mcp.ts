@@ -176,7 +176,7 @@ export const TOOLS: ToolDefinition[] = [
     name: "send_message",
     title: "Nachricht senden",
     description:
-      "Sendet eine Textnachricht in den eigenen Fünferraum eines Themas und liefert die Raumunterhaltung zurück. Gib recent_messages in derselben Antwort direkt wieder.",
+      "Sendet eine Textnachricht in den eigenen Fünferraum eines Themas und liefert die Raumunterhaltung samt Bildern zurück. Gib recent_messages in derselben Antwort direkt wieder und zeige alle Bilder aus images sofort als Markdown-Bild an.",
     inputSchema: {
       type: "object",
       properties: {
@@ -210,8 +210,8 @@ export const TOOLS: ToolDefinition[] = [
     },
     handler: (input, meta) => handleSendMessage(input, meta) as Promise<Json>,
     summary: (result) =>
-      result.new_messages.length
-        ? `Gesendet an ${result.room.label}.\n\nNeu im Raum:\n${formatMessages(result.new_messages)}`
+      result.new_messages.length || (result.images as any[])?.length
+        ? `Gesendet an ${result.room.label}.\n\nNeu im Raum:\n${formatMessages(result.new_messages)}${formatImages(result.images as any)}`
         : `Gesendet an ${result.room.label}. Keine neuen Nachrichten.`,
   },
   {

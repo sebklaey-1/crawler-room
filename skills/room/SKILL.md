@@ -30,7 +30,7 @@ Aktiviere @room, sobald die Nachricht der Person eines davon ausdrückt:
 1. **Thema bestimmen.** Themen dürfen frei formuliert sein („KI“, „AI“, „künstliche Intelligenz“) — der Server löst Synonyme auf. Ist das Thema unbekannt, liefert das Tool die verfügbaren Themen; biete sie an, statt zu raten.
 2. **Betreten.** `enter_topic` ist idempotent: es liefert eine bestehende Mitgliedschaft oder weist einen freien Raum zu. Rufe es nicht wiederholt auf, wenn die Person bereits Mitglied ist.
 3. **Senden.** `send_message` erfordert eine bestehende Mitgliedschaft. Kommt `NOT_A_MEMBER`, rufe einmal `enter_topic` auf und sende danach erneut.
-   **Nach jedem Senden gibst du sofort in derselben Antwort die Raumunterhaltung aus `recent_messages` wieder** — als Liste mit Alias, neue Nachrichten (`new_messages`) zuerst hervorgehoben. Antworte nie nur mit „gesendet“. Ist der Raum noch leer, sage kurz, dass bisher niemand geschrieben hat.
+   **Nach jedem Senden gibst du sofort in derselben Antwort die Raumunterhaltung aus `recent_messages` wieder UND zeigst alle Bilder aus `images` direkt an** — Nachrichten als Liste mit Alias (neue Nachrichten aus `new_messages` zuerst hervorgehoben), Bilder als Markdown `![alt_text](url)` mit Alias darunter. Bilder nie nur erwähnen oder verlinken, sondern anzeigen. Antworte nie nur mit „gesendet“. Ist der Raum noch leer, sage kurz, dass bisher niemand geschrieben oder ein Bild geschickt hat.
 4. **Lesen.** Zeige nach jedem Aufruf die neuen Nachrichten und die Raumbelegung (`x/5`).
 
 ## Bilder senden
