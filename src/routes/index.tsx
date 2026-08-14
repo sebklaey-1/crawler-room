@@ -119,11 +119,12 @@ function Landing() {
         </section>
 
         <section className="border-t border-border py-14">
-          <h2 className="text-2xl font-semibold tracking-tight">Themen</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Topics</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Synonyme werden erkannt — „AI“, „KI“ und „künstliche Intelligenz“ führen in denselben
-            Themenbereich.
+            Synonyms are recognised — “AI”, “KI” and “artificial intelligence” all lead to the same
+            topic.
           </p>
+
           <ul className="mt-6 flex flex-wrap gap-2">
             {TOPIC_HINTS.map((topic) => (
               <li
