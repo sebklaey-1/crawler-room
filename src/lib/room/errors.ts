@@ -54,18 +54,16 @@ const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   IMAGE_NOT_UPLOADED: "Für dieses Bild wurden noch keine Bilddaten hochgeladen.",
   IMAGE_PENDING_REVIEW: "Bild wird geprüft …",
   IMAGE_REJECTED: "Bild abgelehnt: Es verstösst gegen die Raumregeln.",
-  PLAN_REQUIRED:
-    "Diese Funktion gehört zu einem kostenpflichtigen Plan. Das Reden und Lesen in öffentlichen Räumen bleibt immer kostenlos.",
-  SUBSCRIPTION_READ_ONLY:
-    "Dein Abo ist abgelaufen. Deine Räume bleiben erhalten, Verwaltungsfunktionen sind vorübergehend schreibgeschützt.",
-  LIMIT_REACHED: "Das Limit deines Plans ist erreicht.",
+  PLAN_REQUIRED: "Diese Möglichkeit ist gerade nicht verfügbar.",
+  SUBSCRIPTION_READ_ONLY: "Diese Verwaltungsfunktion ist gerade schreibgeschützt.",
+  LIMIT_REACHED: "Das technische Limit für diese Aktion ist erreicht.",
   NOT_FOUND: "Nicht gefunden.",
   FORBIDDEN: "Dafür fehlt dir die Berechtigung.",
   ORGANIZATION_REQUIRED: "Dafür wird eine verifizierte Organisation mit Business-Abo benötigt.",
   CAMPAIGN_INVALID: "Die Kampagnendaten sind unvollständig oder unzulässig.",
   POLICY_VIOLATION: "Dieser Inhalt verstösst gegen die Werberichtlinien von @room.",
   DUPLICATE_REQUEST: "Diese Anfrage wurde bereits verarbeitet.",
-  BILLING_REQUIRED: "Für diese Aktion fehlt eine hinterlegte Zahlungsmethode.",
+  BILLING_REQUIRED: "Diese Aktion ist derzeit nicht möglich.",
   REVIEW_INVALID: "Die Prüfung konnte nicht bestätigt werden. Bitte starte die Prüfung neu.",
   INTERNAL_ERROR: "Da ist etwas schiefgelaufen. Bitte versuche es später noch einmal.",
 
