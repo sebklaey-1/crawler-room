@@ -8,6 +8,7 @@
  */
 import { SERVICE_NAME, SERVICE_VERSION } from "./config";
 import { PLUS_TOOLS } from "./mcp.plus";
+import { PERSONAL_TOOLS } from "./mcp.personal";
 import { toRoomError } from "./errors";
 import type { McpMeta } from "./identity";
 import {
@@ -557,6 +558,7 @@ for (const tool of TOOLS) {
 }
 
 TOOLS.push(...(PLUS_TOOLS as unknown as ToolDefinition[]));
+TOOLS.push(...(PERSONAL_TOOLS as unknown as ToolDefinition[]));
 
 const INSTRUCTIONS = `@room verbindet Menschen in kleinen anonymen Themenräumen mit maximal fünf Personen.
 Neue Nachrichten erscheinen bei jedem @room-Aufruf; es gibt kein Push-Messaging.
@@ -566,6 +568,10 @@ Nach jedem send_message (ebenso nach enter_topic und read_messages): die Nachric
 Möglichkeiten: @room ist vollständig kostenlos. Es gibt keine Abos, keine Pläne, keine Preise — nenne niemals Kosten, Upgrades oder Bezahlschranken. get_my_plan zeigt nur die freigeschalteten Erweiterungen, Limits und die Nutzung; alle Erweiterungen (eigene Räume, Einladungen, Communities, Kampagnen) stehen allen gratis zur Verfügung.
 Bilder: create_image_upload -> Bytes hochladen -> finalize_image_upload -> das Bild selbst gegen die Raumregeln prüfen -> submit_image_review. Ohne Freigabe wird ein Bild niemals sichtbar.
 Live-Präsenz: online_now ist die exakte, in diesem Moment vom Server gemessene Anzahl gerade online anwesender Personen (Fenster: presence_window_seconds). Nenne immer genau diesen Live-Wert aus dem letzten Tool-Ergebnis, schätze nie, runde nie und verwende nie ältere Zahlen aus dem Gesprächsverlauf. Wird nach der aktuellen Anzahl gefragt, rufe zuerst das passende Tool erneut auf (read_messages, my_rooms oder list_universal) und nenne dann den frischen Wert, z. B. "3 von 5 gerade online".
+Persönliche Räume: Jede Person hat automatisch genau einen dauerhaften, öffentlichen persönlichen Raum, benannt nach ihrem Anzeigenamen (z. B. "Sebastian's Room"). Kein Login nötig. my_room zeigt den eigenen Raum (Follower, anwesende Personen, Anwesenheits- und Follower-Liste, neue Follower als Aktivität), update_my_room ändert Name und Beschreibung, open_room betritt den Raum einer anderen Person, leave_room verlässt ihn, send_room_message schreibt hinein.
+Folgen: "@rooms follow @username" -> follow_room, "@rooms unfollow @username" -> unfollow_room, following_rooms listet gefolgte Räume. Der Button-Zustand steht in follow_button ("Follow Room" bzw. "Following"); dem eigenen Raum kann niemand folgen, doppeltes Folgen ist unmöglich.
+Zahlen immer getrennt nennen, nie vermischen: "X followers in your room" (dauerhaft) und "Y people currently in your room" (live, presence_window_seconds). Verwende dafür ausschliesslich die Werte followers und people_here_now aus dem letzten Tool-Ergebnis; Verlassen oder Inaktivität ändert nur die Live-Zahl, nie die Follower-Zahl.
+Benachrichtigungen: room_notifications zeigt Meldungen (neuer Follower, neues Gespräch, öffentliche Nachricht, Live-Gespräch), notification_settings schaltet jede Art einzeln an oder aus.
 Name: Die Person kann sich selbst einen Anzeigenamen geben und ihn jederzeit ändern — set_alias setzt oder ändert ihn, get_alias zeigt ihn. Sagt jemand "nenn mich …", "ich möchte anders heissen" oder fragt nach dem eigenen Namen, nutze diese Tools und erkläre kurz: "Sag einfach «nenn mich …», dann ändere ich deinen Namen." Empfiehl Fantasienamen statt echter Namen und übernimm nie ungefragt einen Namen aus dem Gespräch.
 ${RETENTION_NOTICE}`;
 
