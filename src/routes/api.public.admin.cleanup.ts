@@ -24,13 +24,17 @@ export const Route = createFileRoute("/api/public/admin/cleanup")({
 
         try {
           const { getDb } = await import("@/lib/room/store");
+          const { sweepImages } = await import("@/lib/room/imagestore");
           const db = await getDb();
           const { data, error } = await db.rpc("cleanup_expired");
           if (error) throw error;
-          return new Response(JSON.stringify({ ok: true, result: data ?? {} }), {
+          // Fallback sweep: rolling limits, dead uploads and orphaned files.
+          const images = await sweepImages(db);
+          return new Response(JSON.stringify({ ok: true, result: data ?? {}, images }), {
             headers: { "content-type": "application/json" },
           });
         } catch {
+
           return new Response(JSON.stringify({ ok: false, error: "cleanup_failed" }), {
             status: 500,
             headers: { "content-type": "application/json" },

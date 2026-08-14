@@ -5,7 +5,7 @@
 import { roomError } from "./errors";
 import type { Db } from "./store";
 
-export type RateAction = "message" | "join" | "report";
+export type RateAction = "message" | "join" | "report" | "upload";
 
 interface Window {
   seconds: number;

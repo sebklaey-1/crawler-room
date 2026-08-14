@@ -14,7 +14,16 @@ export type RoomErrorCode =
   | "ROOM_UNAVAILABLE"
   | "INVALID_INPUT"
   | "MESSAGE_NOT_FOUND"
+  | "IMAGE_NOT_FOUND"
+  | "IMAGE_TOO_LARGE"
+  | "IMAGE_TYPE_UNSUPPORTED"
+  | "IMAGE_DUPLICATE"
+  | "IMAGE_NOT_UPLOADED"
+  | "IMAGE_PENDING_REVIEW"
+  | "IMAGE_REJECTED"
+  | "REVIEW_INVALID"
   | "INTERNAL_ERROR";
+
 
 const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   RATE_LIMITED: "Du warst gerade sehr aktiv. Bitte versuche es in einer Minute noch einmal.",
@@ -28,7 +37,16 @@ const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   ROOM_UNAVAILABLE: "Dein Raum ist gerade nicht verfügbar. Bitte versuche es erneut.",
   INVALID_INPUT: "Die Angaben waren unvollständig oder ungültig.",
   MESSAGE_NOT_FOUND: "Diese Nachricht ist nicht (mehr) verfügbar.",
+  IMAGE_NOT_FOUND: "Bild nicht mehr verfügbar.",
+  IMAGE_TOO_LARGE: "Das Bild ist zu gross. Erlaubt sind höchstens 10 MB.",
+  IMAGE_TYPE_UNSUPPORTED: "Dieses Bildformat wird nicht unterstützt. Erlaubt sind JPG, PNG und WebP.",
+  IMAGE_DUPLICATE: "Dieses Bild wurde in diesem Raum bereits geteilt.",
+  IMAGE_NOT_UPLOADED: "Für dieses Bild wurden noch keine Bilddaten hochgeladen.",
+  IMAGE_PENDING_REVIEW: "Bild wird geprüft …",
+  IMAGE_REJECTED: "Bild abgelehnt: Es verstösst gegen die Raumregeln.",
+  REVIEW_INVALID: "Die Prüfung konnte nicht bestätigt werden. Bitte starte die Prüfung neu.",
   INTERNAL_ERROR: "Da ist etwas schiefgelaufen. Bitte versuche es später noch einmal.",
+
 };
 
 export class RoomError extends Error {

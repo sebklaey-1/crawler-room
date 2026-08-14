@@ -14,11 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      image_messages: {
+        Row: {
+          alt_text: string | null
+          approved_at: string | null
+          checksum: string | null
+          created_at: string
+          expires_at: string
+          file_size: number
+          height: number | null
+          id: number
+          mime_type: string
+          moderation_reason: string | null
+          moderation_status: string
+          room_id: string
+          sender_membership_id: string
+          storage_path: string
+          uploaded: boolean
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          approved_at?: string | null
+          checksum?: string | null
+          created_at?: string
+          expires_at?: string
+          file_size?: number
+          height?: number | null
+          id?: number
+          mime_type: string
+          moderation_reason?: string | null
+          moderation_status?: string
+          room_id: string
+          sender_membership_id: string
+          storage_path: string
+          uploaded?: boolean
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          approved_at?: string | null
+          checksum?: string | null
+          created_at?: string
+          expires_at?: string
+          file_size?: number
+          height?: number | null
+          id?: number
+          mime_type?: string
+          moderation_reason?: string | null
+          moderation_status?: string
+          room_id?: string
+          sender_membership_id?: string
+          storage_path?: string
+          uploaded?: boolean
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "image_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "image_messages_sender_membership_id_fkey"
+            columns: ["sender_membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           alias: string
           id: string
           joined_at: string
+          last_read_image_id: number | null
           last_read_message_id: number | null
           last_seen_at: string
           left_at: string | null
@@ -30,6 +103,7 @@ export type Database = {
           alias: string
           id?: string
           joined_at?: string
+          last_read_image_id?: number | null
           last_read_message_id?: number | null
           last_seen_at?: string
           left_at?: string | null
@@ -41,6 +115,7 @@ export type Database = {
           alias?: string
           id?: string
           joined_at?: string
+          last_read_image_id?: number | null
           last_read_message_id?: number | null
           last_seen_at?: string
           left_at?: string | null
@@ -69,25 +144,35 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          message_id: number
+          image_message_id: number | null
+          message_id: number | null
           reason: string
           reporter_membership_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          message_id: number
+          image_message_id?: number | null
+          message_id?: number | null
           reason: string
           reporter_membership_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          message_id?: number
+          image_message_id?: number | null
+          message_id?: number | null
           reason?: string
           reporter_membership_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "message_reports_image_message_id_fkey"
+            columns: ["image_message_id"]
+            isOneToOne: false
+            referencedRelation: "image_messages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "message_reports_message_id_fkey"
             columns: ["message_id"]
@@ -264,9 +349,28 @@ export type Database = {
     }
     Functions: {
       cleanup_expired: { Args: never; Returns: Json }
+      enforce_all_retention: {
+        Args: never
+        Returns: {
+          storage_path: string
+        }[]
+      }
+      enforce_image_retention: {
+        Args: { p_room_id: string }
+        Returns: {
+          storage_path: string
+        }[]
+      }
+      enforce_text_retention: { Args: { p_room_id: string }; Returns: number }
       join_topic_room: {
         Args: { p_alias: string; p_subject_hash: string; p_topic_slug: string }
         Returns: Json
+      }
+      purge_dead_images: {
+        Args: never
+        Returns: {
+          storage_path: string
+        }[]
       }
     }
     Enums: {

@@ -10,10 +10,26 @@
 import { z } from "zod";
 
 import { generateAlias, sanitizeAlias } from "./alias";
-import { config } from "./config";
+import { config, imageConfig, IMAGE_RETENTION } from "./config";
+import { bytesToBase64, randomId } from "./crypto";
 import { roomError } from "./errors";
 import { resolveIdentity, type McpMeta } from "./identity";
-import { decodeMessageId, encodeMessageId } from "./ids";
+import { decodeImageId, decodeMessageId, encodeImageId, encodeMessageId, idKind } from "./ids";
+import { ALLOWED_MIME } from "./images";
+import {
+  aliasesFor,
+  createImageRow,
+  downloadObject,
+  enforceImageRetention,
+  findDuplicate,
+  getImageRow,
+  listApprovedImages,
+  listOwnUnpublishedImages,
+  removeStorageObjects,
+  updateImageRow,
+  type ImageRow,
+} from "./imagestore";
+import { issueToken, subjectFingerprint, verifyToken } from "./tokens";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import {
   countActiveMembers,
@@ -61,6 +77,32 @@ export const inputSchemas = {
       reason: z.enum(REPORT_REASONS),
     })
     .strict(),
+  create_image_upload: z
+    .object({
+      topic: z.string().min(1),
+      mime_type: z.string().min(1),
+      file_size: z.number().int().positive(),
+    })
+    .strict(),
+  finalize_image_upload: z
+    .object({
+      topic: z.string().min(1),
+      image_id: z.string().min(1),
+      alt_text: z.string().optional(),
+    })
+    .strict(),
+  submit_image_review: z
+    .object({
+      topic: z.string().min(1),
+      image_id: z.string().min(1),
+      review_token: z.string().min(1),
+      decision: z.enum(["approved", "rejected"]),
+      category: z.string().optional(),
+      alt_text: z.string().optional(),
+      note: z.string().optional(),
+    })
+    .strict(),
+  get_image: z.object({ topic: z.string().min(1), image_id: z.string().min(1) }).strict(),
 };
 
 async function resolveSlug(db: Db, raw: string): Promise<string> {
@@ -147,7 +189,9 @@ export async function handleEnterTopic(input: unknown, meta: McpMeta) {
     room: roomPayload(membership),
     membership: { alias: membership.alias, joined_now: membership.joinedNow },
     messages: await serializeMessages(messages, membership),
+    ...(await roomImages(db, membership)),
     unread_count: unread,
+    notice: RETENTION_NOTICE,
   };
 }
 
@@ -193,7 +237,9 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
       is_self: true,
     },
     new_messages: await serializeMessages(others, membership),
+    ...(await roomImages(db, membership)),
     unread_count: 0,
+    notice: RETENTION_NOTICE,
   };
 }
 
@@ -219,8 +265,10 @@ export async function handleReadMessages(input: unknown, meta: McpMeta) {
     topic: { slug: membership.topic.slug, display_name: membership.topic.display_name },
     room: roomPayload(membership),
     messages: await serializeMessages(messages, membership),
+    ...(await roomImages(db, membership)),
     unread_count: unread,
     has_more: hasMore,
+    notice: RETENTION_NOTICE,
   };
 }
 
@@ -285,6 +333,20 @@ export async function handleReportMessage(input: unknown, meta: McpMeta) {
   const settings = config();
 
   const membership = await requireMembership(db, identity.subjectHash, slug);
+  const kind = idKind(message_id);
+
+  if (kind === "image") {
+    const imageId = await decodeImageId(message_id);
+    if (imageId === null) throw roomError("IMAGE_NOT_FOUND");
+    const row = await getImageRow(db, imageId);
+    if (!row || row.room_id !== membership.roomId || row.moderation_status !== "approved") {
+      throw roomError("IMAGE_NOT_FOUND");
+    }
+    await enforceRateLimit(db, identity.subjectHash, "report", WINDOWS.report(settings.reportLimitPerHour));
+    await insertReport(db, { imageMessageId: imageId }, membership.membershipId, reason);
+    return { reported: true, message: "Danke. Das Bild wurde zur Prüfung gemeldet." };
+  }
+
   const internalId = await decodeMessageId(message_id);
   if (internalId === null) throw roomError("MESSAGE_NOT_FOUND");
 
@@ -294,10 +356,295 @@ export async function handleReportMessage(input: unknown, meta: McpMeta) {
   if (!visible) throw roomError("MESSAGE_NOT_FOUND");
 
   await enforceRateLimit(db, identity.subjectHash, "report", WINDOWS.report(settings.reportLimitPerHour));
-  await insertReport(db, internalId, membership.membershipId, reason);
+  await insertReport(db, { messageId: internalId }, membership.membershipId, reason);
 
   return {
     reported: true,
     message: "Danke. Die Nachricht wurde zur Prüfung gemeldet.",
   };
+}
+
+/* ------------------------------ image tools ------------------------------ */
+
+const SAFETY_RULES = [
+  "sexual content or nudity",
+  "any sexualized depiction of minors",
+  "graphic violence or gore",
+  "hate symbols or extremist propaganda",
+  "harassment or degrading targeted content",
+  "illegal content",
+  "instructions promoting dangerous wrongdoing",
+  "clearly exposed sensitive personal information (documents, addresses, ID cards)",
+  "spam, scams or malicious QR codes",
+];
+
+const REVIEW_INSTRUCTIONS =
+  "Look at the attached image yourself and decide. Approve normal artwork, photography, illustrations and creative work — a difficult political, historical or artistic subject alone is NOT a reason to reject. Reject only on a clear violation of the listed rules. Then call submit_image_review with the review_token, your decision and a short neutral alt text. The image stays invisible to everyone else until you approve it.";
+
+export const RETENTION_NOTICE =
+  "Temporärer Raum: Pro Raum werden nur die neuesten 7 Textnachrichten und 3 Bilder gespeichert. Ältere Inhalte werden automatisch und dauerhaft gelöscht.";
+
+function fileExtension(mime: string): string {
+  if (mime === "image/png") return "png";
+  if (mime === "image/webp") return "webp";
+  return "jpg";
+}
+
+async function serializeImages(
+  db: Db,
+  rows: ImageRow[],
+  membership: MembershipContext,
+) {
+  const aliases = await aliasesFor(db, rows.map((row) => row.sender_membership_id));
+  return Promise.all(
+    rows.map(async (row) => ({
+      id: await encodeImageId(row.id),
+      alias: aliases[row.sender_membership_id] ?? "Unbekannt",
+      created_at: new Date(row.created_at).toISOString(),
+      alt_text: row.alt_text ?? "",
+      width: row.width ?? 0,
+      height: row.height ?? 0,
+      status: row.moderation_status,
+      is_self: row.sender_membership_id === membership.membershipId,
+      note:
+        row.moderation_status === "approved"
+          ? "Use get_image with this id to display the image."
+          : row.moderation_status === "pending"
+            ? "Bild wird geprüft … (nur für dich sichtbar)"
+            : "Bild abgelehnt (nur für dich sichtbar).",
+    })),
+  );
+}
+
+/** Approved images of the room plus the caller's own pending/rejected uploads. */
+async function roomImages(db: Db, membership: MembershipContext) {
+  const approved = await listApprovedImages(db, membership.roomId, IMAGE_RETENTION);
+  const own = await listOwnUnpublishedImages(db, membership.roomId, membership.membershipId);
+  return {
+    images: await serializeImages(db, approved, membership),
+    my_pending_images: await serializeImages(db, own, membership),
+  };
+}
+
+export async function handleCreateImageUpload(input: unknown, meta: McpMeta) {
+  const { topic, mime_type, file_size } = inputSchemas.create_image_upload.parse(input);
+  const identity = await resolveIdentity(meta);
+  const db = await getDb();
+  const slug = await resolveSlug(db, topic);
+  const membership = await requireMembership(db, identity.subjectHash, slug);
+  const settings = imageConfig();
+
+  if (!ALLOWED_MIME.includes(mime_type as any)) throw roomError("IMAGE_TYPE_UNSUPPORTED");
+  if (file_size <= 0 || file_size > settings.maxImageBytes) throw roomError("IMAGE_TOO_LARGE");
+
+  await enforceRateLimit(db, identity.subjectHash, "upload", [
+    { seconds: 3600, max: settings.uploadLimitPerHour },
+  ]);
+
+  const path = `${membership.roomId}/${randomId(16)}.${fileExtension(mime_type)}`;
+  const row = await createImageRow(db, membership, path, mime_type);
+  const token = await issueToken(
+    "upload",
+    row.id,
+    identity.subjectHash,
+    settings.uploadTokenTtlSeconds,
+    randomId(8),
+  );
+
+  return {
+    image_id: await encodeImageId(row.id),
+    upload: {
+      url: `${uploadBaseUrl(meta)}/api/public/room/upload`,
+      method: "POST",
+      token,
+      token_header: "x-room-upload-token",
+      content_type_header: mime_type,
+      body: "raw image bytes",
+      expires_in_seconds: settings.uploadTokenTtlSeconds,
+    },
+    status: "awaiting_upload",
+    max_bytes: settings.maxImageBytes,
+    notice: RETENTION_NOTICE,
+    next_step: "After uploading the bytes, call finalize_image_upload with this image_id.",
+  };
+}
+
+export async function handleFinalizeImageUpload(input: unknown, meta: McpMeta) {
+  const { topic, image_id, alt_text } = inputSchemas.finalize_image_upload.parse(input);
+  const identity = await resolveIdentity(meta);
+  const db = await getDb();
+  const slug = await resolveSlug(db, topic);
+  const membership = await requireMembership(db, identity.subjectHash, slug);
+  const settings = imageConfig();
+
+  const internalId = await decodeImageId(image_id);
+  if (internalId === null) throw roomError("IMAGE_NOT_FOUND");
+  const row = await getImageRow(db, internalId);
+  if (!row || row.sender_membership_id !== membership.membershipId) throw roomError("IMAGE_NOT_FOUND");
+  if (!row.uploaded) throw roomError("IMAGE_NOT_UPLOADED");
+  if (row.moderation_status === "approved") {
+    return {
+      image_id,
+      status: "approved",
+      message: "Bild genehmigt",
+      notice: RETENTION_NOTICE,
+      ...(await roomImages(db, membership)),
+    };
+  }
+  if (row.moderation_status !== "pending") throw roomError("IMAGE_REJECTED");
+
+  if (typeof alt_text === "string" && alt_text.trim()) {
+    await updateImageRow(db, row.id, { alt_text: alt_text.trim().slice(0, 300) });
+  }
+
+  const bytes = await downloadObject(db, row.storage_path);
+  if (!bytes) throw roomError("IMAGE_NOT_FOUND");
+
+  const reviewToken = await issueToken(
+    "review",
+    row.id,
+    identity.subjectHash,
+    settings.reviewTokenTtlSeconds,
+    randomId(8),
+  );
+
+  return {
+    image_id,
+    status: "pending",
+    message: "Bild wird geprüft …",
+    review_required: true,
+    review_token: reviewToken,
+    safety_rules: SAFETY_RULES,
+    instructions: REVIEW_INSTRUCTIONS,
+    notice: RETENTION_NOTICE,
+    _content: [
+      { type: "text", text: `Bild wird geprüft … Prüfe dieses Bild gegen die Raumregeln.\n${REVIEW_INSTRUCTIONS}` },
+      { type: "image", data: bytesToBase64(bytes), mimeType: row.mime_type },
+    ],
+  };
+}
+
+export async function handleSubmitImageReview(input: unknown, meta: McpMeta) {
+  const { topic, image_id, review_token, decision, category, alt_text } =
+    inputSchemas.submit_image_review.parse(input);
+  const identity = await resolveIdentity(meta);
+  const db = await getDb();
+  const slug = await resolveSlug(db, topic);
+  const membership = await requireMembership(db, identity.subjectHash, slug);
+
+  const internalId = await decodeImageId(image_id);
+  if (internalId === null) throw roomError("IMAGE_NOT_FOUND");
+
+  const claims = await verifyToken(review_token, "review");
+  if (
+    !claims ||
+    claims.imageId !== internalId ||
+    claims.subjectHash !== subjectFingerprint(identity.subjectHash)
+  ) {
+    throw roomError("REVIEW_INVALID");
+  }
+
+  const row = await getImageRow(db, internalId);
+  if (!row || row.sender_membership_id !== membership.membershipId) throw roomError("IMAGE_NOT_FOUND");
+  if (row.moderation_status !== "pending") throw roomError("REVIEW_INVALID");
+
+  if (decision === "rejected") {
+    await updateImageRow(db, row.id, {
+      moderation_status: "rejected",
+      moderation_reason: category ?? "safety_rule_violation",
+    });
+    // The file goes immediately; the row is purged by the cleanup job.
+    await removeStorageObjects(db, [row.storage_path]);
+    logModeration(row.id, "rejected", category ?? "safety_rule_violation");
+    return {
+      image_id,
+      status: "rejected",
+      message: "Bild abgelehnt. Es verstösst gegen die Raumregeln und wurde nicht veröffentlicht.",
+      visible_to_others: false,
+      notice: RETENTION_NOTICE,
+      ...(await roomImages(db, membership)),
+    };
+  }
+
+  if (row.checksum && (await findDuplicate(db, row.room_id, row.checksum, row.id))) {
+    await updateImageRow(db, row.id, { moderation_status: "failed", moderation_reason: "duplicate" });
+    await removeStorageObjects(db, [row.storage_path]);
+    throw roomError("IMAGE_DUPLICATE");
+  }
+
+  await updateImageRow(db, row.id, {
+    moderation_status: "approved",
+    approved_at: new Date().toISOString(),
+    moderation_reason: null,
+    ...(typeof alt_text === "string" && alt_text.trim()
+      ? { alt_text: alt_text.trim().slice(0, 300) }
+      : {}),
+  });
+  logModeration(row.id, "approved", null);
+
+  // Rolling retention: a room keeps only its newest 3 approved images.
+  await enforceImageRetention(db, membership.roomId);
+
+  return {
+    image_id,
+    status: "approved",
+    message: "Bild genehmigt und im Raum veröffentlicht.",
+    visible_to_others: true,
+    notice: RETENTION_NOTICE,
+    ...(await roomImages(db, membership)),
+  };
+}
+
+export async function handleGetImage(input: unknown, meta: McpMeta) {
+  const { topic, image_id } = inputSchemas.get_image.parse(input);
+  const identity = await resolveIdentity(meta);
+  const db = await getDb();
+  const slug = await resolveSlug(db, topic);
+  const membership = await requireMembership(db, identity.subjectHash, slug);
+
+  const internalId = await decodeImageId(image_id);
+  if (internalId === null) throw roomError("IMAGE_NOT_FOUND");
+  const row = await getImageRow(db, internalId);
+  // Cross-room access is impossible: the image must live in the caller's room.
+  if (!row || row.room_id !== membership.roomId) throw roomError("IMAGE_NOT_FOUND");
+
+  if (row.moderation_status !== "approved") {
+    const own = row.sender_membership_id === membership.membershipId;
+    if (!own) throw roomError("IMAGE_NOT_FOUND");
+    throw roomError(row.moderation_status === "pending" ? "IMAGE_PENDING_REVIEW" : "IMAGE_REJECTED");
+  }
+
+  const bytes = await downloadObject(db, row.storage_path);
+  if (!bytes) throw roomError("IMAGE_NOT_FOUND");
+  const aliases = await aliasesFor(db, [row.sender_membership_id]);
+
+  return {
+    image_id,
+    alias: aliases[row.sender_membership_id] ?? "Unbekannt",
+    created_at: new Date(row.created_at).toISOString(),
+    alt_text: row.alt_text ?? "",
+    mime_type: row.mime_type,
+    width: row.width ?? 0,
+    height: row.height ?? 0,
+    notice: RETENTION_NOTICE,
+    _content: [
+      {
+        type: "text",
+        text: `${aliases[row.sender_membership_id] ?? "Unbekannt"} · ${row.alt_text ?? "Bild"}`,
+      },
+      { type: "image", data: bytesToBase64(bytes), mimeType: row.mime_type },
+    ],
+  };
+}
+
+function logModeration(imageId: number, decision: string, reason: string | null) {
+  // Decision log without any personal data or content.
+  console.log(JSON.stringify({ service: "room-mcp", moderation: { imageId, decision, reason } }));
+}
+
+function uploadBaseUrl(meta: McpMeta): string {
+  const settings = config();
+  if (settings.publicMcpBaseUrl) return settings.publicMcpBaseUrl.replace(/\/$/, "");
+  const origin = meta && typeof meta["room/origin"] === "string" ? (meta["room/origin"] as string) : "";
+  return origin.replace(/\/$/, "");
 }

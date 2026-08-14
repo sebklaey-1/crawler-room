@@ -228,6 +228,11 @@ export async function insertMessage(
     .single();
   if (error || !data) throw roomError("INTERNAL_ERROR");
   const row = data as any;
+
+  // Rolling retention: a room keeps only its newest 7 text messages.
+  const { enforceTextRetention } = await import("./imagestore");
+  await enforceTextRetention(db, membership.roomId);
+
   return {
     id: row.id,
     body: row.body,
@@ -236,6 +241,7 @@ export async function insertMessage(
     alias: membership.alias,
   };
 }
+
 
 export async function leaveTopic(db: Db, subjectHash: string, topicSlug: string) {
   const membership = await getActiveMembership(db, subjectHash, topicSlug);
@@ -261,15 +267,15 @@ export async function listMyRooms(db: Db, subjectHash: string) {
 
 export async function insertReport(
   db: Db,
-  messageId: number,
+  target: { messageId?: number; imageMessageId?: number },
   reporterMembershipId: string,
   reason: string,
 ) {
-  const { error } = await db
-    .from("message_reports")
-    .upsert(
-      { message_id: messageId, reporter_membership_id: reporterMembershipId, reason },
-      { onConflict: "message_id,reporter_membership_id", ignoreDuplicates: true },
-    );
+  const { error } = await db.from("message_reports").insert({
+    message_id: target.messageId ?? null,
+    image_message_id: target.imageMessageId ?? null,
+    reporter_membership_id: reporterMembershipId,
+    reason,
+  });
   if (error) throw roomError("INTERNAL_ERROR");
 }
