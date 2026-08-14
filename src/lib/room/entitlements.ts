@@ -136,14 +136,15 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
 
 }
 
+/** Everything is free — features are only blocked by an explicit admin override. */
 export function requireEntitlement(ctx: AccountContext, key: string): void {
-  if (!ctx.entitlements[key]) {
-    throw roomError("PLAN_REQUIRED", undefined, { required_feature: key, current_plan: ctx.plan.code });
+  if (ctx.entitlements[key] === false) {
+    throw roomError("FORBIDDEN", undefined, { feature: key });
   }
 }
 
-export function requireWritablePaidFeatures(ctx: AccountContext): void {
-  if (ctx.readOnlyPaidFeatures) throw roomError("SUBSCRIPTION_READ_ONLY");
+export function requireWritablePaidFeatures(_ctx: AccountContext): void {
+  // No subscriptions — nothing is ever read-only for billing reasons.
 }
 
 export function limitOf(ctx: AccountContext, key: string, fallback = 0): number {
@@ -156,11 +157,13 @@ export async function requireUnderLimit(
   key: string,
   current: number,
 ): Promise<void> {
+  // Abuse guard only: the most generous catalogue limit applies to everyone.
   const max = limitOf(ctx, key, 0);
-  if (current >= max) {
-    throw roomError("LIMIT_REACHED", undefined, { limit: key, max, current_plan: ctx.plan.code });
+  if (max > 0 && current >= max) {
+    throw roomError("LIMIT_REACHED", undefined, { limit: key, max });
   }
 }
+
 
 /** Usage counters shown in room_get_my_plan and the upgrade screen. */
 export async function currentUsage(db: Db, ctx: AccountContext) {
