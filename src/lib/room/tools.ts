@@ -108,6 +108,7 @@ export const inputSchemas = {
     })
     .strict(),
   get_image: z.object({ topic: z.string().min(1), image_id: z.string().min(1) }).strict(),
+  set_alias: z.object({ alias: z.string().min(1).max(64) }).strict(),
 };
 
 async function resolveSlug(db: Db, raw: string): Promise<string> {
@@ -328,6 +329,7 @@ export async function handleMyRooms(_input: unknown, meta: McpMeta) {
       room_label: roomLabel(membership.topic.display_name, membership.roomNumber),
       alias: membership.alias,
       member_count: memberCount,
+      online_now: await countOnline(db, membership.roomId),
       capacity: membership.capacity,
       unread_count: await countUnread(db, { ...membership, memberCount }),
     });
@@ -683,4 +685,54 @@ function uploadBaseUrl(meta: McpMeta): string {
   if (settings.publicMcpBaseUrl) return settings.publicMcpBaseUrl.replace(/\/$/, "");
   const origin = meta && typeof meta["room/origin"] === "string" ? (meta["room/origin"] as string) : "";
   return origin.replace(/\/$/, "");
+}
+
+
+/* ------------------------------ display name ------------------------------ */
+
+/**
+ * Sets or changes the person's own display name. The name is stored on the
+ * pseudonymous identity and applied to every active room membership, so other
+ * people immediately see the new name. Identity itself never changes.
+ */
+export async function handleSetAlias(input: unknown, meta: McpMeta) {
+  const { alias } = inputSchemas.set_alias.parse(input);
+  const identity = await resolveIdentity(meta);
+  const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
+
+  const clean = sanitizeAlias(alias);
+  if (!clean) {
+    throw roomError(
+      "VALIDATION_ERROR",
+      "Dieser Name enthält keine verwendbaren Zeichen. Bitte einen einfachen Namen wählen (Buchstaben, Zahlen, Leerzeichen).",
+    );
+  }
+
+  const { ensureAccount } = await import("./entitlements");
+  await ensureAccount(db, identity.subjectHash);
+  const previous = await getCustomAlias(db, identity.subjectHash);
+  const result = await setSubjectAlias(db, identity.subjectHash, clean);
+
+  return {
+    alias: result.alias,
+    previous_alias: previous,
+    rooms_updated: result.roomsUpdated,
+    message: `Dein Name ist jetzt «${result.alias}». Er gilt in ${result.roomsUpdated} aktiven Raum/Räumen und für neue Räume. Du kannst ihn jederzeit wieder ändern.`,
+  };
+}
+
+/** Current display name plus a short how-to for changing it. */
+export async function handleGetAlias(_input: unknown, meta: McpMeta) {
+  const identity = await resolveIdentity(meta);
+  const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
+  const alias = await getCustomAlias(db, identity.subjectHash);
+  return {
+    alias,
+    has_custom_alias: Boolean(alias),
+    message: alias
+      ? `Dein Name ist «${alias}». Sag einfach «nenn mich …», um ihn zu ändern.`
+      : "Du hast noch keinen eigenen Namen gewählt — in jedem Raum bekommst du einen zufälligen Anzeigenamen. Sag «nenn mich …», um einen eigenen Namen zu setzen.",
+  };
 }
