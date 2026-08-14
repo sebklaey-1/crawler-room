@@ -39,6 +39,29 @@ const TOPIC_HINTS = [
   "Life",
 ];
 
+const PLANS = [
+  {
+    name: "Free",
+    price: "0 / month",
+    features: ["Join public rooms", "Universal Room access", "Text and reviewed images", "Standard retention"],
+  },
+  {
+    name: "Plus",
+    price: "Personal",
+    features: ["Create your own rooms", "Secure invitations", "Higher room capacity", "Extended retention"],
+  },
+  {
+    name: "Pro",
+    price: "Creators",
+    features: ["Multiple communities", "Moderator roles", "Room analytics", "Priority placement in listings"],
+  },
+  {
+    name: "Business",
+    price: "Organisations",
+    features: ["Verified organisation", "Sponsored rooms", "Campaign analytics", "Team management"],
+  },
+] as const;
+
 const STEPS = [
   {
     title: "Pick a topic",
