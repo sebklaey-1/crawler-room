@@ -446,7 +446,8 @@ async function handleRpc(message: any): Promise<Json | null> {
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "content-type, accept, mcp-protocol-version, mcp-session-id",
+  "Access-Control-Allow-Headers":
+    "content-type, accept, authorization, mcp-protocol-version, mcp-session-id, last-event-id",
   "Access-Control-Expose-Headers": "mcp-session-id",
 };
 
@@ -457,13 +458,43 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+/** Single-message SSE response, as required by MCP Streamable HTTP clients (ChatGPT). */
+function sseResponse(body: unknown) {
+  const stream = `event: message\ndata: ${JSON.stringify(body)}\n\n`;
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      "content-type": "text/event-stream",
+      "cache-control": "no-cache, no-transform",
+      connection: "keep-alive",
+      ...CORS_HEADERS,
+    },
+  });
+}
+
+function prefersSse(request: Request): boolean {
+  return (request.headers.get("accept") ?? "").includes("text/event-stream");
+}
+
 /** Streamable HTTP endpoint handler. Stateless: every POST is self-contained. */
 export async function handleMcpRequest(request: Request): Promise<Response> {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
   if (request.method === "DELETE") return new Response(null, { status: 204, headers: CORS_HEADERS });
   if (request.method === "GET") {
-    // No server-initiated streaming in the pull-based MVP.
-    return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
+    // Clients (ChatGPT) may open a listening stream. There is no server-initiated
+    // messaging in this pull-based MVP, so keep an empty stream open briefly.
+    if (!prefersSse(request)) {
+      return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
+    }
+    return new Response(": ok\n\n", {
+      status: 200,
+      headers: {
+        "content-type": "text/event-stream",
+        "cache-control": "no-cache, no-transform",
+        connection: "keep-alive",
+        ...CORS_HEADERS,
+      },
+    });
   }
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
@@ -476,13 +507,16 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
     return jsonResponse(rpcError(null, -32700, "Parse error"), 400);
   }
 
+  const sse = prefersSse(request);
+
   if (Array.isArray(payload)) {
     const responses = (await Promise.all(payload.map((entry) => handleRpc(entry)))).filter(Boolean);
     if (!responses.length) return new Response(null, { status: 202, headers: CORS_HEADERS });
-    return jsonResponse(responses);
+    return sse ? sseResponse(responses) : jsonResponse(responses);
   }
 
   const response = await handleRpc(payload);
   if (!response) return new Response(null, { status: 202, headers: CORS_HEADERS });
-  return jsonResponse(response);
+  return sse ? sseResponse(response) : jsonResponse(response);
 }
+
