@@ -30,14 +30,13 @@ interface Health {
 }
 
 const TOPIC_HINTS = [
-  "KI & Technik",
-  "Kunst",
-  "Wissenschaft",
-  "Musik",
-  "Bücher",
-  "Reisen",
-  "Gesundheit",
-  "Alltag",
+  "AI",
+  "Art",
+  "Science",
+  "Tech",
+  "Music",
+  "Gaming",
+  "Life",
 ];
 
 const STEPS = [
