@@ -15,7 +15,7 @@ import { selectPlacements, type PlacementCard } from "./ads";
 import { universalSettings } from "./plans";
 import { enforceRateLimit } from "./ratelimit";
 import { clampLimit, validateMessage } from "./validation";
-import type { Db } from "./store";
+import { countOnline, PRESENCE_WINDOW_SECONDS, type Db } from "./store";
 
 export interface UniversalMembership {
   roomId: string;
@@ -113,9 +113,17 @@ export async function universalFeed(
   ]);
 
   const presence = presenceLabel(membership.presence);
+  const onlineNow = await countOnline(db, membership.roomId);
 
   return {
-    room: { label: "Universal Room", presence: presence.bucket, approximate_online: presence.approximate },
+    room: {
+      label: "Universal Room",
+      presence: presence.bucket,
+      approximate_online: presence.approximate,
+      online_now: onlineNow,
+      presence_window_seconds: PRESENCE_WINDOW_SECONDS,
+      presence_checked_at: new Date().toISOString(),
+    },
     messages,
     next_cursor: nextCursor,
     has_more: hasMore,

@@ -146,6 +146,8 @@ async function context(meta: McpMeta): Promise<{ db: Db; ctx: AccountContext }> 
   const identity = await resolveIdentity(meta);
   const db = await getDb();
   const ctx = await resolveEntitlements(db, identity.subjectHash);
+  const { touchPresence } = await import("./store");
+  await touchPresence(db, identity.subjectHash);
   return { db, ctx };
 }
 
@@ -272,6 +274,7 @@ export async function handleEnterUniversal(input: unknown, meta: McpMeta) {
     joined_now: membership.joinedNow,
     alias: membership.alias,
     presence: presence.bucket,
+    online_now: (feed.room as any).online_now,
     ...feed,
   };
 }

@@ -33,6 +33,7 @@ import { issueToken, subjectFingerprint, verifyToken } from "./tokens";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import {
   countActiveMembers,
+  countOnline,
   countUnread,
   fetchVisibleMessages,
   getActiveMembership,
@@ -43,8 +44,12 @@ import {
   leaveTopic,
   listMyRooms,
   listTopics,
+  getCustomAlias,
   loadAliasMap,
+  PRESENCE_WINDOW_SECONDS,
   roomLabel,
+  setSubjectAlias,
+  touchPresence,
   updateReadCursor,
   type Db,
   type MembershipContext,
@@ -103,6 +108,7 @@ export const inputSchemas = {
     })
     .strict(),
   get_image: z.object({ topic: z.string().min(1), image_id: z.string().min(1) }).strict(),
+  set_alias: z.object({ alias: z.string().min(1).max(64) }).strict(),
 };
 
 async function resolveSlug(db: Db, raw: string): Promise<string> {
@@ -120,11 +126,15 @@ async function resolveSlug(db: Db, raw: string): Promise<string> {
   return slug;
 }
 
-function roomPayload(membership: MembershipContext) {
+async function roomPayload(db: Db, membership: MembershipContext) {
+  const onlineNow = await countOnline(db, membership.roomId);
   return {
     label: roomLabel(membership.topic.display_name, membership.roomNumber),
     member_count: membership.memberCount,
     capacity: membership.capacity,
+    online_now: onlineNow,
+    presence_window_seconds: PRESENCE_WINDOW_SECONDS,
+    presence_checked_at: new Date().toISOString(),
   };
 }
 
@@ -164,6 +174,7 @@ export async function handleEnterTopic(input: unknown, meta: McpMeta) {
   const { topic, alias } = inputSchemas.enter_topic.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const settings = config();
 
@@ -173,7 +184,9 @@ export async function handleEnterTopic(input: unknown, meta: McpMeta) {
   }
 
   const desiredAlias =
-    sanitizeAlias(alias) ?? generateAlias(`${identity.subjectHash}:${slug}`);
+    sanitizeAlias(alias) ??
+    (await getCustomAlias(db, identity.subjectHash)) ??
+    generateAlias(`${identity.subjectHash}:${slug}`);
   const membership = await joinTopicRoom(db, identity.subjectHash, slug, desiredAlias);
 
   const { messages } = await fetchVisibleMessages(db, membership, {
@@ -186,7 +199,7 @@ export async function handleEnterTopic(input: unknown, meta: McpMeta) {
 
   return {
     topic: { slug: membership.topic.slug, display_name: membership.topic.display_name },
-    room: roomPayload(membership),
+    room: await roomPayload(db, membership),
     membership: { alias: membership.alias, joined_now: membership.joinedNow },
     messages: await serializeMessages(messages, membership),
     ...(await roomImages(db, membership)),
@@ -199,6 +212,7 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
   const { topic, text } = inputSchemas.send_message.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const settings = config();
 
@@ -236,7 +250,7 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
   return {
     sent: true,
     topic: { slug: membership.topic.slug, display_name: membership.topic.display_name },
-    room: roomPayload(membership),
+    room: await roomPayload(db, membership),
     sent_message: {
       id: await encodeMessageId(sent.id),
       alias: membership.alias,
@@ -262,6 +276,7 @@ export async function handleReadMessages(input: unknown, meta: McpMeta) {
   const { topic, limit } = inputSchemas.read_messages.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
 
   const membership = await requireMembership(db, identity.subjectHash, slug);
@@ -278,7 +293,7 @@ export async function handleReadMessages(input: unknown, meta: McpMeta) {
 
   return {
     topic: { slug: membership.topic.slug, display_name: membership.topic.display_name },
-    room: roomPayload(membership),
+    room: await roomPayload(db, membership),
     messages: await serializeMessages(messages, membership),
     ...(await roomImages(db, membership)),
     unread_count: unread,
@@ -290,6 +305,7 @@ export async function handleReadMessages(input: unknown, meta: McpMeta) {
 export async function handleMyRooms(_input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const rows = await listMyRooms(db, identity.subjectHash);
 
   const rooms = [];
@@ -313,6 +329,7 @@ export async function handleMyRooms(_input: unknown, meta: McpMeta) {
       room_label: roomLabel(membership.topic.display_name, membership.roomNumber),
       alias: membership.alias,
       member_count: memberCount,
+      online_now: await countOnline(db, membership.roomId),
       capacity: membership.capacity,
       unread_count: await countUnread(db, { ...membership, memberCount }),
     });
@@ -324,6 +341,7 @@ export async function handleLeaveTopic(input: unknown, meta: McpMeta) {
   const { topic } = inputSchemas.leave_topic.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
 
   const membership = await leaveTopic(db, identity.subjectHash, slug);
@@ -344,6 +362,7 @@ export async function handleReportMessage(input: unknown, meta: McpMeta) {
   const { topic, message_id, reason } = inputSchemas.report_message.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const settings = config();
 
@@ -445,6 +464,7 @@ export async function handleCreateImageUpload(input: unknown, meta: McpMeta) {
   const { topic, mime_type, file_size } = inputSchemas.create_image_upload.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const membership = await requireMembership(db, identity.subjectHash, slug);
   const settings = imageConfig();
@@ -488,6 +508,7 @@ export async function handleFinalizeImageUpload(input: unknown, meta: McpMeta) {
   const { topic, image_id, alt_text } = inputSchemas.finalize_image_upload.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const membership = await requireMembership(db, identity.subjectHash, slug);
   const settings = imageConfig();
@@ -544,6 +565,7 @@ export async function handleSubmitImageReview(input: unknown, meta: McpMeta) {
     inputSchemas.submit_image_review.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const membership = await requireMembership(db, identity.subjectHash, slug);
 
@@ -614,6 +636,7 @@ export async function handleGetImage(input: unknown, meta: McpMeta) {
   const { topic, image_id } = inputSchemas.get_image.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const membership = await requireMembership(db, identity.subjectHash, slug);
 
@@ -662,4 +685,54 @@ function uploadBaseUrl(meta: McpMeta): string {
   if (settings.publicMcpBaseUrl) return settings.publicMcpBaseUrl.replace(/\/$/, "");
   const origin = meta && typeof meta["room/origin"] === "string" ? (meta["room/origin"] as string) : "";
   return origin.replace(/\/$/, "");
+}
+
+
+/* ------------------------------ display name ------------------------------ */
+
+/**
+ * Sets or changes the person's own display name. The name is stored on the
+ * pseudonymous identity and applied to every active room membership, so other
+ * people immediately see the new name. Identity itself never changes.
+ */
+export async function handleSetAlias(input: unknown, meta: McpMeta) {
+  const { alias } = inputSchemas.set_alias.parse(input);
+  const identity = await resolveIdentity(meta);
+  const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
+
+  const clean = sanitizeAlias(alias);
+  if (!clean) {
+    throw roomError(
+      "INVALID_INPUT",
+      "Dieser Name enthält keine verwendbaren Zeichen. Bitte einen einfachen Namen wählen (Buchstaben, Zahlen, Leerzeichen).",
+    );
+  }
+
+  const { ensureAccount } = await import("./entitlements");
+  await ensureAccount(db, identity.subjectHash);
+  const previous = await getCustomAlias(db, identity.subjectHash);
+  const result = await setSubjectAlias(db, identity.subjectHash, clean);
+
+  return {
+    alias: result.alias,
+    previous_alias: previous,
+    rooms_updated: result.roomsUpdated,
+    message: `Dein Name ist jetzt «${result.alias}». Er gilt in ${result.roomsUpdated} aktiven Raum/Räumen und für neue Räume. Du kannst ihn jederzeit wieder ändern.`,
+  };
+}
+
+/** Current display name plus a short how-to for changing it. */
+export async function handleGetAlias(_input: unknown, meta: McpMeta) {
+  const identity = await resolveIdentity(meta);
+  const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
+  const alias = await getCustomAlias(db, identity.subjectHash);
+  return {
+    alias,
+    has_custom_alias: Boolean(alias),
+    message: alias
+      ? `Dein Name ist «${alias}». Sag einfach «nenn mich …», um ihn zu ändern.`
+      : "Du hast noch keinen eigenen Namen gewählt — in jedem Raum bekommst du einen zufälligen Anzeigenamen. Sag «nenn mich …», um einen eigenen Namen zu setzen.",
+  };
 }

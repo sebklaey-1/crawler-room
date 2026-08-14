@@ -19,7 +19,9 @@ import {
   handleCreateImageUpload,
   handleFinalizeImageUpload,
   handleGetImage,
+  handleGetAlias,
   handleReportMessage,
+  handleSetAlias,
   handleSubmitImageReview,
   RETENTION_NOTICE,
   handleSendMessage,
@@ -67,8 +69,15 @@ const roomSchema: Json = {
     label: { type: "string" },
     member_count: { type: "integer" },
     capacity: { type: "integer" },
+    online_now: {
+      type: "integer",
+      description:
+        "Exakte Anzahl der Personen, die in diesem Raum gerade live online sind (in den letzten Minuten aktiv). Immer diesen Live-Wert nennen, niemals schätzen.",
+    },
+    presence_window_seconds: { type: "integer" },
+    presence_checked_at: { type: "string", format: "date-time" },
   },
-  required: ["label", "member_count", "capacity"],
+  required: ["label", "member_count", "capacity", "online_now"],
   additionalProperties: false,
 };
 
@@ -156,8 +165,8 @@ export const TOOLS: ToolDefinition[] = [
     handler: (input, meta) => handleEnterTopic(input, meta) as Promise<Json>,
     summary: (result) => {
       const head = result.membership.joined_now
-        ? `Du bist ${result.room.label} beigetreten — ${result.room.member_count}/${result.room.capacity} Personen.`
-        : `${result.room.label} — ${result.room.member_count}/${result.room.capacity} Personen.`;
+        ? `Du bist ${result.room.label} beigetreten — ${result.room.member_count}/${result.room.capacity} Personen, ${result.room.online_now} gerade live online.`
+        : `${result.room.label} — ${result.room.member_count}/${result.room.capacity} Personen, ${result.room.online_now} gerade live online.`;
       return result.messages.length
         ? `${head}\n\nNeue Nachrichten:\n${formatMessages(result.messages)}`
         : `${head} Keine neuen Nachrichten.`;
@@ -240,7 +249,7 @@ export const TOOLS: ToolDefinition[] = [
     handler: (input, meta) => handleReadMessages(input, meta) as Promise<Json>,
     summary: (result) =>
       result.messages.length
-        ? `${result.room.label} — ${result.room.member_count}/${result.room.capacity} Personen\n\nNeue Nachrichten:\n${formatMessages(result.messages)}`
+        ? `${result.room.label} — ${result.room.member_count}/${result.room.capacity} Personen, ${result.room.online_now} gerade live online\n\nNeue Nachrichten:\n${formatMessages(result.messages)}`
         : `${result.room.label} — keine neuen Nachrichten.`,
   },
   {
@@ -261,6 +270,7 @@ export const TOOLS: ToolDefinition[] = [
               room_label: { type: "string" },
               alias: { type: "string" },
               member_count: { type: "integer" },
+              online_now: { type: "integer", description: "Exakt, live: gerade online in diesem Raum." },
               capacity: { type: "integer" },
               unread_count: { type: "integer" },
             },
@@ -270,6 +280,7 @@ export const TOOLS: ToolDefinition[] = [
               "room_label",
               "alias",
               "member_count",
+              "online_now",
               "capacity",
               "unread_count",
             ],
@@ -292,7 +303,7 @@ export const TOOLS: ToolDefinition[] = [
         ? result.rooms
             .map(
               (room: any) =>
-                `${room.room_label} — ${room.member_count}/${room.capacity}, ${room.unread_count} neue`,
+                `${room.room_label} — ${room.member_count}/${room.capacity}, ${room.online_now} gerade online, ${room.unread_count} neue`,
             )
             .join("\n")
         : "Du bist aktuell in keinem Raum.",
@@ -360,6 +371,66 @@ export const TOOLS: ToolDefinition[] = [
       idempotentHint: true,
     },
     handler: (input, meta) => handleReportMessage(input, meta) as Promise<Json>,
+    summary: (result) => result.message,
+  },
+  {
+    name: "set_alias",
+    title: "Namen wählen oder ändern",
+    description:
+      "Setzt oder ändert den selbstgewählten Anzeigenamen der Person. Der Name gilt sofort in allen aktiven Räumen und für neue Räume und kann jederzeit erneut geändert werden. Nur mit einem von der Person ausdrücklich gewünschten Namen aufrufen.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        alias: {
+          type: "string",
+          description: "Gewünschter Anzeigename, 1 bis 64 Zeichen. Keine echten Namen oder persönlichen Daten empfehlen.",
+        },
+      },
+      required: ["alias"],
+      additionalProperties: false,
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        alias: { type: "string" },
+        previous_alias: { type: ["string", "null"] },
+        rooms_updated: { type: "integer" },
+        message: { type: "string" },
+      },
+      required: ["alias", "rooms_updated", "message"],
+      additionalProperties: false,
+    },
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      openWorldHint: true,
+      idempotentHint: true,
+    },
+    handler: (input, meta) => handleSetAlias(input, meta) as Promise<Json>,
+    summary: (result) => result.message,
+  },
+  {
+    name: "get_alias",
+    title: "Mein Name",
+    description: "Zeigt den aktuell gewählten Anzeigenamen der Person und wie er geändert werden kann.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    outputSchema: {
+      type: "object",
+      properties: {
+        alias: { type: ["string", "null"] },
+        has_custom_alias: { type: "boolean" },
+        message: { type: "string" },
+      },
+      required: ["has_custom_alias", "message"],
+      additionalProperties: false,
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      openWorldHint: false,
+      idempotentHint: true,
+    },
+    handler: (input, meta) => handleGetAlias(input, meta) as Promise<Json>,
     summary: (result) => result.message,
   },
   {
@@ -480,7 +551,10 @@ Universal Room: enter_universal / list_universal / send_universal_message sind d
 Nach jedem send_message: die Nachrichten aus recent_messages sofort in derselben Antwort vorlesen (Liste mit Alias), damit die Person direkt sieht, was andere im Raum geschrieben haben. Niemals nur "gesendet" antworten.
 Möglichkeiten: @room ist vollständig kostenlos. Es gibt keine Abos, keine Pläne, keine Preise — nenne niemals Kosten, Upgrades oder Bezahlschranken. get_my_plan zeigt nur die freigeschalteten Erweiterungen, Limits und die Nutzung; alle Erweiterungen (eigene Räume, Einladungen, Communities, Kampagnen) stehen allen gratis zur Verfügung.
 Bilder: create_image_upload -> Bytes hochladen -> finalize_image_upload -> das Bild selbst gegen die Raumregeln prüfen -> submit_image_review. Ohne Freigabe wird ein Bild niemals sichtbar.
+Live-Präsenz: online_now ist die exakte, in diesem Moment vom Server gemessene Anzahl gerade online anwesender Personen (Fenster: presence_window_seconds). Nenne immer genau diesen Live-Wert aus dem letzten Tool-Ergebnis, schätze nie, runde nie und verwende nie ältere Zahlen aus dem Gesprächsverlauf. Wird nach der aktuellen Anzahl gefragt, rufe zuerst das passende Tool erneut auf (read_messages, my_rooms oder list_universal) und nenne dann den frischen Wert, z. B. "3 von 5 gerade online".
+Name: Die Person kann sich selbst einen Anzeigenamen geben und ihn jederzeit ändern — set_alias setzt oder ändert ihn, get_alias zeigt ihn. Sagt jemand "nenn mich …", "ich möchte anders heissen" oder fragt nach dem eigenen Namen, nutze diese Tools und erkläre kurz: "Sag einfach «nenn mich …», dann ändere ich deinen Namen." Empfiehl Fantasienamen statt echter Namen und übernimm nie ungefragt einen Namen aus dem Gespräch.
 ${RETENTION_NOTICE}`;
+
 
 /* --------------------------- JSON-RPC plumbing --------------------------- */
 
