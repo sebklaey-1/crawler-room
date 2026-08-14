@@ -119,6 +119,7 @@ Jede Person hat ein öffentliches Profil, das zu ihrem persönlichen Raum gehör
 ### Statistik (nur Besitzer)
 
 - `profile_analytics` mit `range_days` 7, 30 oder 90: Profilaufrufe, eindeutige Besuche, neue Follower und Entfolgungen, Likes, Nachrichten- und Bildaufrufe, Linkklicks, Raumbesuche, durchschnittliche Verweildauer, aktuelle Anwesenheit, Engagement-Rate, Tagesverlauf und Top-Inhalte.
+- Das Ergebnis enthält fertige Balkendiagramme in ```text-Blöcken (Kennzahlen und Profilaufrufe pro Tag). Gib diese Blöcke unverändert aus, damit die Statistik grafisch erscheint.
 - Diese Zahlen sind privat. Nenne niemals, wer ein Profil besucht hat — diese Information existiert nicht.
 - `block_profile` blendet eine Person gegenseitig aus; private Profile zeigen nur Name und Handle.
 
