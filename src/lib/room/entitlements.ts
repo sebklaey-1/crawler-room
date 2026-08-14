@@ -94,25 +94,28 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
 
   const freePlan = await getPlanByCode(db, "free");
   const sub = subscription as any;
-  const status: SubscriptionStatus = (sub?.status as SubscriptionStatus) ?? "free";
-  const paidPlan = sub?.plan_id ? await getPlanById(db, sub.plan_id) : null;
+  const status: SubscriptionStatus = "free";
+  const inGrace = false;
 
-  const graceUntil = sub?.grace_until ? new Date(sub.grace_until) : null;
-  const inGrace = Boolean(
-    graceUntil && graceUntil.getTime() > Date.now() && !FULL_ACCESS.includes(status),
-  );
+  const effectivePlan = freePlan;
 
-  const hasFullAccess = FULL_ACCESS.includes(status);
-  const plan = hasFullAccess && paidPlan ? paidPlan : freePlan;
-  const effectivePlan = !hasFullAccess && inGrace && paidPlan ? paidPlan : plan;
-
-  const entitlements: Record<string, boolean> = { ...(effectivePlan.entitlements ?? {}) };
-  const limits: Record<string, number> = { ...(effectivePlan.limits ?? {}) };
+  // Everything is free: every feature of every tier is unlocked for everyone,
+  // and every limit uses the most generous value in the catalogue.
+  const allPlans = await listPlans(db);
+  const entitlements: Record<string, boolean> = {};
+  const limits: Record<string, number> = {};
+  for (const plan of [freePlan, ...allPlans]) {
+    for (const key of Object.keys(plan.entitlements ?? {})) entitlements[key] = true;
+    for (const [key, value] of Object.entries(plan.limits ?? {})) {
+      const current = limits[key];
+      limits[key] = typeof current === "number" ? Math.max(current, value) : value;
+    }
+  }
 
   for (const row of (overrides ?? []) as any[]) {
     if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) continue;
     if (typeof row.value === "boolean") entitlements[row.key] = row.value;
-    else if (typeof row.value === "number") limits[row.key] = row.value;
+    else if (typeof row.value === "number") limits[row.key] = Math.max(limits[row.key] ?? 0, row.value);
   }
 
   return {
@@ -121,16 +124,16 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
     customAlias,
     plan: effectivePlan,
     status,
-    cancelAtPeriodEnd: Boolean(sub?.cancel_at_period_end),
-    currentPeriodEnd: sub?.current_period_end ?? null,
+    cancelAtPeriodEnd: false,
+    currentPeriodEnd: null,
     inGrace,
-    // During grace, paid management features become read-only.
-    readOnlyPaidFeatures: inGrace,
+    readOnlyPaidFeatures: false,
     entitlements,
     limits,
     isPlatformAdmin: ((roles ?? []) as any[]).some((r) => r.role === "platform_admin"),
     stripeCustomerId: (account as any)?.stripe_customer_id ?? null,
   };
+
 }
 
 export function requireEntitlement(ctx: AccountContext, key: string): void {
