@@ -38,3 +38,19 @@ export function requireSecret(name: string): string {
   if (!value) throw new Error(`Missing required environment variable: ${name}`);
   return value;
 }
+
+/** Per-room retention: only the newest N items survive. */
+export const TEXT_RETENTION = 7;
+export const IMAGE_RETENTION = 3;
+
+export const IMAGE_BUCKET = "room-images";
+
+export function imageConfig() {
+  return {
+    maxImageBytes: num("MAX_IMAGE_BYTES", 10 * 1024 * 1024),
+    uploadLimitPerHour: num("UPLOAD_LIMIT_PER_HOUR", 10),
+    uploadTokenTtlSeconds: num("UPLOAD_TOKEN_TTL_SECONDS", 900),
+    reviewTokenTtlSeconds: num("REVIEW_TOKEN_TTL_SECONDS", 900),
+    signedUrlTtlSeconds: num("SIGNED_URL_TTL_SECONDS", 300),
+  };
+}

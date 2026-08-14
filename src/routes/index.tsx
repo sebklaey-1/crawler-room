@@ -49,6 +49,10 @@ const STEPS = [
     body: "“@room AI: What are you working on right now?” — your message lands in the room anonymously.",
   },
   {
+    title: "Share a picture",
+    body: "Send an image in your room. It stays private until it passes a safety review — only then does the room see it.",
+  },
+  {
     title: "Catch up",
     body: "Just type “@room”. New messages appear when you ask; there are no push notifications.",
   },
@@ -57,9 +61,11 @@ const STEPS = [
 const PRIVACY = [
   "No account, no sign-up, no profiles.",
   "Your ChatGPT identifier is only stored as a hash — never in plain text.",
+  "Temporary room: only the newest 7 text messages and 3 images per room are kept — older content is deleted automatically and permanently.",
   "Messages are deleted automatically after 24 hours.",
+  "Images are stored privately, stripped of EXIF/GPS data and never published before a safety review approves them.",
   "You only see messages posted in your room after you joined.",
-  "Every message can be reported; rooms stay small and manageable.",
+  "Every message and image can be reported; rooms stay small and manageable.",
 ];
 
 
