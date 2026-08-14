@@ -47,6 +47,7 @@ const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
     "Ich konnte deine anonyme Kennung nicht ermitteln. Bitte öffne @room in einer unterstützten ChatGPT-Oberfläche, die Plugin-Kennungen übermittelt.",
   ROOM_UNAVAILABLE: "Dein Raum ist gerade nicht verfügbar. Bitte versuche es erneut.",
   INVALID_INPUT: "Die Angaben waren unvollständig oder ungültig.",
+  ALIAS_TAKEN: "Dieser Name ist bereits vergeben. Bitte wähle einen anderen.",
   MESSAGE_NOT_FOUND: "Diese Nachricht ist nicht (mehr) verfügbar.",
   IMAGE_NOT_FOUND: "Bild nicht mehr verfügbar.",
   IMAGE_TOO_LARGE: "Das Bild ist zu gross. Erlaubt sind höchstens 10 MB.",
