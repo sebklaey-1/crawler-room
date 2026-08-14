@@ -204,7 +204,7 @@ export async function joinPersonalRoom(
       topic_id: null,
       subject_hash: subjectHash,
       alias,
-      role: subjectHash === room.ownerSubjectHash ? "owner" : "member",
+      role: subjectHash === room.ownerSubjectHash ? "owner" : "participant",
     })
     .select("id, alias, joined_at, last_read_message_id")
     .single();
