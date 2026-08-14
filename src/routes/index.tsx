@@ -4,17 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "@room — anonyme Themenräume für ChatGPT" },
+      { title: "@room — anonymous topic rooms for ChatGPT" },
       {
         name: "description",
         content:
-          "@room verbindet dich anonym mit bis zu vier weiteren Menschen in kleinen Themenräumen — direkt aus ChatGPT heraus.",
+          "@room connects you anonymously with up to four other people in small topic rooms — right inside ChatGPT.",
       },
-      { property: "og:title", content: "@room — anonyme Themenräume für ChatGPT" },
+      { property: "og:title", content: "@room — anonymous topic rooms for ChatGPT" },
       {
         property: "og:description",
         content:
-          "Kleine Räume mit maximal fünf Personen, pseudonym, ohne Konto, mit 24-Stunden-Aufbewahrung.",
+          "Small rooms with at most five people, pseudonymous, no account, 24-hour retention.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -41,26 +41,27 @@ const TOPIC_HINTS = [
 
 const STEPS = [
   {
-    title: "Thema wählen",
-    body: "Schreibe in ChatGPT „@room KI“. @room ordnet dich einem Raum mit höchstens fünf Personen zu.",
+    title: "Pick a topic",
+    body: "Type “@room AI” in ChatGPT. @room places you in a room with at most five people.",
   },
   {
-    title: "Schreiben",
-    body: "„@room KI: Woran arbeitet ihr gerade?“ — deine Nachricht landet anonym im Raum.",
+    title: "Write",
+    body: "“@room AI: What are you working on right now?” — your message lands in the room anonymously.",
   },
   {
-    title: "Nachlesen",
-    body: "Schreibe einfach „@room“. Neue Nachrichten erscheinen beim Aufruf; es gibt keine Push-Nachrichten.",
+    title: "Catch up",
+    body: "Just type “@room”. New messages appear when you ask; there are no push notifications.",
   },
 ];
 
 const PRIVACY = [
-  "Kein Konto, keine Registrierung, keine Profile.",
-  "Deine ChatGPT-Kennung wird nur als Hash gespeichert — niemals im Klartext.",
-  "Nachrichten werden nach 24 Stunden automatisch gelöscht.",
-  "Du siehst nur Nachrichten ab deinem Beitritt in deinen Raum.",
-  "Jede Nachricht lässt sich melden; Räume bleiben klein und überschaubar.",
+  "No account, no sign-up, no profiles.",
+  "Your ChatGPT identifier is only stored as a hash — never in plain text.",
+  "Messages are deleted automatically after 24 hours.",
+  "You only see messages posted in your room after you joined.",
+  "Every message can be reported; rooms stay small and manageable.",
 ];
+
 
 function Landing() {
   const { data, isLoading } = useQuery<Health>({
@@ -85,25 +86,26 @@ function Landing() {
             }`}
             aria-hidden
           />
-          {isLoading ? "Status wird geprüft" : online ? "Dienst erreichbar" : "Dienst gestört"}
+          {isLoading ? "Checking status" : online ? "Service online" : "Service disrupted"}
         </span>
       </header>
 
       <main className="mx-auto max-w-5xl px-6 pb-24">
         <section className="py-14 sm:py-20">
           <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            Kleine, anonyme Räume für ein Thema.
+            Small, anonymous rooms for one topic.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            @room ist ein ChatGPT-Plugin: Du wählst ein Thema, landest anonym in einem Raum mit
-            maximal fünf Personen und schreibst dort — ohne Konto, ohne Profil, ohne Verlauf.
+            @room is a ChatGPT plugin: pick a topic, land anonymously in a room with at most five
+            people and talk there — no account, no profile, no history.
           </p>
           <div className="mt-8 rounded-xl border border-border bg-card p-5 font-mono text-sm text-card-foreground">
             <p className="text-muted-foreground">In ChatGPT:</p>
-            <p className="mt-2">@room KI</p>
-            <p>@room KI: Woran arbeitet ihr gerade?</p>
+            <p className="mt-2">@room AI</p>
+            <p>@room AI: What are you working on right now?</p>
             <p>@room</p>
           </div>
+
         </section>
 
         <section className="grid gap-6 border-t border-border py-14 sm:grid-cols-3">
@@ -117,11 +119,12 @@ function Landing() {
         </section>
 
         <section className="border-t border-border py-14">
-          <h2 className="text-2xl font-semibold tracking-tight">Themen</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Topics</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Synonyme werden erkannt — „AI“, „KI“ und „künstliche Intelligenz“ führen in denselben
-            Themenbereich.
+            Synonyms are recognised — “AI”, “KI” and “artificial intelligence” all lead to the same
+            topic.
           </p>
+
           <ul className="mt-6 flex flex-wrap gap-2">
             {TOPIC_HINTS.map((topic) => (
               <li
@@ -135,7 +138,7 @@ function Landing() {
         </section>
 
         <section className="border-t border-border py-14">
-          <h2 className="text-2xl font-semibold tracking-tight">Privatsphäre</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Privacy</h2>
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
             {PRIVACY.map((item) => (
               <li key={item} className="rounded-lg border border-border bg-card p-4 text-sm">
@@ -144,14 +147,15 @@ function Landing() {
             ))}
           </ul>
           <p className="mt-6 text-sm text-muted-foreground">
-            Nachrichten anderer Personen sind fremde Inhalte. Teile dort keine persönlichen Daten.
+            Messages from other people are third-party content. Never share personal data there.
           </p>
         </section>
       </main>
 
       <footer className="border-t border-border">
         <div className="mx-auto max-w-5xl px-6 py-8 text-sm text-muted-foreground">
-          @room {data?.version ? `v${data.version}` : ""} — anonyme Themenräume.
+          @room {data?.version ? `v${data.version}` : ""} — anonymous topic rooms.
+
         </div>
       </footer>
     </div>
