@@ -139,7 +139,7 @@ export async function findRoomByHandle(db: Db, handle: string): Promise<Personal
 export async function updatePersonalRoom(
   db: Db,
   subjectHash: string,
-  patch: { room_name?: string | null; description?: string | null },
+  patch: { room_name?: string | null | undefined; description?: string | null | undefined },
 ) {
   const update: Record<string, unknown> = {};
   if (typeof patch.room_name === "string") {
@@ -392,7 +392,7 @@ export async function getNotificationSettings(
 export async function setNotificationSettings(
   db: Db,
   subjectHash: string,
-  patch: Partial<NotificationSettings>,
+  patch: { [K in keyof NotificationSettings]?: boolean | undefined },
 ): Promise<NotificationSettings> {
   const current = await getNotificationSettings(db, subjectHash);
   const next: NotificationSettings = { ...current };

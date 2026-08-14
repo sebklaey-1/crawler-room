@@ -227,7 +227,7 @@ export async function handleSendRoomMessage(input: unknown, meta: McpMeta) {
     db,
     identity.subjectHash,
     "message",
-    WINDOWS.message(settings.messageLimitPerMinute, settings.messageLimitPerHour),
+    WINDOWS.message(settings.rateLimitPerMinute, settings.rateLimitPerHour),
   );
 
   const now = new Date();
