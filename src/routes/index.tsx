@@ -144,6 +144,36 @@ function Landing() {
         </section>
 
         <section className="border-t border-border py-14">
+          <h2 className="text-2xl font-semibold tracking-tight">Plans</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Talking, reading and joining public rooms is always free. Paid plans only add creation,
+            organisation and reach tools.
+          </p>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {PLANS.map((plan) => (
+              <div key={plan.name} className="rounded-lg border border-border bg-card p-5">
+                <h3 className="text-lg font-semibold">{plan.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{plan.price}</p>
+                <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+                  {plan.features.map((feature) => (
+                    <li key={feature}>· {feature}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-6 text-sm text-muted-foreground">
+            Ask ChatGPT “show my @room plan” to see your tier, limits and upgrade options. Sponsored
+            rooms are always labelled as advertising, reviewed before publication, and can be hidden
+            at any time.
+          </p>
+        </section>
+
+
+
+        <section className="border-t border-border py-14">
           <h2 className="text-2xl font-semibold tracking-tight">Privacy</h2>
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
             {PRIVACY.map((item) => (
