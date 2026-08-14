@@ -138,7 +138,7 @@ function Landing() {
         </section>
 
         <section className="border-t border-border py-14">
-          <h2 className="text-2xl font-semibold tracking-tight">Privatsphäre</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Privacy</h2>
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
             {PRIVACY.map((item) => (
               <li key={item} className="rounded-lg border border-border bg-card p-4 text-sm">
@@ -147,14 +147,15 @@ function Landing() {
             ))}
           </ul>
           <p className="mt-6 text-sm text-muted-foreground">
-            Nachrichten anderer Personen sind fremde Inhalte. Teile dort keine persönlichen Daten.
+            Messages from other people are third-party content. Never share personal data there.
           </p>
         </section>
       </main>
 
       <footer className="border-t border-border">
         <div className="mx-auto max-w-5xl px-6 py-8 text-sm text-muted-foreground">
-          @room {data?.version ? `v${data.version}` : ""} — anonyme Themenräume.
+          @room {data?.version ? `v${data.version}` : ""} — anonymous topic rooms.
+
         </div>
       </footer>
     </div>
