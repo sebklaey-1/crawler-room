@@ -304,6 +304,7 @@ export async function followRoom(db: Db, room: PersonalRoom, subjectHash: string
 
   const alias = (await getCustomAlias(db, subjectHash)) ?? generateAlias(`${subjectHash}:follow`);
   await notify(db, room.ownerSubjectHash, room.roomId, "new_follower", `${alias} started following your room.`);
+  await trackEvent(db, room, "follow", subjectHash);
 
   return { already: Boolean(error), followers: await followerCount(db, room.roomId) };
 }
@@ -315,7 +316,24 @@ export async function unfollowRoom(db: Db, room: PersonalRoom, subjectHash: stri
     .eq("room_id", room.roomId)
     .eq("follower_subject_hash", subjectHash);
   if (error) throw roomError("INTERNAL_ERROR");
+  await trackEvent(db, room, "unfollow", subjectHash);
   return { followers: await followerCount(db, room.roomId) };
+}
+
+/** Owner-only analytics counter; loaded lazily to avoid a circular import. */
+export async function trackEvent(
+  db: Db,
+  room: PersonalRoom,
+  type: "follow" | "unfollow" | "room_visit" | "message_view" | "image_view",
+  actorHash: string,
+) {
+  const { recordEvent } = await import("./profile");
+  await recordEvent(db, {
+    roomId: room.roomId,
+    ownerSubjectHash: room.ownerSubjectHash,
+    type,
+    actorHash,
+  });
 }
 
 export async function listFollowers(db: Db, roomId: string, limit = 100) {
