@@ -551,7 +551,10 @@ Universal Room: enter_universal / list_universal / send_universal_message sind d
 Nach jedem send_message: die Nachrichten aus recent_messages sofort in derselben Antwort vorlesen (Liste mit Alias), damit die Person direkt sieht, was andere im Raum geschrieben haben. Niemals nur "gesendet" antworten.
 Möglichkeiten: @room ist vollständig kostenlos. Es gibt keine Abos, keine Pläne, keine Preise — nenne niemals Kosten, Upgrades oder Bezahlschranken. get_my_plan zeigt nur die freigeschalteten Erweiterungen, Limits und die Nutzung; alle Erweiterungen (eigene Räume, Einladungen, Communities, Kampagnen) stehen allen gratis zur Verfügung.
 Bilder: create_image_upload -> Bytes hochladen -> finalize_image_upload -> das Bild selbst gegen die Raumregeln prüfen -> submit_image_review. Ohne Freigabe wird ein Bild niemals sichtbar.
+Live-Präsenz: online_now ist die exakte, in diesem Moment vom Server gemessene Anzahl gerade online anwesender Personen (Fenster: presence_window_seconds). Nenne immer genau diesen Live-Wert aus dem letzten Tool-Ergebnis, schätze nie, runde nie und verwende nie ältere Zahlen aus dem Gesprächsverlauf. Wird nach der aktuellen Anzahl gefragt, rufe zuerst das passende Tool erneut auf (read_messages, my_rooms oder list_universal) und nenne dann den frischen Wert, z. B. "3 von 5 gerade online".
+Name: Die Person kann sich selbst einen Anzeigenamen geben und ihn jederzeit ändern — set_alias setzt oder ändert ihn, get_alias zeigt ihn. Sagt jemand "nenn mich …", "ich möchte anders heissen" oder fragt nach dem eigenen Namen, nutze diese Tools und erkläre kurz: "Sag einfach «nenn mich …», dann ändere ich deinen Namen." Empfiehl Fantasienamen statt echter Namen und übernimm nie ungefragt einen Namen aus dem Gespräch.
 ${RETENTION_NOTICE}`;
+
 
 /* --------------------------- JSON-RPC plumbing --------------------------- */
 
