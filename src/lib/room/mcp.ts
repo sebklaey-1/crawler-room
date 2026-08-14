@@ -167,7 +167,7 @@ export const TOOLS: ToolDefinition[] = [
     name: "send_message",
     title: "Nachricht senden",
     description:
-      "Sendet eine Textnachricht in den eigenen Fünferraum eines Themas und liefert anschliessend die seither eingegangenen Nachrichten.",
+      "Sendet eine Textnachricht in den eigenen Fünferraum eines Themas und liefert die Raumunterhaltung zurück. Gib recent_messages in derselben Antwort direkt wieder.",
     inputSchema: {
       type: "object",
       properties: {
@@ -185,11 +185,14 @@ export const TOOLS: ToolDefinition[] = [
         room: roomSchema,
         sent_message: messageSchema,
         new_messages: { type: "array", items: messageSchema },
+        recent_messages: { type: "array", items: messageSchema },
+        display_instruction: { type: "string" },
         unread_count: { type: "integer" },
       },
-      required: ["sent", "topic", "room", "sent_message", "new_messages", "unread_count"],
+      required: ["sent", "topic", "room", "sent_message", "new_messages", "recent_messages", "unread_count"],
       additionalProperties: false,
     },
+
     annotations: {
       readOnlyHint: false,
       destructiveHint: false,
