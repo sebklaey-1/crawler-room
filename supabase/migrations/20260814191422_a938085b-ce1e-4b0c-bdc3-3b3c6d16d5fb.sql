@@ -1,0 +1,1 @@
+DELETE FROM public.anonymous_identities WHERE custom_alias ILIKE 'UniqTest99';

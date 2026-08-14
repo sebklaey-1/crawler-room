@@ -717,6 +717,23 @@ export async function handleSetAlias(input: unknown, meta: McpMeta) {
 
   const { ensureAccount } = await import("./entitlements");
   await ensureAccount(db, identity.subjectHash);
+
+  // Display names are unique across @room — suggest free variants when taken.
+  const { isAliasTaken } = await import("./store");
+  if (await isAliasTaken(db, identity.subjectHash, clean)) {
+    const suggestions: string[] = [];
+    for (let i = 2; suggestions.length < 3 && i < 40; i += 1) {
+      const candidate = `${clean}${i}`;
+      if (!(await isAliasTaken(db, identity.subjectHash, candidate))) suggestions.push(candidate);
+    }
+    throw roomError(
+      "ALIAS_TAKEN",
+      `Der Name «${clean}» ist bereits vergeben. Frei wären zum Beispiel: ${suggestions
+        .map((s) => `«${s}»`)
+        .join(", ")}. Sag einfach «nenn mich …» mit einem anderen Namen.`,
+    );
+  }
+
   const previous = await getCustomAlias(db, identity.subjectHash);
   const result = await setSubjectAlias(db, identity.subjectHash, clean);
 

@@ -322,15 +322,35 @@ export async function getCustomAlias(db: Db, subjectHash: string): Promise<strin
 }
 
 /** Sets the display name everywhere: identity record + all active memberships. */
+/** True when another person already uses this display name (case-insensitive). */
+export async function isAliasTaken(
+  db: Db,
+  subjectHash: string,
+  alias: string,
+): Promise<boolean> {
+  const { data } = await db
+    .from("anonymous_identities")
+    .select("subject_hash")
+    .ilike("custom_alias", alias.replace(/[%_]/g, "\\$&"))
+    .limit(5);
+  return ((data ?? []) as any[]).some(
+    (row) => row.subject_hash !== subjectHash,
+  );
+}
+
 export async function setSubjectAlias(
   db: Db,
   subjectHash: string,
   alias: string,
 ): Promise<{ alias: string; roomsUpdated: number }> {
+  if (await isAliasTaken(db, subjectHash, alias)) throw roomError("ALIAS_TAKEN");
+
   const { error } = await db
     .from("anonymous_identities")
     .update({ custom_alias: alias })
     .eq("subject_hash", subjectHash);
+  // Unique index race: another person grabbed the same name a moment earlier.
+  if (error?.code === "23505") throw roomError("ALIAS_TAKEN");
   if (error) throw roomError("INTERNAL_ERROR");
 
   const { data, error: memberError } = await db
