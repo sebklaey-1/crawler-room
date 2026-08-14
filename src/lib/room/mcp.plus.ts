@@ -5,7 +5,6 @@
 import type { McpMeta } from "./identity";
 import {
   handleAdminReviewCampaign,
-  handleCreateCheckoutLink,
   handleCreateInvitation,
   handleCreatePrivateRoom,
   handleCreateSponsoredCampaign,
@@ -16,7 +15,6 @@ import {
   handleJoinInvitation,
   handleListUniversal,
   handleManageCampaign,
-  handleOpenBillingPortal,
   handleManageRoom,
   handleReportSponsoredPlacement,
   handleSendUniversalMessage,
@@ -67,47 +65,21 @@ function feedSummary(result: any): string {
 export const PLUS_TOOLS: PlusToolDefinition[] = [
   {
     name: "get_my_plan",
-    title: "Mein Plan",
+    title: "Meine Möglichkeiten",
     description:
-      "Zeigt den aktuellen Plan, den Abo-Status, freigeschaltete Funktionen, Limits, die aktuelle Nutzung und mögliche Upgrades. Reden und Lesen bleibt immer kostenlos.",
+      "Zeigt alle freigeschalteten Möglichkeiten (Erweiterungen), Limits und die aktuelle Nutzung. @room ist vollständig kostenlos: es gibt keine Abos, keine Pläne und keine Preise — nenne niemals Kosten.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     outputSchema: OPEN_OUTPUT,
     annotations: READ_ONLY,
     handler: (input, meta) => handleGetMyPlan(input, meta) as Promise<Json>,
     summary: (result) =>
-      `Plan: ${result.plan.name} (${result.subscription_status}). ${result.notice}`,
-  },
-  {
-    name: "create_checkout_link",
-    title: "Abo abschliessen",
-    description:
-      "Erzeugt einen sicheren Stripe-Checkout-Link für Plus, Pro oder Business. Niemals als Bedingung fürs Mitreden anbieten.",
-    inputSchema: {
-      type: "object",
-      properties: { plan: { type: "string", enum: ["plus", "pro", "business"] } },
-      required: ["plan"],
-      additionalProperties: false,
-    },
-    outputSchema: OPEN_OUTPUT,
-    annotations: WRITE,
-    handler: (input, meta) => handleCreateCheckoutLink(input, meta) as Promise<Json>,
-    summary: (result) => `${result.message} ${result.checkout_url}`,
-  },
-  {
-    name: "open_billing_portal",
-    title: "Abo verwalten",
-    description: "Erzeugt einen Link zum Stripe-Kundenportal (Rechnungen, Wechsel, Kündigung auf Periodenende).",
-    inputSchema: { type: "object", properties: {}, additionalProperties: false },
-    outputSchema: OPEN_OUTPUT,
-    annotations: WRITE,
-    handler: (input, meta) => handleOpenBillingPortal(input, meta) as Promise<Json>,
-    summary: (result) => `${result.message} ${result.portal_url}`,
+      `Alle Möglichkeiten sind freigeschaltet. ${result.notice}`,
   },
   {
     name: "create_private_room",
     title: "Eigenen Raum erstellen",
     description:
-      "Erstellt einen eigenen Raum (Plus, Pro oder Business). Limits für Kapazität und Anzahl Räume werden serverseitig geprüft.",
+      "Erstellt einen eigenen Raum (für alle kostenlos). Limits für Kapazität und Anzahl Räume werden serverseitig geprüft.",
     inputSchema: {
       type: "object",
       properties: {
