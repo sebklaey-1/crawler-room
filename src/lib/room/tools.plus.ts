@@ -17,6 +17,7 @@ import {
   submitCampaignForReview,
 } from "./ads";
 import { sanitizeAlias } from "./alias";
+import { createCheckoutSession, createPortalSession } from "./billing";
 import { roomError } from "./errors";
 import {
   currentUsage,
@@ -54,6 +55,8 @@ const REPORT_REASONS = [
 
 export const plusInputSchemas = {
   get_my_plan: z.object({}).strict(),
+  create_checkout_link: z.object({ plan: z.enum(["plus", "pro", "business"]) }).strict(),
+  open_billing_portal: z.object({}).strict(),
   create_private_room: z
     .object({
       title: z.string().min(2).max(120),
@@ -374,4 +377,29 @@ export async function handleAdminReviewCampaign(input: unknown, meta: McpMeta) {
     data.reason,
   );
   return { ...result, message: `Kampagne: ${result.status}.` };
+}
+
+/* -------------------------------- billing -------------------------------- */
+
+function originFrom(meta: McpMeta): string {
+  const origin = (meta as Record<string, unknown> | undefined)?.["room/origin"];
+  return typeof origin === "string" && origin ? origin : "https://zinga-room.lovable.app";
+}
+
+export async function handleCreateCheckoutLink(input: unknown, meta: McpMeta) {
+  const data = parse(plusInputSchemas.create_checkout_link, input);
+  const { db, ctx } = await context(meta);
+  const session = await createCheckoutSession(db, ctx, data.plan, originFrom(meta));
+  return {
+    checkout_url: session.url,
+    plan: data.plan,
+    message: "Sichere Stripe-Kasse geöffnet. Reden und Lesen bleibt auch ohne Abo kostenlos.",
+  };
+}
+
+export async function handleOpenBillingPortal(input: unknown, meta: McpMeta) {
+  parse(plusInputSchemas.open_billing_portal, input);
+  const { db, ctx } = await context(meta);
+  const session = await createPortalSession(db, ctx, originFrom(meta));
+  return { portal_url: session.url, message: "Verwalte dein Abo im sicheren Stripe-Portal." };
 }
