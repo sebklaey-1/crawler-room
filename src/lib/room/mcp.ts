@@ -85,6 +85,16 @@ function formatMessages(messages: Array<{ alias: string; text: string }>): strin
   return messages.map((message) => `• ${message.alias}: ${message.text}`).join("\n");
 }
 
+function formatImages(
+  images?: Array<{ alias: string; alt_text: string; url?: string; status: string }>,
+): string {
+  const shown = (images ?? []).filter((image) => image.status === "approved" && image.url);
+  if (!shown.length) return "";
+  return `\n\nBilder im Raum (sofort anzeigen):\n${shown
+    .map((image) => `![${image.alt_text || "Bild"}](${image.url}) — ${image.alias}`)
+    .join("\n")}`;
+}
+
 export const TOOLS: ToolDefinition[] = [
   {
     name: "list_topics",
@@ -176,7 +186,7 @@ export const TOOLS: ToolDefinition[] = [
     name: "send_message",
     title: "Nachricht senden",
     description:
-      "Sendet eine Textnachricht in den eigenen Fünferraum eines Themas und liefert die Raumunterhaltung zurück. Gib recent_messages in derselben Antwort direkt wieder.",
+      "Sendet eine Textnachricht in den eigenen Fünferraum eines Themas und liefert die Raumunterhaltung samt Bildern zurück. Gib recent_messages in derselben Antwort direkt wieder und zeige alle Bilder aus images sofort als Markdown-Bild an.",
     inputSchema: {
       type: "object",
       properties: {
@@ -210,8 +220,8 @@ export const TOOLS: ToolDefinition[] = [
     },
     handler: (input, meta) => handleSendMessage(input, meta) as Promise<Json>,
     summary: (result) =>
-      result.new_messages.length
-        ? `Gesendet an ${result.room.label}.\n\nNeu im Raum:\n${formatMessages(result.new_messages)}`
+      result.new_messages.length || (result.images as any[])?.length
+        ? `Gesendet an ${result.room.label}.\n\nNeu im Raum:\n${formatMessages(result.new_messages)}${formatImages(result.images as any)}`
         : `Gesendet an ${result.room.label}. Keine neuen Nachrichten.`,
   },
   {
