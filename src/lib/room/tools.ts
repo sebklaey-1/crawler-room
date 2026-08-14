@@ -33,6 +33,7 @@ import { issueToken, subjectFingerprint, verifyToken } from "./tokens";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import {
   countActiveMembers,
+  countOnline,
   countUnread,
   fetchVisibleMessages,
   getActiveMembership,
@@ -43,8 +44,12 @@ import {
   leaveTopic,
   listMyRooms,
   listTopics,
+  getCustomAlias,
   loadAliasMap,
+  PRESENCE_WINDOW_SECONDS,
   roomLabel,
+  setSubjectAlias,
+  touchPresence,
   updateReadCursor,
   type Db,
   type MembershipContext,
@@ -120,11 +125,15 @@ async function resolveSlug(db: Db, raw: string): Promise<string> {
   return slug;
 }
 
-function roomPayload(membership: MembershipContext) {
+async function roomPayload(db: Db, membership: MembershipContext) {
+  const onlineNow = await countOnline(db, membership.roomId);
   return {
     label: roomLabel(membership.topic.display_name, membership.roomNumber),
     member_count: membership.memberCount,
     capacity: membership.capacity,
+    online_now: onlineNow,
+    presence_window_seconds: PRESENCE_WINDOW_SECONDS,
+    presence_checked_at: new Date().toISOString(),
   };
 }
 
@@ -164,6 +173,7 @@ export async function handleEnterTopic(input: unknown, meta: McpMeta) {
   const { topic, alias } = inputSchemas.enter_topic.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const settings = config();
 
@@ -173,7 +183,9 @@ export async function handleEnterTopic(input: unknown, meta: McpMeta) {
   }
 
   const desiredAlias =
-    sanitizeAlias(alias) ?? generateAlias(`${identity.subjectHash}:${slug}`);
+    sanitizeAlias(alias) ??
+    (await getCustomAlias(db, identity.subjectHash)) ??
+    generateAlias(`${identity.subjectHash}:${slug}`);
   const membership = await joinTopicRoom(db, identity.subjectHash, slug, desiredAlias);
 
   const { messages } = await fetchVisibleMessages(db, membership, {
@@ -186,7 +198,7 @@ export async function handleEnterTopic(input: unknown, meta: McpMeta) {
 
   return {
     topic: { slug: membership.topic.slug, display_name: membership.topic.display_name },
-    room: roomPayload(membership),
+    room: await roomPayload(db, membership),
     membership: { alias: membership.alias, joined_now: membership.joinedNow },
     messages: await serializeMessages(messages, membership),
     ...(await roomImages(db, membership)),
@@ -199,6 +211,7 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
   const { topic, text } = inputSchemas.send_message.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const settings = config();
 
@@ -236,7 +249,7 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
   return {
     sent: true,
     topic: { slug: membership.topic.slug, display_name: membership.topic.display_name },
-    room: roomPayload(membership),
+    room: await roomPayload(db, membership),
     sent_message: {
       id: await encodeMessageId(sent.id),
       alias: membership.alias,
@@ -262,6 +275,7 @@ export async function handleReadMessages(input: unknown, meta: McpMeta) {
   const { topic, limit } = inputSchemas.read_messages.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
 
   const membership = await requireMembership(db, identity.subjectHash, slug);
@@ -278,7 +292,7 @@ export async function handleReadMessages(input: unknown, meta: McpMeta) {
 
   return {
     topic: { slug: membership.topic.slug, display_name: membership.topic.display_name },
-    room: roomPayload(membership),
+    room: await roomPayload(db, membership),
     messages: await serializeMessages(messages, membership),
     ...(await roomImages(db, membership)),
     unread_count: unread,
@@ -290,6 +304,7 @@ export async function handleReadMessages(input: unknown, meta: McpMeta) {
 export async function handleMyRooms(_input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const rows = await listMyRooms(db, identity.subjectHash);
 
   const rooms = [];
@@ -324,6 +339,7 @@ export async function handleLeaveTopic(input: unknown, meta: McpMeta) {
   const { topic } = inputSchemas.leave_topic.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
 
   const membership = await leaveTopic(db, identity.subjectHash, slug);
@@ -344,6 +360,7 @@ export async function handleReportMessage(input: unknown, meta: McpMeta) {
   const { topic, message_id, reason } = inputSchemas.report_message.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const settings = config();
 
@@ -445,6 +462,7 @@ export async function handleCreateImageUpload(input: unknown, meta: McpMeta) {
   const { topic, mime_type, file_size } = inputSchemas.create_image_upload.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const membership = await requireMembership(db, identity.subjectHash, slug);
   const settings = imageConfig();
@@ -488,6 +506,7 @@ export async function handleFinalizeImageUpload(input: unknown, meta: McpMeta) {
   const { topic, image_id, alt_text } = inputSchemas.finalize_image_upload.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const membership = await requireMembership(db, identity.subjectHash, slug);
   const settings = imageConfig();
@@ -544,6 +563,7 @@ export async function handleSubmitImageReview(input: unknown, meta: McpMeta) {
     inputSchemas.submit_image_review.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const membership = await requireMembership(db, identity.subjectHash, slug);
 
@@ -614,6 +634,7 @@ export async function handleGetImage(input: unknown, meta: McpMeta) {
   const { topic, image_id } = inputSchemas.get_image.parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
+  await touchPresence(db, identity.subjectHash);
   const slug = await resolveSlug(db, topic);
   const membership = await requireMembership(db, identity.subjectHash, slug);
 
