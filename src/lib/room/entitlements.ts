@@ -188,16 +188,11 @@ export async function currentUsage(db: Db, ctx: AccountContext) {
   };
 }
 
-/** All extensions ("Erweiterungen") available to everyone, free of charge. */
-export async function upgradeOptions(db: Db, _ctx: AccountContext) {
-  const plans = await listPlans(db);
-  return plans.map((plan) => ({
-    code: plan.code,
-    name: plan.name,
-    tagline: plan.tagline ?? "",
-    included: true,
-    price_cents: 0,
-  }));
+/** All extensions are unlocked for everyone, free of charge. */
+export async function upgradeOptions(_db: Db, ctx: AccountContext) {
+  return Object.keys(ctx.entitlements)
+    .filter((key) => ctx.entitlements[key])
+    .map((key) => ({ feature: key, included: true }));
 }
 
 /* ------------------------------ organizations ----------------------------- */
