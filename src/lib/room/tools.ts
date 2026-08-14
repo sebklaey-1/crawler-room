@@ -222,6 +222,14 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
     limit: 20,
   });
   const others = messages.filter((row) => row.id !== sent.id);
+
+  // Full recent conversation of the room so the assistant can read it back
+  // immediately in the same reply.
+  const { messages: recent } = await fetchVisibleMessages(db, membership, {
+    afterId: null,
+    limit: 20,
+  });
+
   const lastId = messages.length ? messages[messages.length - 1]!.id : sent.id;
   await updateReadCursor(db, membership.membershipId, Math.max(lastId, sent.id));
 
@@ -237,11 +245,18 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
       is_self: true,
     },
     new_messages: await serializeMessages(others, membership),
+    recent_messages: await serializeMessages(
+      recent.filter((row) => row.id !== sent.id),
+      membership,
+    ),
+    display_instruction:
+      "Gib in derselben Antwort die Nachrichten aus recent_messages als Liste mit Alias wieder, damit die Person sofort sieht, was im Raum geschrieben wurde. Neue Nachrichten (new_messages) zuerst hervorheben. Sind keine vorhanden, sage kurz, dass es noch still ist.",
     ...(await roomImages(db, membership)),
     unread_count: 0,
     notice: RETENTION_NOTICE,
   };
 }
+
 
 export async function handleReadMessages(input: unknown, meta: McpMeta) {
   const { topic, limit } = inputSchemas.read_messages.parse(input);
