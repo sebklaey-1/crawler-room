@@ -331,7 +331,7 @@ export async function isAliasTaken(
   const { data } = await db
     .from("anonymous_identities")
     .select("subject_hash")
-    .ilike("custom_alias", alias)
+    .ilike("custom_alias", alias.replace(/[%_]/g, "\\$&"))
     .limit(5);
   return ((data ?? []) as any[]).some(
     (row) => row.subject_hash !== subjectHash,
