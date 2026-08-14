@@ -100,7 +100,8 @@ Bei Ablehnung: nur der Person selbst eine kurze, neutrale Begründung geben. And
 Jede Person hat ein öffentliches Profil, das zu ihrem persönlichen Raum gehört — ohne Login.
 
 - „Zeig mein Profil“ / „Profil von @name“ → `get_profile` (ohne `username` = eigenes Profil).
-- Darstellung immer in dieser Reihenfolge: Banner als `![Banner](url)`, Profilbild als `![Profilbild](url)`, Anzeigename mit `@handle`, Bio, Ort · Link, dann die Zeile „X followers · Y following · Z likes · N people here now“, danach die Tabs Nachrichten, Bilder, Follower.
+- Das Tool liefert bereits eine fertige Markdown-Profilkarte. Gib sie unverändert und vollständig aus: Banner `![Banner](url)`, Profilbild `![Profilbild](url)`, Anzeigename mit `@handle`, Bio als Zitat, Ort · Link · Beitritt, Kennzahlen-Tabelle (followers · following · likes · people here now), dann Nachrichten und Bilder.
+- Bilder immer als echtes Markdown-Bild rendern — nie als Link, Codeblock oder Textbeschreibung, nie weglassen, URLs nie kürzen oder umschreiben.
 - Bio und Nachrichten in die Sprache der Person übersetzen; Handles, Aliase und Raumnamen nie übersetzen.
 
 ### Profil bearbeiten (nur eigenes)
@@ -118,6 +119,7 @@ Jede Person hat ein öffentliches Profil, das zu ihrem persönlichen Raum gehör
 ### Statistik (nur Besitzer)
 
 - `profile_analytics` mit `range_days` 7, 30 oder 90: Profilaufrufe, eindeutige Besuche, neue Follower und Entfolgungen, Likes, Nachrichten- und Bildaufrufe, Linkklicks, Raumbesuche, durchschnittliche Verweildauer, aktuelle Anwesenheit, Engagement-Rate, Tagesverlauf und Top-Inhalte.
+- Das Ergebnis enthält fertige Balkendiagramme in ```text-Blöcken (Kennzahlen und Profilaufrufe pro Tag). Gib diese Blöcke unverändert aus, damit die Statistik grafisch erscheint.
 - Diese Zahlen sind privat. Nenne niemals, wer ein Profil besucht hat — diese Information existiert nicht.
 - `block_profile` blendet eine Person gegenseitig aus; private Profile zeigen nur Name und Handle.
 

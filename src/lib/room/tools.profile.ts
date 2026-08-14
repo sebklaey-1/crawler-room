@@ -33,7 +33,7 @@ import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import { getDb, touchPresence, type Db } from "./store";
 
 export const PROFILE_DISPLAY_INSTRUCTION =
-  "Zeige das Profil wie ein Social-Media-Profil: Banner (Markdown-Bild), Avatar, Anzeigename, @handle, Bio, Ort, Link, dann die Zeile «X followers · Y following · Z likes · N people here now» und danach die Tabs Nachrichten, Bilder und Likes. Übersetze Bio und Nachrichten in die Sprache der Person. Beim eigenen Profil biete Bearbeiten an (Name, Bio, Ort, Link, Bilder, Handle, Sichtbarkeit).";
+  "PFLICHT: Gib den mitgelieferten Markdown-Text der Antwort unverändert und vollständig aus, damit Banner und Profilbild als echte Bilder erscheinen. Bilder immer als ![alt](url) rendern — niemals als Link, Codeblock oder Beschreibung, niemals weglassen, URLs nie kürzen oder verändern. Reihenfolge: Banner, Profilbild, Anzeigename, @handle, Bio, Ort/Link/Beitritt, Kennzahlen-Tabelle (followers · following · likes · people here now), dann Nachrichten und Bilder. Übersetze nur Bio, Nachrichten und Alt-Texte in die Sprache der Person; Zahlen, Handles und Bild-URLs bleiben unverändert. Beim eigenen Profil biete Bearbeiten an (Name, Bio, Ort, Link, Bilder, Handle, Sichtbarkeit).";
 
 /* -------------------------------- helpers -------------------------------- */
 
@@ -181,6 +181,7 @@ export async function handleUpdateProfile(input: unknown, meta: McpMeta) {
   return {
     profile: await serializeProfile(db, profile, identity.subjectHash),
     message: "Profil aktualisiert.",
+    display_instruction: PROFILE_DISPLAY_INSTRUCTION,
   };
 }
 
@@ -345,7 +346,7 @@ export async function handleProfileAnalytics(input: unknown, meta: McpMeta) {
     privacy_note:
       "Analytics sind nur für dich sichtbar und enthalten keine Identitäten anderer Personen.",
     display_instruction:
-      "Zeige die Kennzahlen als kompakte Liste und danach den Verlauf pro Tag als kleine Textgrafik. Keine Namen von Besucherinnen und Besuchern nennen — es gibt keine.",
+      "PFLICHT: Gib den mitgelieferten Markdown-Text unverändert aus — die Balkendiagramme in den ```text-Blöcken müssen genau so erscheinen. Ergänze danach optional eine kurze Einordnung in der Sprache der Person. Keine Namen von Besucherinnen und Besuchern nennen — es gibt keine.",
   };
 }
 
