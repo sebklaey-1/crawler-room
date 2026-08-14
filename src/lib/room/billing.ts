@@ -12,20 +12,37 @@ import type { AccountContext } from "./entitlements";
 import { getPlanByCode, graceSettings } from "./plans";
 import type { Db } from "./store";
 
-const STRIPE_API = "https://api.stripe.com/v1";
+const GATEWAY_STRIPE_BASE = "https://connector-gateway.lovable.dev/stripe";
 
-function stripeKey(): string {
-  const key = process.env["STRIPE_SECRET_KEY"];
+export type StripeEnv = "sandbox" | "live";
+
+/** Live credentials only exist after go-live; before that everything runs in test mode. */
+export function stripeEnvironment(): StripeEnv {
+  return process.env["STRIPE_LIVE_API_KEY"] ? "live" : "sandbox";
+}
+
+function connectionKey(env: StripeEnv): string {
+  const key = env === "live" ? process.env["STRIPE_LIVE_API_KEY"] : process.env["STRIPE_SANDBOX_API_KEY"];
   if (!key) throw roomError("BILLING_REQUIRED");
   return key;
 }
 
+/**
+ * All Stripe calls go through the Lovable connector gateway, which holds the
+ * real Stripe secret. The keys below are opaque connection identifiers.
+ */
 async function stripeRequest(path: string, body?: Record<string, string>): Promise<any> {
-  const response = await fetch(`${STRIPE_API}${path}`, {
+  const env = stripeEnvironment();
+  const connection = connectionKey(env);
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  if (!lovableKey) throw roomError("BILLING_REQUIRED");
+
+  const response = await fetch(`${GATEWAY_STRIPE_BASE}${path}`, {
     method: body ? "POST" : "GET",
     headers: {
-      authorization: `Bearer ${stripeKey()}`,
       "content-type": "application/x-www-form-urlencoded",
+      "X-Connection-Api-Key": connection,
+      "Lovable-API-Key": lovableKey,
     },
     ...(body ? { body: new URLSearchParams(body).toString() } : {}),
   });
@@ -34,9 +51,17 @@ async function stripeRequest(path: string, body?: Record<string, string>): Promi
   return json;
 }
 
+/** Human-readable price ids stay stable across test and live; resolve via lookup key. */
+async function resolvePriceId(lookupKey: string): Promise<string> {
+  const prices = await stripeRequest(`/v1/prices?lookup_keys[]=${encodeURIComponent(lookupKey)}&limit=1`);
+  const price = prices?.data?.[0];
+  if (!price?.id) throw roomError("BILLING_REQUIRED");
+  return price.id as string;
+}
+
 async function ensureCustomer(db: Db, ctx: AccountContext): Promise<string> {
   if (ctx.stripeCustomerId) return ctx.stripeCustomerId;
-  const customer = await stripeRequest("/customers", {
+  const customer = await stripeRequest("/v1/customers", {
     "metadata[account_id]": ctx.accountId,
   });
   await db.from("accounts").update({ stripe_customer_id: customer.id }).eq("id", ctx.accountId);
@@ -53,11 +78,12 @@ export async function createCheckoutSession(
   if (!plan.stripe_price_id) throw roomError("BILLING_REQUIRED");
   const customer = await ensureCustomer(db, ctx);
 
-  const session = await stripeRequest("/checkout/sessions", {
+  const priceId = await resolvePriceId(plan.stripe_price_id);
+  const session = await stripeRequest("/v1/checkout/sessions", {
     mode: "subscription",
     customer,
     client_reference_id: ctx.accountId,
-    "line_items[0][price]": plan.stripe_price_id,
+    "line_items[0][price]": priceId,
     "line_items[0][quantity]": "1",
     "subscription_data[metadata][account_id]": ctx.accountId,
     "subscription_data[metadata][plan_code]": plan.code,
@@ -83,7 +109,7 @@ export async function createPortalSession(
   origin: string,
 ): Promise<{ url: string }> {
   const customer = await ensureCustomer(db, ctx);
-  const session = await stripeRequest("/billing_portal/sessions", {
+  const session = await stripeRequest("/v1/billing_portal/sessions", {
     customer,
     return_url: `${origin}/pricing`,
   });
@@ -92,8 +118,15 @@ export async function createPortalSession(
 
 /* -------------------------------- webhook -------------------------------- */
 
-export async function verifyStripeSignature(rawBody: string, header: string | null): Promise<boolean> {
-  const secret = process.env["STRIPE_WEBHOOK_SECRET"];
+export async function verifyStripeSignature(
+  rawBody: string,
+  header: string | null,
+  env: StripeEnv,
+): Promise<boolean> {
+  const secret =
+    env === "live"
+      ? process.env["PAYMENTS_LIVE_WEBHOOK_SECRET"]
+      : process.env["PAYMENTS_SANDBOX_WEBHOOK_SECRET"];
   if (!secret || !header) return false;
 
   const parts = Object.fromEntries(
@@ -186,7 +219,7 @@ export async function processStripeEvent(db: Db, event: any): Promise<{ handled:
     case "checkout.session.completed": {
       const accountId = await resolveAccount();
       if (accountId && object.subscription) {
-        const subscription = await stripeRequest(`/subscriptions/${object.subscription}`);
+        const subscription = await stripeRequest(`/v1/subscriptions/${object.subscription}`);
         await upsertSubscription(db, accountId, await planCodeFromSub(subscription), {
           status: subscription.status,
           stripeSubscriptionId: subscription.id,
