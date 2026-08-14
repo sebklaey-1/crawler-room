@@ -720,8 +720,13 @@ export async function handleSetAlias(input: unknown, meta: McpMeta) {
   const previous = await getCustomAlias(db, identity.subjectHash);
   const result = await setSubjectAlias(db, identity.subjectHash, clean);
 
+  // The personal room is named after the display name — keep both in sync.
+  const { syncPersonalRoomName } = await import("./personal");
+  const personal = await syncPersonalRoomName(db, identity.subjectHash, clean);
+
   return {
     alias: result.alias,
+    personal_room: personal ? { handle: personal.handle, room_name: personal.roomName } : null,
     previous_alias: previous,
     rooms_updated: result.roomsUpdated,
     message: `Dein Name ist jetzt «${result.alias}». Er gilt in ${result.roomsUpdated} aktiven Raum/Räumen und für neue Räume. Du kannst ihn jederzeit wieder ändern.`,
