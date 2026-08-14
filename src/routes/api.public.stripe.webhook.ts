@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/public/stripe/webhook")({
 
         const { getDb } = await import("@/lib/room/store");
         try {
-          const result = await processStripeEvent(getDb(), event as any);
+          const result = await processStripeEvent(await getDb(), event as any);
           return Response.json({ received: true, ...result });
         } catch {
           // Signal a retry to Stripe without leaking internals.
