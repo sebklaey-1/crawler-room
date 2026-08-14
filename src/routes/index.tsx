@@ -86,7 +86,7 @@ function Landing() {
             }`}
             aria-hidden
           />
-          {isLoading ? "Status wird geprüft" : online ? "Dienst erreichbar" : "Dienst gestört"}
+          {isLoading ? "Checking status" : online ? "Service online" : "Service disrupted"}
         </span>
       </header>
 
