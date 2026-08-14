@@ -431,6 +431,7 @@ async function serializeImages(
   membership: MembershipContext,
 ) {
   const aliases = await aliasesFor(db, rows.map((row) => row.sender_membership_id));
+  const ttl = config().signedUrlTtlSeconds;
   return Promise.all(
     rows.map(async (row) => ({
       id: await encodeImageId(row.id),
@@ -441,9 +442,13 @@ async function serializeImages(
       height: row.height ?? 0,
       status: row.moderation_status,
       is_self: row.sender_membership_id === membership.membershipId,
+      url:
+        row.moderation_status === "approved"
+          ? ((await signedUrl(db, row.storage_path, ttl)) ?? "")
+          : "",
       note:
         row.moderation_status === "approved"
-          ? "Use get_image with this id to display the image."
+          ? "Zeige dieses Bild sofort in der Antwort an (Markdown ![alt_text](url)); alternativ get_image mit dieser id."
           : row.moderation_status === "pending"
             ? "Bild wird geprüft … (nur für dich sichtbar)"
             : "Bild abgelehnt (nur für dich sichtbar).",
