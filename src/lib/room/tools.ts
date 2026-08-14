@@ -431,7 +431,7 @@ async function serializeImages(
   membership: MembershipContext,
 ) {
   const aliases = await aliasesFor(db, rows.map((row) => row.sender_membership_id));
-  const ttl = config().signedUrlTtlSeconds;
+  const ttl = imageConfig().signedUrlTtlSeconds;
   return Promise.all(
     rows.map(async (row) => ({
       id: await encodeImageId(row.id),
