@@ -5,7 +5,13 @@
 import { roomError } from "./errors";
 import type { Db } from "./store";
 
-export type RateAction = "message" | "join" | "report" | "upload";
+export type RateAction =
+  | "message"
+  | "join"
+  | "report"
+  | "upload"
+  | "like"
+  | "profile_image";
 
 interface Window {
   seconds: number;

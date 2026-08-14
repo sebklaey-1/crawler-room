@@ -166,6 +166,10 @@ export async function handleOpenRoom(input: unknown, meta: McpMeta) {
   const room = await requirePublicRoom(db, username);
   const isOwner = room.ownerSubjectHash === identity.subjectHash;
   const membership = await joinPersonalRoom(db, room, identity.subjectHash);
+  if (!isOwner) {
+    const { trackEvent } = await import("./personal");
+    await trackEvent(db, room, "room_visit", identity.subjectHash);
+  }
   const stats = await counters(db, room);
 
   return {

@@ -41,6 +41,44 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          actor_hash: string | null
+          created_at: string
+          event_type: string
+          id: number
+          metadata: Json
+          owner_subject_hash: string
+          room_id: string
+        }
+        Insert: {
+          actor_hash?: string | null
+          created_at?: string
+          event_type: string
+          id?: never
+          metadata?: Json
+          owner_subject_hash: string
+          room_id: string
+        }
+        Update: {
+          actor_hash?: string | null
+          created_at?: string
+          event_type?: string
+          id?: never
+          metadata?: Json
+          owner_subject_hash?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       anonymous_identities: {
         Row: {
           account_id: string | null
@@ -274,6 +312,44 @@ export type Database = {
           },
         ]
       }
+      content_likes: {
+        Row: {
+          created_at: string
+          id: string
+          owner_subject_hash: string
+          room_id: string | null
+          subject_hash: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_subject_hash: string
+          room_id?: string | null
+          subject_hash: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_subject_hash?: string
+          room_id?: string | null
+          subject_hash?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_likes_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entitlement_overrides: {
         Row: {
           account_id: string
@@ -359,6 +435,35 @@ export type Database = {
           },
           {
             foreignKeyName: "events_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      handle_redirects: {
+        Row: {
+          created_at: string
+          old_handle: string
+          owner_subject_hash: string
+          room_id: string
+        }
+        Insert: {
+          created_at?: string
+          old_handle: string
+          owner_subject_hash: string
+          room_id: string
+        }
+        Update: {
+          created_at?: string
+          old_handle?: string
+          owner_subject_hash?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handle_redirects_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
@@ -1026,6 +1131,30 @@ export type Database = {
           },
         ]
       }
+      profile_blocks: {
+        Row: {
+          blocked_subject_hash: string
+          created_at: string
+          id: string
+          reason: string | null
+          subject_hash: string
+        }
+        Insert: {
+          blocked_subject_hash: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          subject_hash: string
+        }
+        Update: {
+          blocked_subject_hash?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          subject_hash?: string
+        }
+        Relationships: []
+      }
       rate_events: {
         Row: {
           action: string
@@ -1460,35 +1589,56 @@ export type Database = {
       user_rooms: {
         Row: {
           avatar_path: string | null
+          banner_path: string | null
           created_at: string
           description: string | null
+          external_url: string | null
           handle: string
           id: string
+          location: string | null
           owner_subject_hash: string
+          profile_visibility: string
           room_id: string
           room_name: string
+          show_follower_count: boolean
+          show_likes: boolean
+          show_online_status: boolean
           updated_at: string
         }
         Insert: {
           avatar_path?: string | null
+          banner_path?: string | null
           created_at?: string
           description?: string | null
+          external_url?: string | null
           handle: string
           id?: string
+          location?: string | null
           owner_subject_hash: string
+          profile_visibility?: string
           room_id: string
           room_name: string
+          show_follower_count?: boolean
+          show_likes?: boolean
+          show_online_status?: boolean
           updated_at?: string
         }
         Update: {
           avatar_path?: string | null
+          banner_path?: string | null
           created_at?: string
           description?: string | null
+          external_url?: string | null
           handle?: string
           id?: string
+          location?: string | null
           owner_subject_hash?: string
+          profile_visibility?: string
           room_id?: string
           room_name?: string
+          show_follower_count?: boolean
+          show_likes?: boolean
+          show_online_status?: boolean
           updated_at?: string
         }
         Relationships: [
