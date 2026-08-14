@@ -16,6 +16,7 @@ import { resolveIdentity, type McpMeta } from "./identity";
 import { decodeMessageId, encodeMessageId } from "./ids";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import {
+  countActiveMembers,
   countUnread,
   fetchVisibleMessages,
   getActiveMembership,
