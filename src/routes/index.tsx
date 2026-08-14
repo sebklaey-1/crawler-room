@@ -135,6 +135,18 @@ function Landing() {
   });
 
   const online = data?.status === "ok";
+  const [copied, setCopied] = useState(false);
+
+  const copyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(MCP_URL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
