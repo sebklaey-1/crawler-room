@@ -47,9 +47,9 @@ export interface PolicyResult {
 export function screenCampaignCopy(input: {
   title: string;
   description: string;
-  ctaLabel?: string | null;
-  ctaUrl?: string | null;
-  organizationName?: string | null;
+  ctaLabel?: string | null | undefined;
+  ctaUrl?: string | null | undefined;
+  organizationName?: string | null | undefined;
 }): PolicyResult {
   const haystack = [input.title, input.description, input.ctaLabel, input.organizationName]
     .filter(Boolean)

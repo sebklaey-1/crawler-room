@@ -7,12 +7,12 @@ import type { Db } from "./store";
 export async function audit(
   db: Db,
   entry: {
-    actorType?: "system" | "user" | "organization" | "platform_admin";
-    actorId?: string | null;
+    actorType?: "system" | "user" | "organization" | "platform_admin" | undefined;
+    actorId?: string | null | undefined;
     action: string;
-    targetType?: string;
-    targetId?: string;
-    metadata?: Record<string, unknown>;
+    targetType?: string | undefined;
+    targetId?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
   },
 ) {
   await db.from("audit_logs").insert({
@@ -31,9 +31,9 @@ export async function recordModeration(
     subjectType: "message" | "image" | "campaign" | "organization" | "room";
     subjectId: string;
     decision: "approved" | "rejected" | "escalated" | "suspended" | "appealed" | "restored";
-    source?: "automated" | "human" | "appeal";
-    reason?: string;
-    reviewerAccountId?: string | null;
+    source?: "automated" | "human" | "appeal" | undefined;
+    reason?: string | undefined;
+    reviewerAccountId?: string | null | undefined;
   },
 ) {
   await db.from("moderation_decisions").insert({
