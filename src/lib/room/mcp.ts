@@ -526,6 +526,10 @@ const IMAGE_ITEM_SCHEMA = {
     height: { type: "number" },
     status: { type: "string" },
     is_self: { type: "boolean" },
+    url: {
+      type: "string",
+      description: "Direkt anzeigbare Bild-URL (nur bei status=approved). Sofort als Markdown-Bild einbetten.",
+    },
     note: { type: "string" },
   },
   required: ["id", "alias", "created_at", "alt_text", "status", "is_self"],
