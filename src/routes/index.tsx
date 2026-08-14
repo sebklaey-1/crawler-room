@@ -39,28 +39,29 @@ const TOPIC_HINTS = [
   "Life",
 ];
 
-const PLANS = [
+const EXTENSIONS = [
   {
-    name: "Free",
-    price: "0 / month",
-    features: ["Join public rooms", "Universal Room access", "Text and reviewed images", "Standard retention"],
+    name: "Rooms",
+    price: "Free",
+    features: ["Join public rooms", "Universal Room access", "Text and reviewed images", "Rolling retention"],
   },
   {
-    name: "Plus",
-    price: "Personal",
-    features: ["Create your own rooms", "Secure invitations", "Higher room capacity", "Extended retention"],
+    name: "Your own rooms",
+    price: "Free",
+    features: ["Create your own rooms", "Secure invitations", "Larger room capacity", "Room settings"],
   },
   {
-    name: "Pro",
-    price: "Creators",
-    features: ["Multiple communities", "Moderator roles", "Room analytics", "Priority placement in listings"],
+    name: "Communities",
+    price: "Free",
+    features: ["Multiple communities", "Moderator roles", "Room analytics", "Listing placement"],
   },
   {
-    name: "Business",
-    price: "Organisations",
+    name: "Organisations",
+    price: "Free",
     features: ["Verified organisation", "Sponsored rooms", "Campaign analytics", "Team management"],
   },
 ] as const;
+
 
 const STEPS = [
   {
@@ -167,19 +168,19 @@ function Landing() {
         </section>
 
         <section className="border-t border-border py-14">
-          <h2 className="text-2xl font-semibold tracking-tight">Plans</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Extensions</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Talking, reading and joining public rooms is always free. Paid plans only add creation,
-            organisation and reach tools.
+            @room is completely free. No subscriptions, no plans, no prices — every extension is
+            unlocked for everyone.
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {PLANS.map((plan) => (
-              <div key={plan.name} className="rounded-lg border border-border bg-card p-5">
-                <h3 className="text-lg font-semibold">{plan.name}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{plan.price}</p>
+            {EXTENSIONS.map((extension) => (
+              <div key={extension.name} className="rounded-lg border border-border bg-card p-5">
+                <h3 className="text-lg font-semibold">{extension.name}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{extension.price}</p>
                 <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                  {plan.features.map((feature) => (
+                  {extension.features.map((feature) => (
                     <li key={feature}>· {feature}</li>
                   ))}
                 </ul>
@@ -188,11 +189,11 @@ function Landing() {
           </div>
 
           <p className="mt-6 text-sm text-muted-foreground">
-            Ask ChatGPT “show my @room plan” to see your tier, limits and upgrade options. Sponsored
-            rooms are always labelled as advertising, reviewed before publication, and can be hidden
-            at any time.
+            Ask ChatGPT “show my @room options” to see what is unlocked. Sponsored rooms are always
+            labelled as advertising, reviewed before publication, and can be hidden at any time.
           </p>
         </section>
+
 
 
 

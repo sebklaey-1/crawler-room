@@ -6,7 +6,7 @@
  * (HMAC of the MCP subject) and the database.
  */
 import { roomError } from "./errors";
-import { getPlanByCode, getPlanById, listPlans, type PlanRow } from "./plans";
+import { getPlanByCode, listPlans, type PlanRow } from "./plans";
 import type { Db } from "./store";
 
 export type SubscriptionStatus =
@@ -16,9 +16,6 @@ export type SubscriptionStatus =
   | "past_due"
   | "canceled"
   | "expired";
-
-/** Statuses that grant the full paid feature set. */
-const FULL_ACCESS: SubscriptionStatus[] = ["trialing", "active", "past_due"];
 
 export interface AccountContext {
   accountId: string;
@@ -94,25 +91,28 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
 
   const freePlan = await getPlanByCode(db, "free");
   const sub = subscription as any;
-  const status: SubscriptionStatus = (sub?.status as SubscriptionStatus) ?? "free";
-  const paidPlan = sub?.plan_id ? await getPlanById(db, sub.plan_id) : null;
+  const status: SubscriptionStatus = "free";
+  const inGrace = false;
 
-  const graceUntil = sub?.grace_until ? new Date(sub.grace_until) : null;
-  const inGrace = Boolean(
-    graceUntil && graceUntil.getTime() > Date.now() && !FULL_ACCESS.includes(status),
-  );
+  const effectivePlan = freePlan;
 
-  const hasFullAccess = FULL_ACCESS.includes(status);
-  const plan = hasFullAccess && paidPlan ? paidPlan : freePlan;
-  const effectivePlan = !hasFullAccess && inGrace && paidPlan ? paidPlan : plan;
-
-  const entitlements: Record<string, boolean> = { ...(effectivePlan.entitlements ?? {}) };
-  const limits: Record<string, number> = { ...(effectivePlan.limits ?? {}) };
+  // Everything is free: every feature of every tier is unlocked for everyone,
+  // and every limit uses the most generous value in the catalogue.
+  const allPlans = await listPlans(db);
+  const entitlements: Record<string, boolean> = {};
+  const limits: Record<string, number> = {};
+  for (const plan of [freePlan, ...allPlans]) {
+    for (const key of Object.keys(plan.entitlements ?? {})) entitlements[key] = true;
+    for (const [key, value] of Object.entries(plan.limits ?? {})) {
+      const current = limits[key];
+      limits[key] = typeof current === "number" ? Math.max(current, value) : value;
+    }
+  }
 
   for (const row of (overrides ?? []) as any[]) {
     if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) continue;
     if (typeof row.value === "boolean") entitlements[row.key] = row.value;
-    else if (typeof row.value === "number") limits[row.key] = row.value;
+    else if (typeof row.value === "number") limits[row.key] = Math.max(limits[row.key] ?? 0, row.value);
   }
 
   return {
@@ -121,26 +121,27 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
     customAlias,
     plan: effectivePlan,
     status,
-    cancelAtPeriodEnd: Boolean(sub?.cancel_at_period_end),
-    currentPeriodEnd: sub?.current_period_end ?? null,
+    cancelAtPeriodEnd: false,
+    currentPeriodEnd: null,
     inGrace,
-    // During grace, paid management features become read-only.
-    readOnlyPaidFeatures: inGrace,
+    readOnlyPaidFeatures: false,
     entitlements,
     limits,
     isPlatformAdmin: ((roles ?? []) as any[]).some((r) => r.role === "platform_admin"),
     stripeCustomerId: (account as any)?.stripe_customer_id ?? null,
   };
+
 }
 
+/** Everything is free — features are only blocked by an explicit admin override. */
 export function requireEntitlement(ctx: AccountContext, key: string): void {
-  if (!ctx.entitlements[key]) {
-    throw roomError("PLAN_REQUIRED", undefined, { required_feature: key, current_plan: ctx.plan.code });
+  if (ctx.entitlements[key] === false) {
+    throw roomError("FORBIDDEN", undefined, { feature: key });
   }
 }
 
-export function requireWritablePaidFeatures(ctx: AccountContext): void {
-  if (ctx.readOnlyPaidFeatures) throw roomError("SUBSCRIPTION_READ_ONLY");
+export function requireWritablePaidFeatures(_ctx: AccountContext): void {
+  // No subscriptions — nothing is ever read-only for billing reasons.
 }
 
 export function limitOf(ctx: AccountContext, key: string, fallback = 0): number {
@@ -153,11 +154,13 @@ export async function requireUnderLimit(
   key: string,
   current: number,
 ): Promise<void> {
+  // Abuse guard only: the most generous catalogue limit applies to everyone.
   const max = limitOf(ctx, key, 0);
-  if (current >= max) {
-    throw roomError("LIMIT_REACHED", undefined, { limit: key, max, current_plan: ctx.plan.code });
+  if (max > 0 && current >= max) {
+    throw roomError("LIMIT_REACHED", undefined, { limit: key, max });
   }
 }
+
 
 /** Usage counters shown in room_get_my_plan and the upgrade screen. */
 export async function currentUsage(db: Db, ctx: AccountContext) {
@@ -185,18 +188,11 @@ export async function currentUsage(db: Db, ctx: AccountContext) {
   };
 }
 
-export async function upgradeOptions(db: Db, ctx: AccountContext) {
-  const plans = await listPlans(db);
-  return plans
-    .filter((plan) => plan.sort_order > (ctx.plan.sort_order ?? 0))
-    .map((plan) => ({
-      code: plan.code,
-      name: plan.name,
-      tagline: plan.tagline ?? "",
-      price_cents: plan.price_cents,
-      currency: plan.currency,
-      interval: plan.interval,
-    }));
+/** All extensions are unlocked for everyone, free of charge. */
+export async function upgradeOptions(_db: Db, ctx: AccountContext) {
+  return Object.keys(ctx.entitlements)
+    .filter((key) => ctx.entitlements[key])
+    .map((key) => ({ feature: key, included: true }));
 }
 
 /* ------------------------------ organizations ----------------------------- */

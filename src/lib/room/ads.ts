@@ -175,7 +175,6 @@ export async function submitCampaignForReview(db: Db, ctx: AccountContext, campa
   const org = await requireBusinessOrg(db, ctx, campaign.organization_id);
 
   if (!org.verified) throw roomError("ORGANIZATION_REQUIRED");
-  if (!org.billingReady) throw roomError("BILLING_REQUIRED");
   if (!campaign.title || !campaign.description || !campaign.topics?.length || !campaign.ends_at) {
     throw roomError("CAMPAIGN_INVALID");
   }

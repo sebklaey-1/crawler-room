@@ -17,7 +17,6 @@ import {
   submitCampaignForReview,
 } from "./ads";
 import { sanitizeAlias } from "./alias";
-import { createCheckoutSession, createPortalSession } from "./billing";
 import { roomError } from "./errors";
 import {
   currentUsage,
@@ -55,8 +54,6 @@ const REPORT_REASONS = [
 
 export const plusInputSchemas = {
   get_my_plan: z.object({}).strict(),
-  create_checkout_link: z.object({ plan: z.enum(["plus", "pro", "business"]) }).strict(),
-  open_billing_portal: z.object({}).strict(),
   create_private_room: z
     .object({
       title: z.string().min(2).max(120),
@@ -159,16 +156,12 @@ export async function handleGetMyPlan(input: unknown, meta: McpMeta) {
   const { db, ctx } = await context(meta);
   const usage = await currentUsage(db, ctx);
   return {
-    plan: { code: ctx.plan.code, name: ctx.plan.name, tagline: ctx.plan.tagline ?? "" },
-    subscription_status: ctx.status,
-    read_only_paid_features: ctx.readOnlyPaidFeatures,
-    cancel_at_period_end: ctx.cancelAtPeriodEnd,
-    current_period_end: ctx.currentPeriodEnd,
-    entitlements: ctx.entitlements,
+    features: ctx.entitlements,
     limits: ctx.limits,
     usage,
-    upgrade_options: await upgradeOptions(db, ctx),
-    notice: "Reden, Lesen und Bilder teilen in öffentlichen Räumen bleibt in jedem Fall kostenlos.",
+    extensions: await upgradeOptions(db, ctx),
+    notice:
+      "Alle Möglichkeiten von @room sind kostenlos freigeschaltet. Es gibt keine Abos, keine Pläne und keine Preise.",
   };
 }
 
@@ -176,13 +169,11 @@ export async function handlePublicPlans() {
   const db = await getDb();
   const plans = await listPlans(db);
   return {
-    plans: plans.map((plan) => ({
+    free: true,
+    extensions: plans.map((plan) => ({
       code: plan.code,
       name: plan.name,
       tagline: plan.tagline ?? "",
-      price_cents: plan.price_cents,
-      currency: plan.currency,
-      interval: plan.interval,
       limits: plan.limits,
       entitlements: plan.entitlements,
     })),
@@ -379,27 +370,3 @@ export async function handleAdminReviewCampaign(input: unknown, meta: McpMeta) {
   return { ...result, message: `Kampagne: ${result.status}.` };
 }
 
-/* -------------------------------- billing -------------------------------- */
-
-function originFrom(meta: McpMeta): string {
-  const origin = (meta as Record<string, unknown> | undefined)?.["room/origin"];
-  return typeof origin === "string" && origin ? origin : "https://zinga-room.lovable.app";
-}
-
-export async function handleCreateCheckoutLink(input: unknown, meta: McpMeta) {
-  const data = parse(plusInputSchemas.create_checkout_link, input);
-  const { db, ctx } = await context(meta);
-  const session = await createCheckoutSession(db, ctx, data.plan, originFrom(meta));
-  return {
-    checkout_url: session.url,
-    plan: data.plan,
-    message: "Sichere Stripe-Kasse geöffnet. Reden und Lesen bleibt auch ohne Abo kostenlos.",
-  };
-}
-
-export async function handleOpenBillingPortal(input: unknown, meta: McpMeta) {
-  parse(plusInputSchemas.open_billing_portal, input);
-  const { db, ctx } = await context(meta);
-  const session = await createPortalSession(db, ctx, originFrom(meta));
-  return { portal_url: session.url, message: "Verwalte dein Abo im sicheren Stripe-Portal." };
-}
