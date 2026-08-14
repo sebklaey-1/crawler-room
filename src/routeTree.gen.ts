@@ -10,33 +10,70 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
+import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
+import { Route as ApiPublicAdminCleanupRouteImport } from './routes/api.public.admin.cleanup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMcpRoute = ApiPublicMcpRouteImport.update({
+  id: '/api/public/mcp',
+  path: '/api/public/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAdminCleanupRoute = ApiPublicAdminCleanupRouteImport.update({
+  id: '/api/public/admin/cleanup',
+  path: '/api/public/admin/cleanup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    '/' | '/api/public/health' | '/api/public/mcp' | '/api/public/admin/cleanup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    '/' | '/api/public/health' | '/api/public/mcp' | '/api/public/admin/cleanup'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/public/health'
+    | '/api/public/mcp'
+    | '/api/public/admin/cleanup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicMcpRoute: typeof ApiPublicMcpRoute
+  ApiPublicAdminCleanupRoute: typeof ApiPublicAdminCleanupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +85,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mcp': {
+      id: '/api/public/mcp'
+      path: '/api/public/mcp'
+      fullPath: '/api/public/mcp'
+      preLoaderRoute: typeof ApiPublicMcpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/cleanup': {
+      id: '/api/public/admin/cleanup'
+      path: '/api/public/admin/cleanup'
+      fullPath: '/api/public/admin/cleanup'
+      preLoaderRoute: typeof ApiPublicAdminCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicMcpRoute: ApiPublicMcpRoute,
+  ApiPublicAdminCleanupRoute: ApiPublicAdminCleanupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
