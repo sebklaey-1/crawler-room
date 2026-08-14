@@ -39,28 +39,29 @@ const TOPIC_HINTS = [
   "Life",
 ];
 
-const PLANS = [
+const EXTENSIONS = [
   {
-    name: "Free",
-    price: "0 / month",
-    features: ["Join public rooms", "Universal Room access", "Text and reviewed images", "Standard retention"],
+    name: "Rooms",
+    price: "Free",
+    features: ["Join public rooms", "Universal Room access", "Text and reviewed images", "Rolling retention"],
   },
   {
-    name: "Plus",
-    price: "Personal",
-    features: ["Create your own rooms", "Secure invitations", "Higher room capacity", "Extended retention"],
+    name: "Your own rooms",
+    price: "Free",
+    features: ["Create your own rooms", "Secure invitations", "Larger room capacity", "Room settings"],
   },
   {
-    name: "Pro",
-    price: "Creators",
-    features: ["Multiple communities", "Moderator roles", "Room analytics", "Priority placement in listings"],
+    name: "Communities",
+    price: "Free",
+    features: ["Multiple communities", "Moderator roles", "Room analytics", "Listing placement"],
   },
   {
-    name: "Business",
-    price: "Organisations",
+    name: "Organisations",
+    price: "Free",
     features: ["Verified organisation", "Sponsored rooms", "Campaign analytics", "Team management"],
   },
 ] as const;
+
 
 const STEPS = [
   {
