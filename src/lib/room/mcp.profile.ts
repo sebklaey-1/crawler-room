@@ -273,8 +273,7 @@ export const PROFILE_TOOLS: ProfileToolDefinition[] = [
     outputSchema: OPEN_OUTPUT,
     annotations: READ_ONLY,
     handler: (input, meta) => handleProfileAnalytics(input, meta) as Promise<Json>,
-    summary: (result) =>
-      `@${result.handle} · ${result.range_days} Tage: ${result.profile_views} Profilaufrufe (${result.unique_visitors} eindeutig), ${result.new_followers} neue Follower, ${result.likes} Likes, ${result.link_clicks} Linkklicks, ${result.online_now} gerade anwesend, Engagement ${result.engagement_rate_percent}%.`,
+    summary: analyticsSummary,
   },
   {
     name: "open_profile_link",
