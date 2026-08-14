@@ -85,6 +85,16 @@ function formatMessages(messages: Array<{ alias: string; text: string }>): strin
   return messages.map((message) => `• ${message.alias}: ${message.text}`).join("\n");
 }
 
+function formatImages(
+  images?: Array<{ alias: string; alt_text: string; url?: string; status: string }>,
+): string {
+  const shown = (images ?? []).filter((image) => image.status === "approved" && image.url);
+  if (!shown.length) return "";
+  return `\n\nBilder im Raum (sofort anzeigen):\n${shown
+    .map((image) => `![${image.alt_text || "Bild"}](${image.url}) — ${image.alias}`)
+    .join("\n")}`;
+}
+
 export const TOOLS: ToolDefinition[] = [
   {
     name: "list_topics",
