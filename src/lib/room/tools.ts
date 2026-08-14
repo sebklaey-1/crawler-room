@@ -26,6 +26,7 @@ import {
   listApprovedImages,
   listOwnUnpublishedImages,
   removeStorageObjects,
+  signedUrl,
   updateImageRow,
   type ImageRow,
 } from "./imagestore";
@@ -264,7 +265,7 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
       membership,
     ),
     display_instruction:
-      "Gib in derselben Antwort die Nachrichten aus recent_messages als Liste mit Alias wieder, damit die Person sofort sieht, was im Raum geschrieben wurde. Neue Nachrichten (new_messages) zuerst hervorheben. Sind keine vorhanden, sage kurz, dass es noch still ist.",
+      "Gib in derselben Antwort die Nachrichten aus recent_messages als Liste mit Alias wieder UND zeige alle Bilder aus images direkt an — als Markdown ![alt_text](url) mit Alias darunter. Neue Nachrichten (new_messages) zuerst hervorheben. Sind weder Nachrichten noch Bilder vorhanden, sage kurz, dass es noch still ist.",
     ...(await roomImages(db, membership)),
     unread_count: 0,
     notice: RETENTION_NOTICE,
@@ -430,6 +431,7 @@ async function serializeImages(
   membership: MembershipContext,
 ) {
   const aliases = await aliasesFor(db, rows.map((row) => row.sender_membership_id));
+  const ttl = imageConfig().signedUrlTtlSeconds;
   return Promise.all(
     rows.map(async (row) => ({
       id: await encodeImageId(row.id),
@@ -440,9 +442,13 @@ async function serializeImages(
       height: row.height ?? 0,
       status: row.moderation_status,
       is_self: row.sender_membership_id === membership.membershipId,
+      url:
+        row.moderation_status === "approved"
+          ? ((await signedUrl(db, row.storage_path, ttl)) ?? "")
+          : "",
       note:
         row.moderation_status === "approved"
-          ? "Use get_image with this id to display the image."
+          ? "Zeige dieses Bild sofort in der Antwort an (Markdown ![alt_text](url)); alternativ get_image mit dieser id."
           : row.moderation_status === "pending"
             ? "Bild wird geprüft … (nur für dich sichtbar)"
             : "Bild abgelehnt (nur für dich sichtbar).",
