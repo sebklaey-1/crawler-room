@@ -704,7 +704,7 @@ export async function handleSetAlias(input: unknown, meta: McpMeta) {
   const clean = sanitizeAlias(alias);
   if (!clean) {
     throw roomError(
-      "VALIDATION_ERROR",
+      "INVALID_INPUT",
       "Dieser Name enthält keine verwendbaren Zeichen. Bitte einen einfachen Namen wählen (Buchstaben, Zahlen, Leerzeichen).",
     );
   }
