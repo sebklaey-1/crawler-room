@@ -272,6 +272,7 @@ export async function handleEnterUniversal(input: unknown, meta: McpMeta) {
     joined_now: membership.joinedNow,
     alias: membership.alias,
     presence: presence.bucket,
+    online_now: (feed.room as any).online_now,
     ...feed,
   };
 }
