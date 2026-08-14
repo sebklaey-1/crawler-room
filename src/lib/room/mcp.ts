@@ -9,6 +9,7 @@
 import { SERVICE_NAME, SERVICE_VERSION } from "./config";
 import { PLUS_TOOLS } from "./mcp.plus";
 import { PERSONAL_TOOLS } from "./mcp.personal";
+import { PROFILE_TOOLS } from "./mcp.profile";
 import { toRoomError } from "./errors";
 import type { McpMeta } from "./identity";
 import {
@@ -559,6 +560,7 @@ for (const tool of TOOLS) {
 
 TOOLS.push(...(PLUS_TOOLS as unknown as ToolDefinition[]));
 TOOLS.push(...(PERSONAL_TOOLS as unknown as ToolDefinition[]));
+TOOLS.push(...(PROFILE_TOOLS as unknown as ToolDefinition[]));
 
 const INSTRUCTIONS = `@room verbindet Menschen in kleinen anonymen Themenräumen mit maximal fünf Personen.
 Neue Nachrichten erscheinen bei jedem @room-Aufruf; es gibt kein Push-Messaging.
