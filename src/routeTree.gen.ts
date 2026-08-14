@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
 import { Route as ApiPublicAdminCleanupRouteImport } from './routes/api.public.admin.cleanup'
-import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicRoomUploadRouteImport } from './routes/api.public.room.upload'
 
 const IndexRoute = IndexRouteImport.update({
@@ -36,12 +35,6 @@ const ApiPublicAdminCleanupRoute = ApiPublicAdminCleanupRouteImport.update({
   path: '/api/public/admin/cleanup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicPaymentsWebhookRoute =
-  ApiPublicPaymentsWebhookRouteImport.update({
-    id: '/api/public/payments/webhook',
-    path: '/api/public/payments/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicRoomUploadRoute = ApiPublicRoomUploadRouteImport.update({
   id: '/api/public/room/upload',
   path: '/api/public/room/upload',
@@ -53,7 +46,6 @@ export interface FileRoutesByFullPath {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
 }
 export interface FileRoutesByTo {
@@ -61,7 +53,6 @@ export interface FileRoutesByTo {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
 }
 export interface FileRoutesById {
@@ -70,7 +61,6 @@ export interface FileRoutesById {
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
 }
 export interface FileRouteTypes {
@@ -80,7 +70,6 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/admin/cleanup'
-    | '/api/public/payments/webhook'
     | '/api/public/room/upload'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,7 +77,6 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/admin/cleanup'
-    | '/api/public/payments/webhook'
     | '/api/public/room/upload'
   id:
     | '__root__'
@@ -96,7 +84,6 @@ export interface FileRouteTypes {
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/admin/cleanup'
-    | '/api/public/payments/webhook'
     | '/api/public/room/upload'
   fileRoutesById: FileRoutesById
 }
@@ -105,7 +92,6 @@ export interface RootRouteChildren {
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicAdminCleanupRoute: typeof ApiPublicAdminCleanupRoute
-  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicRoomUploadRoute: typeof ApiPublicRoomUploadRoute
 }
 
@@ -139,13 +125,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminCleanupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/payments/webhook': {
-      id: '/api/public/payments/webhook'
-      path: '/api/public/payments/webhook'
-      fullPath: '/api/public/payments/webhook'
-      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/room/upload': {
       id: '/api/public/room/upload'
       path: '/api/public/room/upload'
@@ -161,7 +140,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicAdminCleanupRoute: ApiPublicAdminCleanupRoute,
-  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicRoomUploadRoute: ApiPublicRoomUploadRoute,
 }
 export const routeTree = rootRouteImport
