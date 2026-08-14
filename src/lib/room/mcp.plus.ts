@@ -283,7 +283,7 @@ export const PLUS_TOOLS: PlusToolDefinition[] = [
     name: "submit_campaign_for_review",
     title: "Kampagne einreichen",
     description:
-      "Reicht eine Kampagne zur Prüfung ein. Geprüft werden Business-Abo, verifizierte Organisation, Zahlungsbereitschaft, Vollständigkeit, Richtlinien und Zielseite.",
+      "Reicht eine Kampagne zur Prüfung ein. Geprüft werden verifizierte Organisation, Vollständigkeit, Richtlinien und Zielseite.",
     inputSchema: {
       type: "object",
       properties: { campaign_id: { type: "string" } },
