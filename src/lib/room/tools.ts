@@ -265,7 +265,7 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
       membership,
     ),
     display_instruction:
-      "Gib in derselben Antwort die Nachrichten aus recent_messages als Liste mit Alias wieder, damit die Person sofort sieht, was im Raum geschrieben wurde. Neue Nachrichten (new_messages) zuerst hervorheben. Sind keine vorhanden, sage kurz, dass es noch still ist.",
+      "Gib in derselben Antwort die Nachrichten aus recent_messages als Liste mit Alias wieder UND zeige alle Bilder aus images direkt an — als Markdown ![alt_text](url) mit Alias darunter. Neue Nachrichten (new_messages) zuerst hervorheben. Sind weder Nachrichten noch Bilder vorhanden, sage kurz, dass es noch still ist.",
     ...(await roomImages(db, membership)),
     unread_count: 0,
     notice: RETENTION_NOTICE,
