@@ -48,7 +48,7 @@ const EXTENSIONS = [
   {
     name: "Your own rooms",
     price: "Free",
-    features: ["Create your own rooms", "Secure invitations", "Larger room capacity", "Room settings"],
+    features: ["Personal room named after you", "Followers and live presence", "Secure invitations", "Room settings"],
   },
   {
     name: "Communities",
@@ -75,6 +75,10 @@ const STEPS = [
   {
     title: "Share a picture",
     body: "Send an image in your room. It stays private until it passes a safety review — only then does the room see it.",
+  },
+  {
+    title: "Your own room",
+    body: "Say \u201c@rooms my room\u201d. Everyone gets one permanent public room named after them \u2014 no login. Others follow it with \u201c@rooms follow @you\u201d.",
   },
   {
     title: "Catch up",
