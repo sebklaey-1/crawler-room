@@ -4,17 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "@room — anonyme Themenräume für ChatGPT" },
+      { title: "@room — anonymous topic rooms for ChatGPT" },
       {
         name: "description",
         content:
-          "@room verbindet dich anonym mit bis zu vier weiteren Menschen in kleinen Themenräumen — direkt aus ChatGPT heraus.",
+          "@room connects you anonymously with up to four other people in small topic rooms — right inside ChatGPT.",
       },
-      { property: "og:title", content: "@room — anonyme Themenräume für ChatGPT" },
+      { property: "og:title", content: "@room — anonymous topic rooms for ChatGPT" },
       {
         property: "og:description",
         content:
-          "Kleine Räume mit maximal fünf Personen, pseudonym, ohne Konto, mit 24-Stunden-Aufbewahrung.",
+          "Small rooms with at most five people, pseudonymous, no account, 24-hour retention.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -41,26 +41,27 @@ const TOPIC_HINTS = [
 
 const STEPS = [
   {
-    title: "Thema wählen",
-    body: "Schreibe in ChatGPT „@room KI“. @room ordnet dich einem Raum mit höchstens fünf Personen zu.",
+    title: "Pick a topic",
+    body: "Type “@room AI” in ChatGPT. @room places you in a room with at most five people.",
   },
   {
-    title: "Schreiben",
-    body: "„@room KI: Woran arbeitet ihr gerade?“ — deine Nachricht landet anonym im Raum.",
+    title: "Write",
+    body: "“@room AI: What are you working on right now?” — your message lands in the room anonymously.",
   },
   {
-    title: "Nachlesen",
-    body: "Schreibe einfach „@room“. Neue Nachrichten erscheinen beim Aufruf; es gibt keine Push-Nachrichten.",
+    title: "Catch up",
+    body: "Just type “@room”. New messages appear when you ask; there are no push notifications.",
   },
 ];
 
 const PRIVACY = [
-  "Kein Konto, keine Registrierung, keine Profile.",
-  "Deine ChatGPT-Kennung wird nur als Hash gespeichert — niemals im Klartext.",
-  "Nachrichten werden nach 24 Stunden automatisch gelöscht.",
-  "Du siehst nur Nachrichten ab deinem Beitritt in deinen Raum.",
-  "Jede Nachricht lässt sich melden; Räume bleiben klein und überschaubar.",
+  "No account, no sign-up, no profiles.",
+  "Your ChatGPT identifier is only stored as a hash — never in plain text.",
+  "Messages are deleted automatically after 24 hours.",
+  "You only see messages posted in your room after you joined.",
+  "Every message can be reported; rooms stay small and manageable.",
 ];
+
 
 function Landing() {
   const { data, isLoading } = useQuery<Health>({
