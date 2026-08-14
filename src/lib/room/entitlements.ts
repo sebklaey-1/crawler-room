@@ -6,7 +6,7 @@
  * (HMAC of the MCP subject) and the database.
  */
 import { roomError } from "./errors";
-import { getPlanByCode, getPlanById, listPlans, type PlanRow } from "./plans";
+import { getPlanByCode, listPlans, type PlanRow } from "./plans";
 import type { Db } from "./store";
 
 export type SubscriptionStatus =
@@ -16,9 +16,6 @@ export type SubscriptionStatus =
   | "past_due"
   | "canceled"
   | "expired";
-
-/** Statuses that grant the full paid feature set. */
-const FULL_ACCESS: SubscriptionStatus[] = ["trialing", "active", "past_due"];
 
 export interface AccountContext {
   accountId: string;
@@ -191,18 +188,16 @@ export async function currentUsage(db: Db, ctx: AccountContext) {
   };
 }
 
-export async function upgradeOptions(db: Db, ctx: AccountContext) {
+/** All extensions ("Erweiterungen") available to everyone, free of charge. */
+export async function upgradeOptions(db: Db, _ctx: AccountContext) {
   const plans = await listPlans(db);
-  return plans
-    .filter((plan) => plan.sort_order > (ctx.plan.sort_order ?? 0))
-    .map((plan) => ({
-      code: plan.code,
-      name: plan.name,
-      tagline: plan.tagline ?? "",
-      price_cents: plan.price_cents,
-      currency: plan.currency,
-      interval: plan.interval,
-    }));
+  return plans.map((plan) => ({
+    code: plan.code,
+    name: plan.name,
+    tagline: plan.tagline ?? "",
+    included: true,
+    price_cents: 0,
+  }));
 }
 
 /* ------------------------------ organizations ----------------------------- */
