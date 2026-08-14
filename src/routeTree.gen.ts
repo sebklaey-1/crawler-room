@@ -14,6 +14,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
 import { Route as ApiPublicAdminCleanupRouteImport } from './routes/api.public.admin.cleanup'
 import { Route as ApiPublicRoomUploadRouteImport } from './routes/api.public.room.upload'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api.public.stripe.webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,11 @@ const ApiPublicRoomUploadRoute = ApiPublicRoomUploadRouteImport.update({
   path: '/api/public/room/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe/webhook',
+  path: '/api/public/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +70,7 @@ export interface FileRoutesById {
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,6 +80,7 @@ export interface FileRouteTypes {
     | '/api/public/mcp'
     | '/api/public/admin/cleanup'
     | '/api/public/room/upload'
+    | '/api/public/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -78,6 +88,7 @@ export interface FileRouteTypes {
     | '/api/public/mcp'
     | '/api/public/admin/cleanup'
     | '/api/public/room/upload'
+    | '/api/public/stripe/webhook'
   id:
     | '__root__'
     | '/'
@@ -85,6 +96,7 @@ export interface FileRouteTypes {
     | '/api/public/mcp'
     | '/api/public/admin/cleanup'
     | '/api/public/room/upload'
+    | '/api/public/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,6 +105,7 @@ export interface RootRouteChildren {
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicAdminCleanupRoute: typeof ApiPublicAdminCleanupRoute
   ApiPublicRoomUploadRoute: typeof ApiPublicRoomUploadRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRoomUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/stripe/webhook': {
+      id: '/api/public/stripe/webhook'
+      path: '/api/public/stripe/webhook'
+      fullPath: '/api/public/stripe/webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -141,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicAdminCleanupRoute: ApiPublicAdminCleanupRoute,
   ApiPublicRoomUploadRoute: ApiPublicRoomUploadRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
