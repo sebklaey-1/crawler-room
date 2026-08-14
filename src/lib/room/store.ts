@@ -312,10 +312,6 @@ export async function countOnline(
 }
 
 /** Persisted display name chosen by the person, or null. */
-export async function getСustomAliasPlaceholder(): Promise<null> {
-  return null;
-}
-
 export async function getCustomAlias(db: Db, subjectHash: string): Promise<string | null> {
   const { data } = await db
     .from("anonymous_identities")
