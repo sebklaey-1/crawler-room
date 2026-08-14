@@ -208,7 +208,7 @@ export async function joinPersonalRoom(
     })
     .select("id, alias, joined_at, last_read_message_id")
     .single();
-  if (error || !data) { console.log("joinPersonalRoom", JSON.stringify(error)); throw roomError("ROOM_UNAVAILABLE"); }
+  if (error || !data) throw roomError("ROOM_UNAVAILABLE");
 
   const row = data as any;
   return {
