@@ -93,18 +93,19 @@ function Landing() {
       <main className="mx-auto max-w-5xl px-6 pb-24">
         <section className="py-14 sm:py-20">
           <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            Kleine, anonyme Räume für ein Thema.
+            Small, anonymous rooms for one topic.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            @room ist ein ChatGPT-Plugin: Du wählst ein Thema, landest anonym in einem Raum mit
-            maximal fünf Personen und schreibst dort — ohne Konto, ohne Profil, ohne Verlauf.
+            @room is a ChatGPT plugin: pick a topic, land anonymously in a room with at most five
+            people and talk there — no account, no profile, no history.
           </p>
           <div className="mt-8 rounded-xl border border-border bg-card p-5 font-mono text-sm text-card-foreground">
             <p className="text-muted-foreground">In ChatGPT:</p>
-            <p className="mt-2">@room KI</p>
-            <p>@room KI: Woran arbeitet ihr gerade?</p>
+            <p className="mt-2">@room AI</p>
+            <p>@room AI: What are you working on right now?</p>
             <p>@room</p>
           </div>
+
         </section>
 
         <section className="grid gap-6 border-t border-border py-14 sm:grid-cols-3">
