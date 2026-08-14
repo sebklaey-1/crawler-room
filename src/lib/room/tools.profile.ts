@@ -345,7 +345,7 @@ export async function handleProfileAnalytics(input: unknown, meta: McpMeta) {
     privacy_note:
       "Analytics sind nur für dich sichtbar und enthalten keine Identitäten anderer Personen.",
     display_instruction:
-      "Zeige die Kennzahlen als kompakte Liste und danach den Verlauf pro Tag als kleine Textgrafik. Keine Namen von Besucherinnen und Besuchern nennen — es gibt keine.",
+      "PFLICHT: Gib den mitgelieferten Markdown-Text unverändert aus — die Balkendiagramme in den ```text-Blöcken müssen genau so erscheinen. Ergänze danach optional eine kurze Einordnung in der Sprache der Person. Keine Namen von Besucherinnen und Besuchern nennen — es gibt keine.",
   };
 }
 
