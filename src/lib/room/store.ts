@@ -48,9 +48,13 @@ export async function loadAliasMap(db: Db): Promise<Record<string, string>> {
     .select("normalized_alias, topics(slug)");
   if (error) return {};
   const map: Record<string, string> = {};
-  for (const row of (data ?? []) as Array<{ normalized_alias: string; topics: { slug: string } | null }>) {
+  for (const row of (data ?? []) as unknown as Array<{
+    normalized_alias: string;
+    topics: { slug: string } | null;
+  }>) {
     if (row.topics?.slug) map[row.normalized_alias] = row.topics.slug;
   }
+
   return map;
 }
 
