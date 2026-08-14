@@ -279,3 +279,71 @@ export async function insertReport(
   });
   if (error) throw roomError("INTERNAL_ERROR");
 }
+
+/* --------------------------- live presence --------------------------- */
+
+/** A member counts as "online" when seen within this window. */
+export const PRESENCE_WINDOW_SECONDS = 180;
+
+/** Heartbeat: every tool call marks the caller as present in all their rooms. */
+export async function touchPresence(db: Db, subjectHash: string): Promise<void> {
+  await db
+    .from("memberships")
+    .update({ last_seen_at: new Date().toISOString() })
+    .eq("subject_hash", subjectHash)
+    .is("left_at", null);
+}
+
+/** Exact number of members active in a room right now. */
+export async function countOnline(
+  db: Db,
+  roomId: string,
+  windowSeconds: number = PRESENCE_WINDOW_SECONDS,
+): Promise<number> {
+  const since = new Date(Date.now() - windowSeconds * 1000).toISOString();
+  const { count, error } = await db
+    .from("memberships")
+    .select("id", { count: "exact", head: true })
+    .eq("room_id", roomId)
+    .is("left_at", null)
+    .gte("last_seen_at", since);
+  if (error) throw roomError("INTERNAL_ERROR");
+  return count ?? 0;
+}
+
+/** Persisted display name chosen by the person, or null. */
+export async function getСustomAliasPlaceholder(): Promise<null> {
+  return null;
+}
+
+export async function getCustomAlias(db: Db, subjectHash: string): Promise<string | null> {
+  const { data } = await db
+    .from("anonymous_identities")
+    .select("custom_alias")
+    .eq("subject_hash", subjectHash)
+    .maybeSingle();
+  return ((data as any)?.custom_alias as string | null) ?? null;
+}
+
+/** Sets the display name everywhere: identity record + all active memberships. */
+export async function setSubjectAlias(
+  db: Db,
+  subjectHash: string,
+  alias: string,
+): Promise<{ alias: string; roomsUpdated: number }> {
+  const { error } = await db
+    .from("anonymous_identities")
+    .update({ custom_alias: alias })
+    .eq("subject_hash", subjectHash);
+  if (error) throw roomError("INTERNAL_ERROR");
+
+  const { data, error: memberError } = await db
+    .from("memberships")
+    .update({ alias })
+    .eq("subject_hash", subjectHash)
+    .is("left_at", null)
+    .select("id");
+  if (memberError) throw roomError("INTERNAL_ERROR");
+
+  return { alias, roomsUpdated: ((data ?? []) as any[]).length };
+}
