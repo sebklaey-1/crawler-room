@@ -181,6 +181,7 @@ export async function handleUpdateProfile(input: unknown, meta: McpMeta) {
   return {
     profile: await serializeProfile(db, profile, identity.subjectHash),
     message: "Profil aktualisiert.",
+    display_instruction: PROFILE_DISPLAY_INSTRUCTION,
   };
 }
 
