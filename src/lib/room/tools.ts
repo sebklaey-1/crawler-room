@@ -241,10 +241,8 @@ export async function handleMyRooms(_input: unknown, meta: McpMeta) {
       memberCount: 0,
       topic: { slug: row.topics.slug, display_name: row.topics.display_name },
     };
-    const { getActiveMembership: _unused } = { getActiveMembership };
-    void _unused;
-    const memberCount = (await getActiveMembership(db, identity.subjectHash, membership.topic.slug))
-      ?.memberCount ?? 0;
+    const memberCount = await countActiveMembers(db, membership.roomId);
+
     rooms.push({
       topic_slug: membership.topic.slug,
       topic_display_name: membership.topic.display_name,
