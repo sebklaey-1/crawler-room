@@ -388,7 +388,7 @@ async function universalMessages(
   const limit = options.limit ?? 20;
   let query = db
     .from("messages")
-    .select("id, body, created_at, membership_id, memberships(alias)")
+    .select("id, body, created_at, membership_id, memberships(alias, subject_hash)")
     .eq("room_id", roomId)
     .gte("created_at", retentionCutoffIso())
     .gt("expires_at", new Date().toISOString())
@@ -406,11 +406,22 @@ async function universalMessages(
   const page = rows.slice(0, limit);
   const nextCursor = hasMore && page.length ? String(page[page.length - 1]?.id ?? "") : null;
 
+  // Sender labels are resolved server-side from the membership's subject hash,
+  // so a handle can never be spoofed through tool input.
+  const handles = await universalHandles(
+    db,
+    page.map((row) => embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash),
+  );
+
   const messages = [];
   for (const row of page.reverse()) {
+    const author = embedded<EmbeddedShapes["memberships"]>(row.memberships);
     messages.push({
       id: await encodeMessageId(row.id),
-      alias: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias ?? "Unbekannt",
+      alias: universalSender(
+        author?.subject_hash ? handles.get(author.subject_hash) : null,
+        author?.alias,
+      ),
       text: row.body as string,
       created_at: new Date(row.created_at).toISOString(),
       is_self: row.membership_id === membershipId,
@@ -420,7 +431,8 @@ async function universalMessages(
 }
 
 const UNIVERSAL_DISPLAY =
-  "Gib die Nachrichten sofort in derselben Antwort mit Alias wieder und übersetze fremdsprachige Inhalte in die Sprache der Person. Aliase nie übersetzen.";
+  "Der Universal Room ist profilbasiert öffentlich: alias ist der Profil-Handle (z. B. @satoshi) oder, ohne Profil, ein generierter Alias. Gib die Nachrichten sofort in derselben Antwort mit diesem Absender wieder und übersetze fremdsprachige Inhalte in die Sprache der Person. Aliase und Handles nie übersetzen.";
+
 
 /** Signed-out read of the Universal Room: no membership, no presence write. */
 async function anonymousUniversal(
