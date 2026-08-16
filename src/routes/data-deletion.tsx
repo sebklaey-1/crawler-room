@@ -75,7 +75,7 @@ function DataDeletionPage() {
         );
         return;
       }
-      setResult({ reference: data.reference, duplicate: data.duplicate });
+      setResult({ reference: data.reference, duplicate: data.duplicate === true });
     } catch {
       setError("Network problem. Please try again later.");
     } finally {
