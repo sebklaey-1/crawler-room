@@ -544,7 +544,7 @@ async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
 
   return tag(data.action, {
     joined_now: data.action === "enter" ? membership.joinedNow : false,
-    alias: membership.alias,
+    alias: await universalSelfLabel(db, identity.subjectHash, membership.alias),
     room,
     ...feed,
     display_instruction: UNIVERSAL_DISPLAY,
