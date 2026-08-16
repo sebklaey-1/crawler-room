@@ -132,7 +132,7 @@ describe("MCP surface", () => {
     ];
     for (const [name, args] of cases) {
       const result = await callTool(name, args, meta);
-      expect(result.isError, `${name}/${String(args.action)}`).toBe(true);
+      expect(result.isError, `${name}/${String(args["action"])}`).toBe(true);
     }
   });
 
