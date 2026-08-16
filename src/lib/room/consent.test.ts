@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 /**
- * The consent screen must stay accountless: exactly one `signInAnonymously()`
+ * The consent screen must stay accountless: exactly one anonymous sign-in
  * call, no credential inputs, no sign-up, and a fail-closed error state.
  */
 const CONSENT = readFileSync("src/components/oauth-consent.tsx", "utf8");

@@ -89,7 +89,7 @@ describe("submission dossier", () => {
     const positive = SUBMISSION.split("### Positive")[1]?.split("### Negative")[0] ?? "";
     const negative = SUBMISSION.split("### Negative")[1]?.split("\n## ")[0] ?? "";
     const rows = (block: string, prefix: string) =>
-      (block.match(new RegExp(`^\\| ${prefix}\\d+ \\|`, "gm")) ?? []).length;
+      (block.match(new RegExp(`^\\|\\s*${prefix}\\d+\\s*\\|`, "gm")) ?? []).length;
     expect(rows(positive, "P")).toBeGreaterThanOrEqual(5);
     expect(rows(negative, "N")).toBeGreaterThanOrEqual(3);
     for (const block of [positive, negative]) {
