@@ -25,13 +25,16 @@ import {
 } from "./auth";
 import { SERVICE_NAME, SERVICE_VERSION } from "./config";
 import { RoomError, toRoomError } from "./errors";
-import { AUTH_META_KEY, legacySubjectHash, sanitizeClientMeta, type McpMeta } from "./identity";
+import { AUTH_META_KEY, sanitizeClientMeta, type McpMeta } from "./identity";
 import { PUBLIC_ACTIONS, SURFACE_TOOLS, type SurfaceTool } from "./mcp.surface";
 import { getDb } from "./store";
 
 const PROTOCOL_VERSION = "2025-06-18";
 const SUPPORTED_PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
-const MAX_BODY_BYTES = 1024 * 1024;
+/** Hard body limit in real UTF-8 bytes (256 KiB). */
+const MAX_BODY_BYTES = 256 * 1024;
+const MAX_BATCH_ITEMS = 10;
+const BATCH_CONCURRENCY = 3;
 
 type Json = Record<string, unknown>;
 
@@ -84,19 +87,14 @@ async function buildMeta(params: any, context: RequestContext): Promise<McpMeta>
   const meta = sanitizeClientMeta((params?._meta ?? {}) as McpMeta);
   meta["room/origin"] = context.origin;
 
+  // Only the pseudonymous subject reaches a handler — never the raw auth id.
   if (context.auth && context.testAuth) {
-    meta[AUTH_META_KEY] = {
-      userId: context.auth.userId,
-      subjectHash: await authSubjectHash(context.auth.userId),
-    };
+    meta[AUTH_META_KEY] = { subjectHash: await authSubjectHash(context.auth.userId) };
     return meta;
   }
-
   if (context.auth) {
     const db = await getDb();
-    const legacy = await legacySubjectHash(meta);
-    const subjectHash = await resolveAuthSubject(db, context.auth.userId, legacy);
-    meta[AUTH_META_KEY] = { userId: context.auth.userId, subjectHash };
+    meta[AUTH_META_KEY] = { subjectHash: await resolveAuthSubject(db, context.auth.userId) };
   }
   return meta;
 }
