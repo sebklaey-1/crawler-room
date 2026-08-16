@@ -82,6 +82,7 @@ export type Database = {
       anonymous_identities: {
         Row: {
           account_id: string | null
+          auth_user_id: string | null
           custom_alias: string | null
           first_seen_at: string
           handle: string | null
@@ -90,6 +91,7 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          auth_user_id?: string | null
           custom_alias?: string | null
           first_seen_at?: string
           handle?: string | null
@@ -98,6 +100,7 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          auth_user_id?: string | null
           custom_alias?: string | null
           first_seen_at?: string
           handle?: string | null

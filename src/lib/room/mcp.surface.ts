@@ -28,7 +28,7 @@ import {
 } from "./communities";
 import { roomError } from "./errors";
 import { encodeMessageId } from "./ids";
-import { resolveIdentity, type McpMeta } from "./identity";
+import { isAuthenticated, resolveIdentity, type McpMeta } from "./identity";
 import { listFollowers } from "./personal";
 import { countOnline, getDb, PRESENCE_WINDOW_SECONDS, touchPresence, type Db } from "./store";
 import {
@@ -58,6 +58,8 @@ import {
 import { enterUniversal, sendUniversalMessage } from "./universal";
 import { findRoomByHandle, normalizeHandleInput } from "./personal";
 import { profileCard, analyticsCard } from "./mcp.render";
+import { publicRoomView } from "./tools.personal";
+import { publicProfileView } from "./tools.profile";
 
 type Json = Record<string, unknown>;
 
@@ -72,11 +74,78 @@ export interface SurfaceTool {
   summary: (result: any) => string;
 }
 
-const OPEN_OUTPUT: Json = {
-  type: "object",
-  properties: { action: { type: "string" } },
-  required: ["action"],
-  additionalProperties: true,
+/**
+ * Authentication policy.
+ *
+ * Only side-effect-free public reads may run without an OAuth access token.
+ * Everything that writes, follows, likes, blocks, manages, deletes or exposes
+ * person-specific data requires a validated bearer token.
+ */
+export const PUBLIC_ACTIONS: Record<string, readonly string[]> = {
+  universal_room: ["read"],
+  public_room: ["open"],
+  profile: ["get"],
+  followers_notifications: [],
+  likes: [],
+  analytics: [],
+  communities_organizations: ["list_communities", "get_community", "read_community"],
+};
+
+export function isPublicAction(tool: string, action: unknown): boolean {
+  if (typeof action !== "string") return false;
+  return (PUBLIC_ACTIONS[tool] ?? []).includes(action);
+}
+
+/** Subject used for anonymous reads: never matches a stored identity. */
+const ANONYMOUS_SUBJECT = "anonymous:public-read";
+
+const SIGN_IN_HINT =
+  "Nur Lesen: Zum Schreiben, Folgen, Liken oder Verwalten muss sich die Person bei @room anmelden.";
+
+function requireAuth(meta: McpMeta): void {
+  if (!isAuthenticated(meta)) throw roomError("AUTH_REQUIRED");
+}
+
+/** Action-specific output schemas with an `action` discriminator. */
+function outputFor(actions: readonly string[], properties: Json): Json {
+  return {
+    oneOf: actions.map((action) => ({
+      type: "object",
+      title: action,
+      properties: { action: { type: "string", const: action }, ...properties },
+      required: ["action"],
+    })),
+  };
+}
+
+const MESSAGE_ARRAY: Json = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      alias: { type: "string" },
+      text: { type: "string" },
+      created_at: { type: "string", format: "date-time" },
+      is_self: { type: "boolean" },
+    },
+    required: ["alias", "text"],
+  },
+};
+
+const IMAGE_ARRAY: Json = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      alias: { type: "string" },
+      alt_text: { type: "string" },
+      url: { type: "string" },
+      created_at: { type: "string", format: "date-time" },
+    },
+    required: ["url"],
+  },
 };
 
 const READ_ONLY = {
@@ -163,11 +232,42 @@ async function universalMessages(
 const UNIVERSAL_DISPLAY =
   "Gib die Nachrichten sofort in derselben Antwort mit Alias wieder und übersetze fremdsprachige Inhalte in die Sprache der Person. Aliase nie übersetzen.";
 
+/** Signed-out read of the Universal Room: no membership, no presence write. */
+async function anonymousUniversal(db: Db, data: { limit?: number; cursor?: string | undefined }): Promise<Json> {
+  const { data: row } = await db.from("rooms").select("id").eq("kind", "universal").limit(1).maybeSingle();
+  const roomId = (row as any)?.id as string | undefined;
+  if (!roomId) throw roomError("ROOM_UNAVAILABLE");
+
+  const feed = await universalMessages(db, roomId, "", {
+    ...(data.limit !== undefined ? { limit: data.limit } : {}),
+    cursor: data.cursor,
+  });
+  return tag("read", {
+    authenticated: false,
+    room: {
+      label: "Universal Room",
+      online_now: await countOnline(db, roomId),
+      presence_window_seconds: PRESENCE_WINDOW_SECONDS,
+      presence_checked_at: new Date().toISOString(),
+    },
+    ...feed,
+    display_instruction: UNIVERSAL_DISPLAY,
+    sign_in_hint: SIGN_IN_HINT,
+  });
+}
+
 async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(universalInput, input);
-  const identity = await resolveIdentity(meta);
   const db = await getDb();
+
+  if (!isAuthenticated(meta)) {
+    if (data.action !== "read") throw roomError("AUTH_REQUIRED");
+    return anonymousUniversal(db, { ...(data.limit !== undefined ? { limit: data.limit } : {}), cursor: data.cursor });
+  }
+
+  const identity = await resolveIdentity(meta);
   await touchPresence(db, identity.subjectHash);
+
 
   const membership = await enterUniversal(db, identity.subjectHash);
   const online = await countOnline(db, membership.roomId);
@@ -227,6 +327,13 @@ const publicRoomInput = z
 
 async function publicRoomHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(publicRoomInput, input);
+
+  if (!isAuthenticated(meta)) {
+    if (data.action !== "open") throw roomError("AUTH_REQUIRED");
+    const db = await getDb();
+    return tag("open", (await publicRoomView(db, need(data.username, "Bitte nenne den @handle des Raums."))) as Json);
+  }
+
   switch (data.action) {
     case "mine":
       return tag("mine", (await handleMyRoom({}, meta)) as Json);
@@ -289,6 +396,14 @@ const profileInput = z
 
 async function profileHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(profileInput, input);
+
+  if (!isAuthenticated(meta)) {
+    // Only the public view of a named profile is readable while signed out.
+    if (data.action !== "get") throw roomError("AUTH_REQUIRED");
+    const db = await getDb();
+    return tag("get", (await publicProfileView(db, need(data.username, "Bitte nenne das @handle des Profils."))) as Json);
+  }
+
   switch (data.action) {
     case "get":
       return tag(
@@ -354,6 +469,7 @@ const followersInput = z
   .strict();
 
 async function followersHandler(input: unknown, meta: McpMeta): Promise<Json> {
+  requireAuth(meta);
   const data = parse(followersInput, input);
 
   if (data.action === "follow" || data.action === "unfollow") {
@@ -437,6 +553,7 @@ const likesInput = z
   .strict();
 
 async function likesHandler(input: unknown, meta: McpMeta): Promise<Json> {
+  requireAuth(meta);
   const data = parse(likesInput, input);
   const target =
     data.target_type === "profile"
@@ -458,6 +575,7 @@ const analyticsInput = z
   .strict();
 
 async function analyticsHandler(input: unknown, meta: McpMeta): Promise<Json> {
+  requireAuth(meta);
   const data = parse(analyticsInput, input);
   return tag("profile", (await handleProfileAnalytics({ range_days: data.range_days ?? 30 }, meta)) as Json);
 }
@@ -500,8 +618,39 @@ const communitiesInput = z
 
 async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(communitiesInput, input);
-  const identity = await resolveIdentity(meta);
   const db = await getDb();
+
+  // Signed-out callers may only read public community data — never write,
+  // join, leave or manage anything.
+  if (!isAuthenticated(meta)) {
+    if (!isPublicAction("communities_organizations", data.action)) throw roomError("AUTH_REQUIRED");
+    const anon = ANONYMOUS_SUBJECT;
+    if (data.action === "list_communities") {
+      return tag("list_communities", {
+        authenticated: false,
+        sign_in_hint: SIGN_IN_HINT,
+        communities: await listCommunities(db, anon, {
+          ...(data.query !== undefined ? { query: data.query } : {}),
+          ...(data.limit !== undefined ? { limit: data.limit } : {}),
+        }),
+      });
+    }
+    if (data.action === "get_community") {
+      return tag("get_community", {
+        authenticated: false,
+        sign_in_hint: SIGN_IN_HINT,
+        community: await getCommunity(db, anon, need(data.community, "Bitte nenne die Community.")),
+      });
+    }
+    return tag("read_community", {
+      authenticated: false,
+      sign_in_hint: SIGN_IN_HINT,
+      ...(await readCommunity(db, anon, need(data.community, "Bitte nenne die Community."), data.limit ?? 20)),
+      display_instruction: UNIVERSAL_DISPLAY,
+    });
+  }
+
+  const identity = await resolveIdentity(meta);
   await touchPresence(db, identity.subjectHash);
   const me = identity.subjectHash;
 
@@ -634,7 +783,28 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["enter", "read", "send"], {
+      authenticated: { type: "boolean" },
+      alias: { type: "string" },
+      joined_now: { type: "boolean" },
+      sent: { type: "boolean" },
+      duplicate: { type: "boolean" },
+      sent_message: { type: "object" },
+      room: {
+        type: "object",
+        properties: {
+          label: { type: "string" },
+          online_now: { type: "integer" },
+          presence_window_seconds: { type: "integer" },
+          presence_checked_at: { type: "string", format: "date-time" },
+        },
+      },
+      messages: MESSAGE_ARRAY,
+      next_cursor: { type: ["string", "null"] },
+      has_more: { type: "boolean" },
+      display_instruction: { type: "string" },
+      sign_in_hint: { type: "string" },
+    }),
     annotations: WRITE,
     handler: universalHandler,
     summary: (result) =>
@@ -657,7 +827,30 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["mine", "open", "update", "leave", "send"], {
+      authenticated: { type: "boolean" },
+      room: { type: "object" },
+      is_following: { type: "boolean" },
+      can_follow: { type: "boolean" },
+      follow_button: { type: ["string", "null"] },
+      joined_now: { type: "boolean" },
+      people_here: { type: "array", items: { type: "object" } },
+      messages: MESSAGE_ARRAY,
+      recent_messages: MESSAGE_ARRAY,
+      images: IMAGE_ARRAY,
+      sent: { type: "boolean" },
+      left: { type: "boolean" },
+      followers: { type: "integer" },
+      followers_notified: { type: "integer" },
+      people_here_now: { type: "integer" },
+      presence_window_seconds: { type: "integer" },
+      presence_checked_at: { type: "string", format: "date-time" },
+      headline: { type: "string" },
+      message: { type: "string" },
+      notice: { type: "string" },
+      display_instruction: { type: "string" },
+      sign_in_hint: { type: "string" },
+    }),
     annotations: WRITE,
     handler: publicRoomHandler,
     summary: (result) => {
@@ -696,7 +889,20 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["get", "update", "change_handle", "set_image", "open_link", "block"], {
+      authenticated: { type: "boolean" },
+      profile: { type: "object" },
+      tabs: { type: "object" },
+      redirected_from: { type: ["string", "null"] },
+      handle: { type: "string" },
+      suggestions: { type: "array", items: { type: "string" } },
+      blocked: { type: "boolean" },
+      url: { type: ["string", "null"] },
+      edit_hint: { type: ["string", "null"] },
+      message: { type: "string" },
+      display_instruction: { type: "string" },
+      sign_in_hint: { type: "string" },
+    }),
     annotations: WRITE,
     handler: profileHandler,
     summary: (result) => (result.profile ? profileCard(result) : String(result.message ?? "Fertig.")),
@@ -722,7 +928,26 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(
+      ["follow", "unfollow", "list_followers", "list_following", "list_notifications", "update_settings"],
+      {
+        following: { type: "boolean" },
+        button: { type: ["string", "null"] },
+        handle: { type: "string" },
+        room_name: { type: "string" },
+        followers: { type: ["array", "integer"] },
+        total: { type: "integer" },
+        rooms: { type: "array", items: { type: "object" } },
+        notifications: { type: "array", items: { type: "object" } },
+        unread: { type: "integer" },
+        settings: {
+          type: "object",
+          properties: { new_room_message: { type: "boolean" }, new_follower: { type: "boolean" } },
+        },
+        people_here_now: { type: "integer" },
+        message: { type: "string" },
+      },
+    ),
     annotations: WRITE,
     handler: followersHandler,
     summary: (result) => {
@@ -757,7 +982,13 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action", "target_type"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["like", "unlike"], {
+      liked: { type: "boolean" },
+      already: { type: "boolean" },
+      likes: { type: "integer" },
+      target_type: { type: "string", enum: ["profile", "message", "image"] },
+      message: { type: "string" },
+    }),
     annotations: WRITE,
     handler: likesHandler,
     summary: (result) => `${result.message} (${result.likes} Likes)`,
@@ -776,7 +1007,15 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["profile"], {
+      handle: { type: "string" },
+      range_days: { type: "integer", enum: [7, 30, 90] },
+      totals: { type: "object" },
+      series: { type: "array", items: { type: "object" } },
+      top_content: { type: "object" },
+      message: { type: "string" },
+      display_instruction: { type: "string" },
+    }),
     annotations: READ_ONLY,
     handler: analyticsHandler,
     summary: (result) => analyticsCard(result),
@@ -825,7 +1064,41 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(
+      [
+        "list_communities",
+        "get_community",
+        "create_community",
+        "update_community",
+        "join_community",
+        "leave_community",
+        "read_community",
+        "send_community",
+        "list_organizations",
+        "get_organization",
+        "create_organization",
+        "update_organization",
+        "list_members",
+        "add_member",
+        "remove_member",
+      ],
+      {
+        authenticated: { type: "boolean" },
+        communities: { type: "array", items: { type: "object" } },
+        community: { type: "object" },
+        organizations: { type: "array", items: { type: "object" } },
+        organization: { type: "object" },
+        members: { type: "array", items: { type: "object" } },
+        messages: MESSAGE_ARRAY,
+        alias: { type: "string" },
+        joined_now: { type: "boolean" },
+        left: { type: "boolean" },
+        sent: { type: "boolean" },
+        message: { type: "string" },
+        display_instruction: { type: "string" },
+        sign_in_hint: { type: "string" },
+      },
+    ),
     annotations: WRITE,
     handler: communitiesHandler,
     summary: (result) => {

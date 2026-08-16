@@ -396,3 +396,36 @@ export async function personalAliasFallback(db: Db, subjectHash: string) {
 }
 
 export { sanitizeAlias };
+
+/* ---------------------------- anonymous read path -------------------------- */
+
+/**
+ * Read-only view of a public personal room for signed-out callers.
+ * Performs no joins, no presence writes and no analytics tracking.
+ */
+export async function publicRoomView(db: Db, username: unknown) {
+  const room = await requirePublicRoom(db, username);
+  const stats = await counters(db, room);
+  return {
+    room: {
+      handle: room.handle,
+      room_name: room.roomName,
+      description: room.description ?? "",
+      owner_alias: room.ownerAlias,
+      owner_online: await isOwnerOnline(db, room),
+      is_owner: false,
+      ...stats,
+    },
+    is_following: false,
+    can_follow: false,
+    authenticated: false,
+    joined_now: false,
+    people_here: await presentMembers(db, room.roomId),
+    messages: await roomMessages(db, room, ""),
+    images: await roomImages(db, room),
+    display_instruction: DISPLAY_INSTRUCTION,
+    notice: PERSONAL_NOTICE,
+    sign_in_hint:
+      "Nur Lesen: Zum Schreiben, Folgen oder Liken muss sich die Person bei @room anmelden (Verbinden in ChatGPT).",
+  };
+}
