@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 import { generateAlias, sanitizeAlias } from "./alias";
-import { config, imageConfig, IMAGE_RETENTION } from "./config";
+import { config, imageConfig, IMAGE_RETENTION, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import { resolveIdentity, type McpMeta } from "./identity";
 import { encodeMessageId } from "./ids";

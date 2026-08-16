@@ -8,7 +8,7 @@
  * - rate limiting, spam heuristics and idempotency keys on writes.
  */
 import { generateAlias } from "./alias";
-import { config } from "./config";
+import { config, retentionCutoffIso, retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
 import { encodeMessageId } from "./ids";
 import { selectPlacements, type PlacementCard } from "./ads";

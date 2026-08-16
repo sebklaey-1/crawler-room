@@ -6,7 +6,7 @@
  * happen server-side; only the owner may edit or read analytics.
  */
 import { generateAlias, sanitizeAlias } from "./alias";
-import { imageConfig } from "./config";
+import { imageConfig, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import { sanitizeImage } from "./images";
 import { removeStorageObjects, signedUrl, uploadObject } from "./imagestore";

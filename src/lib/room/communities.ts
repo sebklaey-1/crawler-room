@@ -7,7 +7,7 @@
  * No prices, plans, billing, ads or campaigns are involved.
  */
 import { generateAlias } from "./alias";
-import { config } from "./config";
+import { config, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import { encodeMessageId, encodeRoomId } from "./ids";
 import { normalizeHandleInput } from "./personal";

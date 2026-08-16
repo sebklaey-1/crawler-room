@@ -3,7 +3,7 @@
  * The browser never talks to this module; every call runs inside a request
  * handler with the service role key.
  */
-import { IMAGE_BUCKET } from "./config";
+import { IMAGE_BUCKET, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import type { Db, MembershipContext } from "./store";
 

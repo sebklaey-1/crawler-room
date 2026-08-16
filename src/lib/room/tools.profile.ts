@@ -2,7 +2,7 @@
  * MCP handlers for the social profile: view, edit, images, likes, analytics.
  * Ownership is always the pseudonymous subject from `_meta` — never an input.
  */
-import { imageConfig, IMAGE_RETENTION } from "./config";
+import { imageConfig, IMAGE_RETENTION, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import { resolveIdentity, type McpMeta } from "./identity";
 import { decodeImageId, decodeMessageId, encodeImageId, encodeMessageId } from "./ids";
