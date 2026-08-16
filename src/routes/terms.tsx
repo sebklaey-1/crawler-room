@@ -38,9 +38,8 @@ function TermsPage() {
       <main className="mx-auto max-w-3xl px-6 py-14">
         <h1 className="text-3xl font-semibold tracking-tight">Terms of Use</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          These terms govern your use of Crawler Room, published by SEBKLAEY Agency
-          (Sebastian Kläy). By using Crawler Room inside ChatGPT or on crawler.today you accept
-          them.
+          These terms govern your use of Crawler Room, published by SEBKLAEY Agency (Sebastian
+          Kläy). By using Crawler Room inside ChatGPT or on crawler.today you accept them.
         </p>
 
         <Section title="Who may use Crawler Room">

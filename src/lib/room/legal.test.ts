@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { LEGAL_LINKS } from "./legal";
+import { LEGAL_LINKS, SUPPORT_EMAIL, publicSupportEmail, supportEmailEnvMatches } from "./legal";
 import { openAiAppsChallengeResponse } from "./challenge";
 import { SURFACE_TOOLS } from "./mcp.surface";
 
@@ -91,5 +91,41 @@ describe("response denylist audit", () => {
 
   it("keeps exactly the seven public tool names", () => {
     expect(SURFACE_TOOLS.map((tool) => tool.name).sort()).toHaveLength(7);
+  });
+});
+
+describe("public support contact", () => {
+  it("resolves the canonical address without any build variable", () => {
+    expect(SUPPORT_EMAIL).toBe("info@crawler.today");
+    expect(publicSupportEmail()).toBe("info@crawler.today");
+  });
+
+  it("accepts only the exact same address as an env override", () => {
+    expect(supportEmailEnvMatches(undefined)).toBe(true);
+    expect(supportEmailEnvMatches("  info@crawler.today ")).toBe(true);
+    expect(supportEmailEnvMatches("support@example.com")).toBe(false);
+  });
+
+  it("renders one exact mailto link and no foreign support address", () => {
+    const component = readFileSync("src/components/support-contact.tsx", "utf8");
+    expect(component).toContain("mailto:${email}");
+    const pages = [
+      "src/routes/support.tsx",
+      "src/routes/privacy.tsx",
+      "src/routes/data-deletion.tsx",
+    ];
+    for (const page of pages) {
+      const text = readFileSync(page, "utf8");
+      const mailtos = text.match(/mailto:[^"'`\s)]+/g) ?? [];
+      for (const link of mailtos) expect(link).toBe("mailto:info@crawler.today");
+      const addresses = text.match(/[\w.+-]+@[\w.-]+\.[a-z]{2,}/gi) ?? [];
+      for (const address of addresses) expect(address.toLowerCase()).toBe("info@crawler.today");
+    }
+  });
+
+  it("keeps the support form and promises no immediate reply", () => {
+    const support = readFileSync("src/routes/support.tsx", "utf8");
+    expect(support).toContain("<form");
+    expect(/immediate (reply|response)|sofortige Antwort|instant reply/i.test(support)).toBe(false);
   });
 });

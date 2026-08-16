@@ -39,9 +39,8 @@ function PrivacyPage() {
       <main className="mx-auto max-w-3xl px-6 py-14">
         <h1 className="text-3xl font-semibold tracking-tight">Privacy Policy</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          This policy describes exactly what Crawler Room
-          processes today. It contains no placeholder providers, no promised legal deadlines and no
-          certifications.
+          This policy describes exactly what Crawler Room processes today. It contains no
+          placeholder providers, no promised legal deadlines and no certifications.
         </p>
 
         <Section title="Who runs Crawler Room">

@@ -79,6 +79,6 @@ the case record survives so a pattern remains visible.
 
 ## Contact
 
-Public form at `/support`. A public email address is configured through
-`info@crawler.today`, defined canonically in `src/lib/room/legal.ts`
-and `bun run release:check` reports a blocker.
+Public form at `/support`. The confirmed public contact for support, privacy,
+deletion and abuse is `info@crawler.today`, defined canonically in
+`src/lib/room/legal.ts` and verified by `bun run release:check`.
