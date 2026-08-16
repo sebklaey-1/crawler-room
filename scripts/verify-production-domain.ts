@@ -34,6 +34,8 @@ const EXPECTED_ISSUER = (process.env["SUPABASE_URL"] ?? "").replace(/\/+$/, "");
 
 let technical = 0;
 let notDeployed = 0;
+/** Set to false as soon as we can prove the live build predates this source tree. */
+let deployedIsCurrent = true;
 
 function pass(label: string, detail = "") {
   console.log(`PASS  ${label}${detail ? ` — ${detail}` : ""}`);
@@ -68,6 +70,7 @@ const metaResponse = await get(METADATA);
 if (!metaResponse) {
   fail("protected resource metadata", "no response");
 } else if (metaResponse.status === 404) {
+  deployedIsCurrent = false;
   stale("protected resource metadata", "route not present in the deployed build");
 } else if (!metaResponse.ok) {
   fail("protected resource metadata", `status ${metaResponse.status}`);
@@ -127,7 +130,10 @@ if (!health) {
   if (health.headers.get("cache-control")?.includes("no-store")) pass("health cache-control");
   else fail("health cache-control", "missing no-store");
   if (body && ("database" in body || "env" in body || "error" in body)) {
-    fail("health minimalism", "response exposes internal details");
+    (deployedIsCurrent ? fail : stale)(
+      "health minimalism",
+      deployedIsCurrent ? "response exposes internal details" : "older build still returns details",
+    );
   } else {
     pass("health endpoint", `status field: ${status}`);
   }
@@ -176,7 +182,10 @@ if (process.argv.includes("--rpc")) {
   } else if (names.length === 7 && names.join(",") === TOOL_NAMES.join(",")) {
     pass("tools/list", "exactly the seven public tools");
   } else {
-    fail("tools/list", `expected 7 known tools, got ${names.length}`);
+    (deployedIsCurrent ? fail : stale)(
+      "tools/list",
+      `expected the seven public tools, live build exposes ${names.length}`,
+    );
   }
 }
 
