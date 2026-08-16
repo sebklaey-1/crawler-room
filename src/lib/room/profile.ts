@@ -319,17 +319,16 @@ export async function updateProfile(db: Db, subjectHash: string, patch: ProfileP
     update["show_follower_count"] = patch.show_follower_count;
   if (typeof patch.show_likes === "boolean") update["show_likes"] = patch.show_likes;
 
-  if (!Object.keys(update).length) throw roomError("INVALID_INPUT");
+  if (!Object.keys(update).length && typeof patch.display_name !== "string") {
+    throw roomError("INVALID_INPUT");
+  }
 
-  const { error } = await db
-    .from("user_rooms")
-    .update(update)
-    .eq("owner_subject_hash", subjectHash);
-  if (error) throw roomError("INTERNAL_ERROR");
-
-  if (typeof update["room_name"] === "string") {
-    const profile = await getOwnProfile(db, subjectHash);
-    await db.from("rooms").update({ title: update["room_name"] }).eq("id", profile.roomId);
+  if (Object.keys(update).length) {
+    const { error } = await db
+      .from("user_rooms")
+      .update(update)
+      .eq("owner_subject_hash", subjectHash);
+    if (error) throw roomError("INTERNAL_ERROR");
   }
   return getOwnProfile(db, subjectHash);
 }
