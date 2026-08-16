@@ -38,8 +38,8 @@ function SafetyPage() {
       <main className="mx-auto max-w-3xl px-6 py-14">
         <h1 className="text-3xl font-semibold tracking-tight">Safety and content rules</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Crawler Room is a general-audience product. Everything you post in a room or on your profile is
-          public, so the rules below are strict on purpose.
+          Crawler Room is a general-audience product. Everything you post in a room or on your
+          profile is public, so the rules below are strict on purpose.
         </p>
 
         <Section title="General audience">
@@ -52,9 +52,9 @@ function SafetyPage() {
 
         <Section title="Minors">
           <p>
-            Crawler Room is not directed to children under 13 and must not be used by them. Any content
-            that sexualises a minor, or attempts to contact, groom or solicit a minor, is prohibited
-            without exception and leads to immediate removal of access.
+            Crawler Room is not directed to children under 13 and must not be used by them. Any
+            content that sexualises a minor, or attempts to contact, groom or solicit a minor, is
+            prohibited without exception and leads to immediate removal of access.
           </p>
         </Section>
 
@@ -86,8 +86,8 @@ function SafetyPage() {
           <p>
             Do not encourage, glorify or give instructions for suicide, self-harm or eating
             disorders. If you are in danger or thinking about harming yourself, contact your local
-            emergency number or a crisis line in your country. Crawler Room is not a crisis service and
-            cannot provide help in an emergency.
+            emergency number or a crisis line in your country. Crawler Room is not a crisis service
+            and cannot provide help in an emergency.
           </p>
         </Section>
 
@@ -102,10 +102,11 @@ function SafetyPage() {
         <Section title="How to protect yourself and report">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong>Report in chat:</strong> ask Crawler Room to report a message, an image, a profile, a
-              room or a community (for example “Crawler Room report this message as harassment”). You pick
-              a fixed reason and may add up to 500 characters of context — please do not add extra
-              personal data there. You get back an opaque case reference only.
+              <strong>Report in chat:</strong> ask Crawler Room to report a message, an image, a
+              profile, a room or a community (for example “Crawler Room report this message as
+              harassment”). You pick a fixed reason and may add up to 500 characters of context —
+              please do not add extra personal data there. You get back an opaque case reference
+              only.
             </li>
             <li>
               <strong>A report never removes anything automatically.</strong> Each case runs through{" "}
@@ -113,10 +114,10 @@ function SafetyPage() {
               Reporting the same target twice simply returns the case you already filed.
             </li>
             <li>
-              <strong>Block and unblock:</strong> ask Crawler Room to block or unblock a profile, or to
-              list who you block. A block works in both directions for personal rooms: neither side
-              can open, message or follow the other room. It does not delete content that is already
-              public and it does not change the Universal Room or community rooms.
+              <strong>Block and unblock:</strong> ask Crawler Room to block or unblock a profile, or
+              to list who you block. A block works in both directions for personal rooms: neither
+              side can open, message or follow the other room. It does not delete content that is
+              already public and it does not change the Universal Room or community rooms.
             </li>
             <li>
               <strong>Without ChatGPT:</strong> use the web form at{" "}
@@ -131,8 +132,8 @@ function SafetyPage() {
               guarantee a specific outcome or a specific response time.
             </li>
             <li>
-              If someone is in danger right now, contact your local emergency services. Crawler Room cannot
-              provide medical, legal or crisis assistance.
+              If someone is in danger right now, contact your local emergency services. Crawler Room
+              cannot provide medical, legal or crisis assistance.
             </li>
           </ul>
         </Section>

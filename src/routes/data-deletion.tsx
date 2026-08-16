@@ -91,7 +91,8 @@ function DataDeletionPage() {
 
         <section className="mt-6 space-y-3 text-sm text-muted-foreground">
           <p>
-            A deletion request removes the data that belongs to your pseudonymous Crawler Room identity:
+            A deletion request removes the data that belongs to your pseudonymous Crawler Room
+            identity:
           </p>
           <ul className="list-disc space-y-1 pl-5">
             <li>your profile (handle, display name, bio, location, link, avatar, banner)</li>
@@ -147,8 +148,8 @@ function DataDeletionPage() {
             </div>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">
-              You are not signed in on the web. Sign in through the Crawler Room authorization flow in
-              ChatGPT and open this page again, or send an unverified request through{" "}
+              You are not signed in on the web. Sign in through the Crawler Room authorization flow
+              in ChatGPT and open this page again, or send an unverified request through{" "}
               <a className="underline" href="/support">
                 /support
               </a>{" "}

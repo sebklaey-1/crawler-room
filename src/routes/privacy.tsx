@@ -39,15 +39,15 @@ function PrivacyPage() {
       <main className="mx-auto max-w-3xl px-6 py-14">
         <h1 className="text-3xl font-semibold tracking-tight">Privacy Policy</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          This policy describes exactly what Crawler Room (also referred to as “Crawler Room”) processes
-          today. It contains no placeholder providers, no promised legal deadlines and no
+          This policy describes exactly what Crawler Room (also referred to as “Crawler Room”)
+          processes today. It contains no placeholder providers, no promised legal deadlines and no
           certifications.
         </p>
 
         <Section title="Who runs Crawler Room">
           <p>
-            Crawler Room is published by SEBKLAEY Agency (Sebastian Kläy). Crawler Room is an independent product.
-            It is not affiliated with, sponsored by, or endorsed by OpenAI.
+            Crawler Room is published by SEBKLAEY Agency (Sebastian Kläy). Crawler Room is an
+            independent product. It is not affiliated with, sponsored by, or endorsed by OpenAI.
           </p>
           <p>
             Contact for privacy questions, access, correction and deletion:{" "}
@@ -137,8 +137,8 @@ function PrivacyPage() {
 
         <Section title="Retention">
           <p className="mb-3">
-            No message and no image stays in Crawler Room longer than 24 hours, in every room type. The
-            database caps every expiry at creation time plus 24 hours, reads never return older
+            No message and no image stays in Crawler Room longer than 24 hours, in every room type.
+            The database caps every expiry at creation time plus 24 hours, reads never return older
             content, every write path deletes what has expired in that room, and a maintenance job
             sweeps the rest including the stored files. The rolling limits below apply on top of
             that, immediately when new content is written.

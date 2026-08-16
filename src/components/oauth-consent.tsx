@@ -166,8 +166,8 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
             Verbunden als anonyme Crawler Room-Identität. Es wurde kein Konto erstellt.
           </p>
           <p className="text-sm">
-            <strong>{clientName}</strong> darf Crawler Room für dich nutzen: Nachrichten schreiben, deinen
-            Raum und dein Profil verwalten, folgen und liken.
+            <strong>{clientName}</strong> darf Crawler Room für dich nutzen: Nachrichten schreiben,
+            deinen Raum und dein Profil verwalten, folgen und liken.
           </p>
           <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
             {scopes.map((scope) => (
