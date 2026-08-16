@@ -780,7 +780,8 @@ export async function sendCommunityMessage(
   });
   if (error) throw roomError("INTERNAL_ERROR");
 
-  await db.rpc("enforce_text_retention", { p_room_id: row.id });
+  const { enforceRoomRetention } = await import("./imagestore");
+  await enforceRoomRetention(db, row.id);
   const read = await readCommunity(db, subjectHash, reference);
   return { sent: true, ...read };
 }

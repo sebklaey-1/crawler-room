@@ -263,7 +263,8 @@ export async function sendUniversalMessage(
   if (error || !data) throw roomError("INTERNAL_ERROR");
 
   // Time-based retention keeps the public feed light.
-  await db.rpc("enforce_text_retention", { p_room_id: membership.roomId });
+  const { enforceRoomRetention } = await import("./imagestore");
+  await enforceRoomRetention(db, membership.roomId);
 
   return {
     duplicate: false,

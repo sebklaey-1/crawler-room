@@ -228,8 +228,8 @@ export async function insertMessage(
   const row = data as any;
 
   // Rolling retention: a room keeps only its newest 7 text messages.
-  const { enforceTextRetention } = await import("./imagestore");
-  await enforceTextRetention(db, membership.roomId);
+  const { enforceRoomRetention } = await import("./imagestore");
+  await enforceRoomRetention(db, membership.roomId);
 
   return {
     id: row.id,
