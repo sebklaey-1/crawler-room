@@ -278,13 +278,19 @@ export function protectedResourceMetadata(requestOrigin?: string) {
   };
 }
 
+/**
+ * Bearer challenge. The `resource_metadata` URL always comes from the
+ * canonical resource — in production `https://crawler.today/...` — and never
+ * from the (spoofable) request origin. `requestOrigin` is honoured only by the
+ * test harness.
+ */
 export function challengeHeader(
-  origin: string,
+  requestOrigin?: string,
   error?: "invalid_token" | "insufficient_scope",
   description?: string,
 ): string {
-  const metadata = `${origin}/.well-known/oauth-protected-resource`;
-  const parts = [`Bearer resource_metadata="${metadata}"`];
+  const parts = [`Bearer resource_metadata="${resourceMetadataUrl(requestOrigin)}"`];
+
   if (error) parts.push(`error="${error}"`);
   if (description) parts.push(`error_description="${description.replace(/"/g, "'")}"`);
   return parts.join(", ");
