@@ -136,21 +136,34 @@ async function callTool(params: any, context: RequestContext) {
   }
 
   const started = Date.now();
+  const requestId = newRequestId();
+  const action = safeAction(params, tool);
   try {
     const meta = await buildMeta(params, context);
     const result = (await tool.handler(params?.arguments ?? {}, meta)) as Record<string, unknown>;
-    logEvent({
-      tool: tool.name,
-      ok: true,
-      authenticated: Boolean(context.auth),
-      ms: Date.now() - started,
-    });
+
     // `_content` carries MCP content blocks (e.g. an image) and never ships as data.
-    const { _content, ...structured } = result as { _content?: unknown[] };
+    const { _content, ...raw } = result as { _content?: unknown[] };
+
+    let structured: Json;
+    try {
+      structured = enforceOutputContract(tool.outputSchema, raw);
+    } catch {
+      logEvent({ tool: tool.name, action, ok: false, code: "INTERNAL_ERROR", ms: Date.now() - started, requestId });
+      const failure = new RoomError("INTERNAL_ERROR");
+      return {
+        content: [{ type: "text", text: failure.message }],
+        structuredContent: failure.toPayload(),
+        isError: true,
+      };
+    }
+
+    logEvent({ tool: tool.name, action, ok: true, ms: Date.now() - started, requestId });
     return {
-      content: _content ?? [{ type: "text", text: tool.summary(result as Json) }],
+      content: _content ?? [{ type: "text", text: tool.summary(structured as Json) }],
       structuredContent: structured,
     };
+
   } catch (unknownError) {
     const error = toRoomError(unknownError);
     if (error.code === "AUTH_REQUIRED") context.authRequired = true;
