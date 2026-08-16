@@ -15,6 +15,7 @@ import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
+import { Route as ApiPublicSupportRouteImport } from './routes/api.public.support'
 import { Route as ApiPublicAdminCleanupRouteImport } from './routes/api.public.admin.cleanup'
 import { Route as ApiPublicRoomUploadRouteImport } from './routes/api.public.room.upload'
 
@@ -49,6 +50,11 @@ const ApiPublicMcpRoute = ApiPublicMcpRouteImport.update({
   path: '/api/public/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSupportRoute = ApiPublicSupportRouteImport.update({
+  id: '/api/public/support',
+  path: '/api/public/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAdminCleanupRoute = ApiPublicAdminCleanupRouteImport.update({
   id: '/api/public/admin/cleanup',
   path: '/api/public/admin/cleanup',
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
 }
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
 }
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
 }
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/api/public/health'
     | '/api/public/mcp'
+    | '/api/public/support'
     | '/api/public/admin/cleanup'
     | '/api/public/room/upload'
   fileRoutesByTo: FileRoutesByTo
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/api/public/health'
     | '/api/public/mcp'
+    | '/api/public/support'
     | '/api/public/admin/cleanup'
     | '/api/public/room/upload'
   id:
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/api/public/health'
     | '/api/public/mcp'
+    | '/api/public/support'
     | '/api/public/admin/cleanup'
     | '/api/public/room/upload'
   fileRoutesById: FileRoutesById
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
+  ApiPublicSupportRoute: typeof ApiPublicSupportRoute
   ApiPublicAdminCleanupRoute: typeof ApiPublicAdminCleanupRoute
   ApiPublicRoomUploadRoute: typeof ApiPublicRoomUploadRoute
 }
@@ -179,6 +192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMcpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/support': {
+      id: '/api/public/support'
+      path: '/api/public/support'
+      fullPath: '/api/public/support'
+      preLoaderRoute: typeof ApiPublicSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/admin/cleanup': {
       id: '/api/public/admin/cleanup'
       path: '/api/public/admin/cleanup'
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
+  ApiPublicSupportRoute: ApiPublicSupportRoute,
   ApiPublicAdminCleanupRoute: ApiPublicAdminCleanupRoute,
   ApiPublicRoomUploadRoute: ApiPublicRoomUploadRoute,
 }
