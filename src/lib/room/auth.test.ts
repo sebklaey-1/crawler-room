@@ -75,6 +75,9 @@ describe("authentication policy", () => {
     );
     const body = await response.json();
     expect(body.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
+    const challenge = body.result._meta["mcp/www_authenticate"];
+    expect(challenge).toContain('error="invalid_token"');
+    expect(challenge).toContain("error_description=");
   });
 
   it("rejects an unsupported protocol version", async () => {
@@ -299,14 +302,26 @@ describe("access token claim validation", () => {
     expect(user.clientId).toBe("mcp-client");
   });
 
+  it("accepts a live authorization-server token without the optional hook claims", async () => {
+    // Real Supabase OAuth tokens carry `aud: "authenticated"` and `scope`.
+    stub({
+      aud: "authenticated",
+      room_resource: undefined,
+      room_scopes: undefined,
+      scope: "openid profile",
+    });
+    const user = await verifyAccessToken("token-plain-oauth", "http://localhost");
+    expect(user.clientId).toBe("mcp-client");
+    expect(user.scopes).toEqual(["openid", "profile"]);
+  });
+
   const rejected: Array<[string, Record<string, unknown>]> = [
     ["a foreign issuer", { iss: "https://evil.test/auth/v1" }],
     ["a non-uuid subject", { sub: "not-a-uuid" }],
     ["an expired token", { exp: Math.floor(Date.now() / 1000) - 10 }],
     ["a plain web session without client_id", { client_id: "" }],
     ["a wrong audience", { aud: ["https://other.test/api/public/mcp"] }],
-    ["a missing resource claim", { room_resource: undefined }],
-    ["insufficient scopes", { room_scopes: ["openid"] }],
+    ["a token bound to another resource", { room_resource: "https://other.test/api/public/mcp" }],
   ];
 
   for (const [label, overrides] of rejected) {

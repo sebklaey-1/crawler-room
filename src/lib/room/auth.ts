@@ -10,11 +10,13 @@
  * - Tokens are verified with the official Supabase client (`auth.getClaims`),
  *   which validates the ES256 signature against the project's JWKS. No hand
  *   rolled or unverified JWT parsing decides authorisation.
- * - Beyond the signature every token must be *bound to this resource*: it needs
- *   a non-empty `client_id` (so ordinary web sessions are never accepted), an
- *   `aud` and a `room_resource` claim equal to the canonical MCP resource, and
- *   `room_scopes` containing at least `openid` and `profile`. Those claims are
- *   added by the `custom_access_token_hook` database function.
+ * - Beyond the signature every token must come from the OAuth 2.1 flow: it
+ *   needs a non-empty `client_id`, so an ordinary web/app session JWT is never
+ *   accepted. The audience must be this resource or the authorization
+ *   server's default `authenticated`; a token bound to a *different*
+ *   `room_resource` is rejected. The optional `custom_access_token_hook` may
+ *   narrow `aud`/`room_resource`/`room_scopes`, but is not required.
+
  * - Tokens are never logged, never returned to the model and never stored.
  * - The raw auth user id is never persisted: only
  *   HMAC-SHA256(secret, "auth:" + sub) is used as the pseudonymous subject.
@@ -198,14 +200,29 @@ export async function verifyAccessToken(token: string, requestOrigin?: string): 
   const exp = typeof claims["exp"] === "number" ? claims["exp"] : 0;
   if (!exp || exp * 1000 <= Date.now()) throw roomError("INVALID_TOKEN");
 
+  // Only tokens issued by the OAuth 2.1 authorization server to a registered
+  // client carry `client_id`. An ordinary web/app session JWT has none, so a
+  // copied browser session can never call the MCP server. This is the binding
+  // that must always hold — fail closed.
   const clientId = typeof claims["client_id"] === "string" ? claims["client_id"].trim() : "";
   if (!clientId) throw roomError("INVALID_TOKEN");
 
-  if (!claimList(claims["aud"]).includes(resource)) throw roomError("INVALID_TOKEN");
-  if (claims["room_resource"] !== resource) throw roomError("INVALID_TOKEN");
+  // Resource binding. The authorization server does not implement RFC 8707
+  // audience restriction: OAuth access tokens carry `aud: "authenticated"`.
+  // The optional `custom_access_token_hook` can narrow this to the canonical
+  // resource. Both shapes are accepted, but a token that names *another*
+  // resource is rejected.
+  const audiences = claimList(claims["aud"]);
+  const roomResource = typeof claims["room_resource"] === "string" ? claims["room_resource"] : "";
+  if (roomResource && roomResource !== resource) throw roomError("INVALID_TOKEN");
+  if (!audiences.includes(resource) && !audiences.includes("authenticated")) {
+    throw roomError("INVALID_TOKEN");
+  }
 
-  const scopes = claimList(claims["room_scopes"]);
-  if (!REQUIRED_SCOPES.every((scope) => scopes.includes(scope))) throw roomError("INVALID_TOKEN");
+  // Granted scopes: hook claim first, otherwise the standard `scope` claim.
+  // Scope strings are informational here; every action is authorised by the
+  // domain layer against the pseudonymous subject, never by a scope value.
+  const scopes = claimList(claims["room_scopes"] ?? claims["scope"]);
 
   const user: AuthUser = { userId: sub, issuer, clientId, scopes, expiresAt: exp };
 

@@ -36,11 +36,13 @@ The app does **not** proxy or mirror those documents.
      (`/.lovable/oauth/consent` stays available as a redirect alias)
    - Dynamic client registration: enabled
    - Site URL: `https://crawler.today`
-3. **Custom Access Token Hook** — Authentication → Hooks → _Custom Access Token_:
-   select the Postgres function `public.custom_access_token_hook` and enable it.
-   **This step cannot be automated and must be done in the backend settings.**
-   Without it, tokens carry no `aud` / `room_resource` / `room_scopes` claims and
-   every MCP call is rejected as `INVALID_TOKEN`.
+3. **Custom Access Token Hook (optional)** — Authentication → Hooks → _Custom
+   Access Token_: selecting `public.custom_access_token_hook` narrows `aud` to
+   the canonical resource and adds `room_resource` / `room_scopes`. Token
+   verification does **not** depend on it: OAuth tokens issued by the
+   authorization server always carry a non-empty `client_id`, which is the
+   binding that separates them from ordinary web sessions.
+
 4. **Redirect allow-list** — add the callback URL that the MCP client (ChatGPT)
    displays while connecting. Use exactly the value the client shows; do not
    invent one.
@@ -67,13 +69,16 @@ is **not** `SECURITY DEFINER`; only `supabase_auth_admin` may execute it.
 ## Threat model
 
 - **A normal web access token cannot call the MCP server.** Verification
-  requires a non-empty `client_id`, an `aud` containing the canonical resource
-  and a matching `room_resource` claim. Browser sessions have none of these, so
-  a stolen or copied app session token is rejected with `INVALID_TOKEN`.
+  requires a non-empty `client_id`, which only tokens issued through the OAuth
+  server to a registered client carry. Browser sessions have none, so a stolen
+  or copied app session token is rejected with `INVALID_TOKEN`. When the
+  optional hook is active, `room_resource` must additionally match the
+  canonical resource; a token bound to another resource is always rejected.
 - **Token verification is signature-based.** `supabase.auth.getClaims(token)`
   validates the ES256 signature against the project's JWKS. Nothing is trusted
   from an unverified JWT payload. Issuer, `sub` (UUID), and `exp` are checked
   explicitly, with a request timeout on any network path.
+
 - **Resource binding is fixed by configuration.** `ROOM_MCP_RESOURCE` is the
   only source of the canonical resource, so a spoofed `Host` header can neither
   redirect discovery nor make a token for another resource acceptable.
