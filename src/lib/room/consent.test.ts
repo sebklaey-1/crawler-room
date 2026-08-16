@@ -11,7 +11,8 @@ const CONSENT = readFileSync("src/components/oauth-consent.tsx", "utf8");
 describe("accountless OAuth consent", () => {
   it("uses anonymous sign-in", () => {
     expect(CONSENT).toContain("signInAnonymously()");
-    expect(CONSENT.match(/signInAnonymously\(\)/g) ?? []).toHaveLength(1);
+    // exactly one call site (the other occurrence is the file's doc comment)
+    expect(CONSENT.match(/supabase\.auth\.signInAnonymously\(\)/g) ?? []).toHaveLength(1);
   });
 
   it("has no email, password or sign-up flow", () => {
