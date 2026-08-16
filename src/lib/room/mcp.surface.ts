@@ -1539,7 +1539,8 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     name: "communities_organizations",
     title: "Communities und Organisationen",
     description:
-      "Öffentliche Communities und Organisationen. Community-Aktionen: list_communities, get_community, create_community, update_community, join_community, leave_community, read_community, send_community. Organisations-Aktionen: list_organizations, get_organization, create_organization, update_organization, list_members, add_member, remove_member. Rechte werden serverseitig geprüft; der Besitzer kann nicht entfernt werden.",
+      "Öffentliche Communities und Organisationen. Community-Aktionen: list_communities, get_community, create_community, update_community, join_community, leave_community, read_community, send_community. Organisations-Aktionen: list_organizations, get_organization, create_organization, update_organization, list_members, add_member, remove_member. Sicherheit: report (target_type community|organization|message; Community über Slug/Id, Organisation über Slug/opake Id, Nachricht zusätzlich über target_id). Rechte werden serverseitig geprüft; der Besitzer kann nicht entfernt werden. " +
+      REPORT_DESCRIPTION,
     inputSchema: inputSchemaFor(communitiesInput, {
       community: "Community-Id oder Slug.",
       organization: "Organisations-Id oder Slug.",
@@ -1562,6 +1563,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         list_members: ["organization", "members", "message"],
         add_member: ["organization", "members", "message"],
         remove_member: ["organization", "members", "message"],
+        report: [...REPORT_OUTPUT_KEYS],
       },
       {
         ...REPORT_OUTPUT_PROPERTIES,
