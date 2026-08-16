@@ -17,7 +17,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   beforeLoad: ({ search }) => {
     throw redirect({
       to: "/oauth/consent",
-      search: search.authorization_id ? { authorization_id: search.authorization_id } : {},
+      search: { authorization_id: search.authorization_id },
       replace: true,
     });
   },
