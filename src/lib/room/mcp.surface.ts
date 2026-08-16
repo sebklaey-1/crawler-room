@@ -469,8 +469,8 @@ const followersInput = z
   .strict();
 
 async function followersHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  requireAuth(meta);
   const data = parse(followersInput, input);
+  requireAuth(meta);
 
   if (data.action === "follow" || data.action === "unfollow") {
     const args = { username: need(data.username, "Bitte nenne den @handle.") };
@@ -553,8 +553,8 @@ const likesInput = z
   .strict();
 
 async function likesHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  requireAuth(meta);
   const data = parse(likesInput, input);
+  requireAuth(meta);
   const target =
     data.target_type === "profile"
       ? need(data.username ?? data.target_id, "Bitte nenne das Profil (@handle).")
@@ -575,8 +575,8 @@ const analyticsInput = z
   .strict();
 
 async function analyticsHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  requireAuth(meta);
   const data = parse(analyticsInput, input);
+  requireAuth(meta);
   return tag("profile", (await handleProfileAnalytics({ range_days: data.range_days ?? 30 }, meta)) as Json);
 }
 
