@@ -71,7 +71,7 @@ describe("authentication policy", () => {
     });
     expect(response.status).toBe(401);
     expect(response.headers.get("www-authenticate")).toContain(
-      'resource_metadata="http://localhost/.well-known/oauth-protected-resource"',
+      'resource_metadata="http://localhost/.well-known/oauth-protected-resource/api/public/mcp"',
     );
     const body = await response.json();
     expect(body.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
