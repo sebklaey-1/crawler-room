@@ -234,6 +234,61 @@ export async function getOrganization(db: Db, subjectHash: string, reference: st
   return { organization: serializeOrg(org, role), communities: list };
 }
 
+/** Public, side-effect-free organization DTO: no accounts, roles or members. */
+function serializePublicOrg(row: any) {
+  return {
+    id: row.id as string,
+    slug: (row.slug as string | null) ?? null,
+    name: row.name as string,
+    description: row.description ?? "",
+    website: row.website ?? "",
+    logo: (row.logo_path as string | null) ?? null,
+    verified: Boolean(row.verified),
+    created_at: row.created_at as string,
+  };
+}
+
+/** Anonymous listing of public organizations. Performs reads only. */
+export async function publicListOrganizations(db: Db, limit = 50) {
+  const { data, error } = await db
+    .from("organizations")
+    .select("id, slug, name, description, website, logo_path, verified, created_at")
+    .is("suspended_at", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw roomError("INTERNAL_ERROR");
+  return ((data ?? []) as any[]).map(serializePublicOrg);
+}
+
+/** Anonymous organization view with its public communities. Reads only. */
+export async function publicGetOrganization(db: Db, reference: string) {
+  const org = await findOrg(db, reference);
+
+  const { data: communities } = await db
+    .from("rooms")
+    .select("id, slug, title, description")
+    .eq("organization_id", org.id)
+    .eq("kind", "community")
+    .is("archived_at", null)
+    .limit(50);
+
+  const list = [];
+  for (const room of (communities ?? []) as any[]) {
+    list.push({
+      id: await encodeRoomId(room.id),
+      slug: room.slug,
+      title: room.title,
+      description: room.description ?? "",
+    });
+  }
+
+  return {
+    organization: serializePublicOrg(org),
+    communities: list,
+    community_count: list.length,
+  };
+}
+
 export async function updateOrganization(
   db: Db,
   subjectHash: string,

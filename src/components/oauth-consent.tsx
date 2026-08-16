@@ -38,7 +38,6 @@ function oauthApi(): OAuthNamespace | null {
 const SCOPE_LABELS: Record<string, string> = {
   openid: "Deine Anmeldung bei @room bestätigen",
   profile: "Dein @room-Basisprofil teilen",
-  email: "Deine E-Mail-Adresse teilen",
 };
 
 export function OAuthConsent({ authorizationId }: { authorizationId: string | undefined }) {
@@ -161,6 +160,7 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
 
   const clientName =
     details?.client?.name ?? details?.client?.client_name ?? "Die verbundene Anwendung";
+  // Only the scopes the client actually requested are shown.
   const scopes = (details?.scope ?? "openid profile").split(/\s+/).filter(Boolean);
 
   return (

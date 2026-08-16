@@ -25,13 +25,16 @@ import {
 } from "./auth";
 import { SERVICE_NAME, SERVICE_VERSION } from "./config";
 import { RoomError, toRoomError } from "./errors";
-import { AUTH_META_KEY, legacySubjectHash, sanitizeClientMeta, type McpMeta } from "./identity";
+import { AUTH_META_KEY, sanitizeClientMeta, type McpMeta } from "./identity";
 import { PUBLIC_ACTIONS, SURFACE_TOOLS, type SurfaceTool } from "./mcp.surface";
 import { getDb } from "./store";
 
 const PROTOCOL_VERSION = "2025-06-18";
 const SUPPORTED_PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"];
-const MAX_BODY_BYTES = 1024 * 1024;
+/** Hard body limit in real UTF-8 bytes (256 KiB). */
+const MAX_BODY_BYTES = 256 * 1024;
+const MAX_BATCH_ITEMS = 10;
+const BATCH_CONCURRENCY = 3;
 
 type Json = Record<string, unknown>;
 
@@ -84,19 +87,14 @@ async function buildMeta(params: any, context: RequestContext): Promise<McpMeta>
   const meta = sanitizeClientMeta((params?._meta ?? {}) as McpMeta);
   meta["room/origin"] = context.origin;
 
+  // Only the pseudonymous subject reaches a handler — never the raw auth id.
   if (context.auth && context.testAuth) {
-    meta[AUTH_META_KEY] = {
-      userId: context.auth.userId,
-      subjectHash: await authSubjectHash(context.auth.userId),
-    };
+    meta[AUTH_META_KEY] = { subjectHash: await authSubjectHash(context.auth.userId) };
     return meta;
   }
-
   if (context.auth) {
     const db = await getDb();
-    const legacy = await legacySubjectHash(meta);
-    const subjectHash = await resolveAuthSubject(db, context.auth.userId, legacy);
-    meta[AUTH_META_KEY] = { userId: context.auth.userId, subjectHash };
+    meta[AUTH_META_KEY] = { subjectHash: await resolveAuthSubject(db, context.auth.userId) };
   }
   return meta;
 }
@@ -173,9 +171,42 @@ function describeTool(tool: SurfaceTool) {
   };
 }
 
+/** Strict JSON-RPC 2.0 envelope validation. Returns null when the shape is fine. */
+export function validateRpcMessage(message: unknown): { code: number; message: string } | null {
+  if (typeof message !== "object" || message === null || Array.isArray(message)) {
+    return { code: -32600, message: "Invalid Request: expected a JSON-RPC object" };
+  }
+  const entry = message as Record<string, unknown>;
+  if (entry["jsonrpc"] !== "2.0") {
+    return { code: -32600, message: "Invalid Request: jsonrpc must be '2.0'" };
+  }
+  if (typeof entry["method"] !== "string" || !entry["method"].trim()) {
+    return { code: -32600, message: "Invalid Request: method must be a non-empty string" };
+  }
+  if ("params" in entry) {
+    const params = entry["params"];
+    if (typeof params !== "object" || params === null) {
+      return { code: -32600, message: "Invalid Request: params must be an object or array" };
+    }
+  }
+  if ("id" in entry) {
+    const id = entry["id"];
+    const ok = typeof id === "string" || typeof id === "number" || id === null;
+    if (!ok) return { code: -32600, message: "Invalid Request: id must be a string, number or null" };
+  }
+  return null;
+}
+
 async function handleRpc(message: any, context: RequestContext): Promise<Json | null> {
-  const { id, method, params } = message ?? {};
-  const isNotification = id === undefined || id === null;
+  const invalid = validateRpcMessage(message);
+  if (invalid) {
+    const id =
+      typeof message?.id === "string" || typeof message?.id === "number" ? message.id : null;
+    return rpcError(id, invalid.code, invalid.message);
+  }
+
+  const { id, method, params } = message as { id?: unknown; method: string; params?: any };
+  const isNotification = !("id" in (message as object));
 
   switch (method) {
     case "initialize": {
@@ -183,28 +214,30 @@ async function handleRpc(message: any, context: RequestContext): Promise<Json | 
       const version = SUPPORTED_PROTOCOL_VERSIONS.includes(requested)
         ? requested
         : PROTOCOL_VERSION;
-      return rpcResult(id, {
+      return rpcResult(id ?? null, {
         protocolVersion: version,
         capabilities: { tools: { listChanged: false } },
         serverInfo: {
           name: SERVICE_NAME,
           title: "@room",
           version: SERVICE_VERSION,
-          websiteUrl: context.origin || "https://crawler.today",
+          websiteUrl: context.origin,
         },
         instructions: INSTRUCTIONS,
       });
     }
     case "ping":
-      return rpcResult(id, {});
+      return isNotification ? null : rpcResult(id, {});
     case "tools/list":
-      return rpcResult(id, { tools: TOOLS.map(describeTool) });
+      return isNotification ? null : rpcResult(id, { tools: TOOLS.map(describeTool) });
     case "tools/call":
-      return rpcResult(id, (await callTool(params, context)) as unknown as Json);
+      return isNotification
+        ? null
+        : rpcResult(id, (await callTool(params, context)) as unknown as Json);
     case "resources/list":
-      return rpcResult(id, { resources: [] });
+      return isNotification ? null : rpcResult(id, { resources: [] });
     case "prompts/list":
-      return rpcResult(id, { prompts: [] });
+      return isNotification ? null : rpcResult(id, { prompts: [] });
     default:
       if (isNotification) return null;
       return rpcError(id, -32601, `Method not found: ${String(method)}`);
@@ -219,11 +252,28 @@ const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Expose-Headers": "mcp-session-id, www-authenticate",
 };
 
+/** Baseline security headers applied to every response of this endpoint. */
+export const SECURITY_HEADERS: Record<string, string> = {
+  "Cache-Control": "no-store",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "no-referrer",
+  "X-Frame-Options": "DENY",
+  "Permissions-Policy": "geolocation=(), microphone=(), camera=(), browsing-topics=()",
+};
+
+function baseHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return { ...CORS_HEADERS, ...SECURITY_HEADERS, ...extra };
+}
+
 function jsonResponse(body: unknown, status = 200, extra: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", ...CORS_HEADERS, ...extra },
+    headers: baseHeaders({ "content-type": "application/json", ...extra }),
   });
+}
+
+function emptyResponse(status: number, extra: Record<string, string> = {}) {
+  return new Response(null, { status, headers: baseHeaders(extra) });
 }
 
 /** Single-message SSE response, as required by MCP Streamable HTTP clients (ChatGPT). */
@@ -231,13 +281,12 @@ function sseResponse(body: unknown, extra: Record<string, string> = {}) {
   const stream = `event: message\ndata: ${JSON.stringify(body)}\n\n`;
   return new Response(stream, {
     status: 200,
-    headers: {
+    headers: baseHeaders({
       "content-type": "text/event-stream",
-      "cache-control": "no-cache, no-transform",
+      "Cache-Control": "no-cache, no-transform",
       connection: "keep-alive",
-      ...CORS_HEADERS,
       ...extra,
-    },
+    }),
   });
 }
 
@@ -275,16 +324,43 @@ function unauthorized(origin: string, error?: "invalid_token"): Response {
   );
 }
 
+/** Runs batch entries with bounded concurrency; each entry gets its own context. */
+async function runBatch(
+  entries: unknown[],
+  make: () => RequestContext,
+): Promise<{ responses: Json[]; authRequired: boolean; challenge: boolean }> {
+  const results: (Json | null)[] = new Array(entries.length).fill(null);
+  let authRequired = false;
+  let challenge = false;
+  let cursor = 0;
+
+  async function worker() {
+    for (;;) {
+      const index = cursor;
+      cursor += 1;
+      if (index >= entries.length) return;
+      // A separate context per entry: one auth failure never contaminates another.
+      const context = make();
+      results[index] = await handleRpc(entries[index], context);
+      if (context.authRequired) authRequired = true;
+      if (context.challenge) challenge = true;
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(BATCH_CONCURRENCY, entries.length) }, () => worker()),
+  );
+  return { responses: results.filter(Boolean) as Json[], authRequired, challenge };
+}
+
 /** Streamable HTTP endpoint handler. Stateless: every POST is self-contained. */
 export async function handleMcpRequest(request: Request): Promise<Response> {
   const origin = new URL(request.url).origin;
 
-  if (request.method === "OPTIONS")
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  if (request.method === "OPTIONS") return emptyResponse(204);
   if (!originAllowed(request))
-    return new Response("Forbidden origin", { status: 403, headers: CORS_HEADERS });
-  if (request.method === "DELETE")
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+    return new Response("Forbidden origin", { status: 403, headers: baseHeaders() });
+  if (request.method === "DELETE") return emptyResponse(204);
 
   const protocolHeader = request.headers.get("mcp-protocol-version");
   if (protocolHeader && !SUPPORTED_PROTOCOL_VERSIONS.includes(protocolHeader)) {
@@ -297,26 +373,23 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
   if (request.method === "GET") {
     // Clients (ChatGPT) may open a listening stream. There is no server-initiated
     // messaging in this pull-based service, so keep an empty stream open briefly.
-    if (!prefersSse(request)) {
-      return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
-    }
+    if (!prefersSse(request))
+      return new Response("Method Not Allowed", { status: 405, headers: baseHeaders() });
     return new Response(": ok\n\n", {
       status: 200,
-      headers: {
+      headers: baseHeaders({
         "content-type": "text/event-stream",
-        "cache-control": "no-cache, no-transform",
+        "Cache-Control": "no-cache, no-transform",
         connection: "keep-alive",
-        ...CORS_HEADERS,
-      },
+      }),
     });
   }
-  if (request.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405, headers: CORS_HEADERS });
-  }
+  if (request.method !== "POST")
+    return new Response("Method Not Allowed", { status: 405, headers: baseHeaders() });
 
-  const contentType = request.headers.get("content-type") ?? "";
-  if (contentType && !contentType.toLowerCase().includes("application/json")) {
-    return jsonResponse(rpcError(null, -32700, "Content-Type must be application/json"), 415);
+  const contentType = (request.headers.get("content-type") ?? "").toLowerCase();
+  if (!contentType.split(";")[0]?.trim().includes("application/json")) {
+    return jsonResponse(rpcError(null, -32600, "Content-Type must be application/json"), 415);
   }
 
   const declaredLength = Number.parseInt(request.headers.get("content-length") ?? "", 10);
@@ -325,7 +398,8 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
   }
 
   const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) {
+  // Real UTF-8 byte length, not the JS string length.
+  if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
     return jsonResponse(rpcError(null, -32600, "Payload too large"), 413);
   }
 
@@ -336,44 +410,67 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
     return jsonResponse(rpcError(null, -32700, "Parse error"), 400);
   }
 
+  if (Array.isArray(payload) && payload.length === 0) {
+    return jsonResponse(rpcError(null, -32600, "Invalid Request: empty batch"), 400);
+  }
+  if (Array.isArray(payload) && payload.length > MAX_BATCH_ITEMS) {
+    return jsonResponse(
+      rpcError(null, -32600, `Invalid Request: at most ${MAX_BATCH_ITEMS} batch items`),
+      400,
+    );
+  }
+
   // Authenticate once per request; the token itself never reaches a handler.
   let auth: AuthUser | null = null;
   let testAuth = false;
   const testUser =
     process.env["NODE_ENV"] === "test" ? request.headers.get("x-room-test-user")?.trim() : null;
   if (testUser) {
-    auth = { userId: testUser, issuer: null, expiresAt: null };
+    auth = {
+      userId: testUser,
+      issuer: "test",
+      clientId: "test",
+      scopes: ["openid", "profile"],
+      expiresAt: Math.floor(Date.now() / 1000) + 600,
+    };
     testAuth = true;
   }
   const token = bearerToken(request);
   if (!testAuth && token) {
     try {
-      auth = await verifyAccessToken(token);
+      auth = await verifyAccessToken(token, origin);
     } catch (error) {
-      const roomError = toRoomError(error);
-      if (roomError instanceof RoomError && roomError.code === "INVALID_TOKEN") {
+      const failure = toRoomError(error);
+      if (failure instanceof RoomError && failure.code === "INVALID_TOKEN") {
         return unauthorized(origin, "invalid_token");
       }
       return jsonResponse(rpcError(null, -32603, "Authentication unavailable"), 503);
     }
   }
 
-  const context: RequestContext = { origin, auth, challenge: null, authRequired: false, testAuth };
+  const makeContext = (): RequestContext => ({
+    origin,
+    auth,
+    challenge: null,
+    authRequired: false,
+    testAuth,
+  });
   const sse = prefersSse(request);
 
   if (Array.isArray(payload)) {
-    const responses = (await Promise.all(payload.map((entry) => handleRpc(entry, context)))).filter(
-      Boolean,
-    );
-    if (context.challenge) return unauthorized(origin, "invalid_token");
-    if (!responses.length) return new Response(null, { status: 202, headers: CORS_HEADERS });
-    const extra = context.authRequired ? { "WWW-Authenticate": challengeHeader(origin) } : {};
-    return sse ? sseResponse(responses, extra) : jsonResponse(responses, 200, extra);
+    const batch = await runBatch(payload, makeContext);
+    if (batch.challenge) return unauthorized(origin, "invalid_token");
+    if (!batch.responses.length) return emptyResponse(202);
+    const extra = batch.authRequired ? { "WWW-Authenticate": challengeHeader(origin) } : {};
+    return sse
+      ? sseResponse(batch.responses, extra)
+      : jsonResponse(batch.responses, 200, extra);
   }
 
+  const context = makeContext();
   const response = await handleRpc(payload, context);
   if (context.challenge) return unauthorized(origin, "invalid_token");
-  if (!response) return new Response(null, { status: 202, headers: CORS_HEADERS });
+  if (!response) return emptyResponse(202);
 
   // MCP clients start the OAuth flow when a tool call answers 401 with a
   // `WWW-Authenticate` challenge pointing at the resource metadata.

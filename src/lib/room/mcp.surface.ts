@@ -25,6 +25,8 @@ import {
   sendCommunityMessage,
   updateCommunity,
   updateOrganization,
+  publicGetOrganization,
+  publicListOrganizations,
 } from "./communities";
 import { roomError } from "./errors";
 import { encodeMessageId } from "./ids";
@@ -90,7 +92,13 @@ export const PUBLIC_ACTIONS: Record<string, readonly string[]> = {
   followers_notifications: [],
   likes: [],
   analytics: [],
-  communities_organizations: ["list_communities", "get_community", "read_community"],
+  communities_organizations: [
+    "list_communities",
+    "get_community",
+    "read_community",
+    "list_organizations",
+    "get_organization",
+  ],
 };
 
 /**
@@ -703,6 +711,23 @@ async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> 
         authenticated: false,
         sign_in_hint: SIGN_IN_HINT,
         community: await getCommunity(db, anon, need(data.community, "Bitte nenne die Community.")),
+      });
+    }
+    if (data.action === "list_organizations") {
+      return tag("list_organizations", {
+        authenticated: false,
+        sign_in_hint: SIGN_IN_HINT,
+        organizations: await publicListOrganizations(db, data.limit ?? 50),
+      });
+    }
+    if (data.action === "get_organization") {
+      return tag("get_organization", {
+        authenticated: false,
+        sign_in_hint: SIGN_IN_HINT,
+        ...(await publicGetOrganization(
+          db,
+          need(data.organization, "Bitte nenne die Organisation."),
+        )),
       });
     }
     return tag("read_community", {

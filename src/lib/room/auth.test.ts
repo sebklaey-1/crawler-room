@@ -1,6 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
-import { bearerToken, decodeJwtPayload, protectedResourceMetadata, challengeHeader } from "./auth";
+import {
+  bearerToken,
+  protectedResourceMetadata,
+  challengeHeader,
+  canonicalResource,
+  verifyAccessToken,
+  __setTestClaimsVerifier,
+} from "./auth";
 import { AUTH_META_KEY, isAuthenticated, readAuthMeta, sanitizeClientMeta } from "./identity";
 import { handleMcpRequest } from "./mcp";
 import { isPublicAction, PUBLIC_ACTIONS, SURFACE_TOOLS } from "./mcp.surface";
@@ -83,11 +90,12 @@ describe("authentication policy", () => {
     );
     expect(wrongType.status).toBe(415);
 
+    // Multi-byte characters count as real UTF-8 bytes, not string length.
     const huge = await post({
       jsonrpc: "2.0",
       id: 1,
       method: "ping",
-      params: { pad: "x".repeat(1024 * 1024 + 10) },
+      params: { pad: "ä".repeat(140 * 1024) },
     });
     expect(huge.status).toBe(413);
   });
@@ -162,17 +170,10 @@ describe("token and identity handling", () => {
     expect(bearerToken(new Request(URL_MCP))).toBeNull();
   });
 
-  it("decodes a jwt payload without trusting it", () => {
-    const payload = { sub: "user-1", exp: 1 };
-    const token = `x.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.y`;
-    expect(decodeJwtPayload(token)).toMatchObject({ sub: "user-1" });
-    expect(decodeJwtPayload("not-a-token")).toBeNull();
-  });
-
   it("strips server-controlled meta keys sent by a client", () => {
     const meta = sanitizeClientMeta({
       "openai/subject": "abc",
-      [AUTH_META_KEY]: { userId: "spoofed", subjectHash: "spoofed" },
+      [AUTH_META_KEY]: { subjectHash: "spoofed" },
       "room/origin": "https://evil.test",
     });
     expect(meta[AUTH_META_KEY]).toBeUndefined();
@@ -181,11 +182,8 @@ describe("token and identity handling", () => {
     expect(isAuthenticated(meta)).toBe(false);
   });
 
-  it("accepts only complete auth contexts", () => {
-    expect(readAuthMeta({ [AUTH_META_KEY]: { userId: "u", subjectHash: "s" } })).toEqual({
-      userId: "u",
-      subjectHash: "s",
-    });
+  it("carries only the pseudonymous subject, never a raw account id", () => {
+    expect(readAuthMeta({ [AUTH_META_KEY]: { subjectHash: "s" } })).toEqual({ subjectHash: "s" });
     expect(readAuthMeta({ [AUTH_META_KEY]: { userId: "u" } })).toBeNull();
     expect(readAuthMeta(undefined)).toBeNull();
   });
@@ -196,13 +194,163 @@ describe("protected resource discovery", () => {
     process.env["SUPABASE_URL"] ??= "https://example.supabase.co";
     const metadata = protectedResourceMetadata("https://room.example");
     expect(metadata.resource).toBe("https://room.example/api/public/mcp");
-    expect(metadata.authorization_servers.length).toBe(1);
+    expect(metadata.authorization_servers).toEqual([`${process.env["SUPABASE_URL"]}/auth/v1`]);
+    expect(metadata.scopes_supported).toEqual(["openid", "profile"]);
     expect(metadata.bearer_methods_supported).toEqual(["header"]);
+  });
+
+  it("prefers the configured resource over any request origin", () => {
+    process.env["ROOM_MCP_RESOURCE"] = "https://zinga-room.lovable.app/api/public/mcp";
+    try {
+      expect(canonicalResource("https://evil.test")).toBe(
+        "https://zinga-room.lovable.app/api/public/mcp",
+      );
+      expect(protectedResourceMetadata("https://evil.test").resource).toBe(
+        "https://zinga-room.lovable.app/api/public/mcp",
+      );
+    } finally {
+      delete process.env["ROOM_MCP_RESOURCE"];
+    }
   });
 
   it("builds a spec compliant challenge", () => {
     expect(challengeHeader("https://room.example", "invalid_token")).toBe(
       'Bearer resource_metadata="https://room.example/.well-known/oauth-protected-resource", error="invalid_token"',
     );
+  });
+});
+
+/* ----------------------------- claim validation ---------------------------- */
+
+const RESOURCE = "http://localhost/api/public/mcp";
+
+function claims(overrides: Record<string, unknown> = {}) {
+  return {
+    iss: `${process.env["SUPABASE_URL"]}/auth/v1`,
+    sub: "00000000-0000-4000-8000-0000000000aa",
+    exp: Math.floor(Date.now() / 1000) + 600,
+    client_id: "mcp-client",
+    aud: [RESOURCE],
+    room_resource: RESOURCE,
+    room_scopes: ["openid", "profile"],
+    ...overrides,
+  };
+}
+
+function stub(overrides: Record<string, unknown> = {}) {
+  __setTestClaimsVerifier(async () => claims(overrides));
+}
+
+describe("access token claim validation", () => {
+  afterEach(() => __setTestClaimsVerifier(null));
+
+  it("accepts a fully resource-bound token", async () => {
+    process.env["SUPABASE_URL"] ??= "https://example.supabase.co";
+    stub();
+    const user = await verifyAccessToken("token-ok", "http://localhost");
+    expect(user.userId).toBe("00000000-0000-4000-8000-0000000000aa");
+    expect(user.clientId).toBe("mcp-client");
+  });
+
+  const rejected: Array<[string, Record<string, unknown>]> = [
+    ["a foreign issuer", { iss: "https://evil.test/auth/v1" }],
+    ["a non-uuid subject", { sub: "not-a-uuid" }],
+    ["an expired token", { exp: Math.floor(Date.now() / 1000) - 10 }],
+    ["a plain web session without client_id", { client_id: "" }],
+    ["a wrong audience", { aud: ["https://other.test/api/public/mcp"] }],
+    ["a missing resource claim", { room_resource: undefined }],
+    ["insufficient scopes", { room_scopes: ["openid"] }],
+  ];
+
+  for (const [label, overrides] of rejected) {
+    it(`rejects ${label}`, async () => {
+      stub(overrides);
+      await expect(verifyAccessToken(`token-${label}`, "http://localhost")).rejects.toMatchObject({
+        code: "INVALID_TOKEN",
+      });
+    });
+  }
+});
+
+/* ------------------------- transport hardening ---------------------------- */
+
+describe("streamable http hardening", () => {
+  it("requires a content type on POST", async () => {
+    const response = await handleMcpRequest(
+      new Request(URL_MCP, { method: "POST", body: '{"jsonrpc":"2.0","id":1,"method":"ping"}' }),
+    );
+    expect(response.status).toBe(415);
+  });
+
+  it("sets security headers on every response", async () => {
+    const response = await post({ jsonrpc: "2.0", id: 1, method: "ping" });
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(response.headers.get("referrer-policy")).toBe("no-referrer");
+    expect(response.headers.get("x-frame-options")).toBe("DENY");
+    expect(response.headers.get("permissions-policy")).toContain("camera=()");
+  });
+
+  it("rejects an empty and an oversized batch", async () => {
+    expect((await post([])).status).toBe(400);
+    const many = Array.from({ length: 11 }, (_unused, index) => ({
+      jsonrpc: "2.0",
+      id: index,
+      method: "ping",
+    }));
+    expect((await post(many)).status).toBe(400);
+  });
+
+  it("rejects malformed json-rpc envelopes with -32600", async () => {
+    const bad = [
+      { jsonrpc: "1.0", id: 1, method: "ping" },
+      { jsonrpc: "2.0", id: 2, method: "" },
+      { jsonrpc: "2.0", id: 3, method: "ping", params: "nope" },
+      { jsonrpc: "2.0", id: { bad: true }, method: "ping" },
+    ];
+    for (const message of bad) {
+      const body = (await (await post(message)).json()) as any;
+      expect(body.error.code).toBe(-32600);
+    }
+  });
+
+  it("answers a parse error with -32700", async () => {
+    const response = await handleMcpRequest(
+      new Request(URL_MCP, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{not json",
+      }),
+    );
+    expect(response.status).toBe(400);
+    expect(((await response.json()) as any).error.code).toBe(-32700);
+  });
+
+  it("isolates batch entries so one auth failure never leaks", async () => {
+    const response = await post([
+      { jsonrpc: "2.0", id: 1, method: "ping" },
+      {
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: { name: "analytics", arguments: { action: "profile" } },
+      },
+      { jsonrpc: "2.0", id: 3, method: "tools/list" },
+    ]);
+    const body = (await response.json()) as any[];
+    const ping = body.find((entry) => entry.id === 1);
+    const analytics = body.find((entry) => entry.id === 2);
+    const list = body.find((entry) => entry.id === 3);
+    expect(ping.result).toEqual({});
+    expect(analytics.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
+    expect(list.result.tools.length).toBe(7);
+  });
+
+  it("accepts application/json with a charset", async () => {
+    const response = await post(
+      { jsonrpc: "2.0", id: 1, method: "ping" },
+      { headers: { "content-type": "application/json; charset=utf-8" } },
+    );
+    expect(response.status).toBe(200);
   });
 });

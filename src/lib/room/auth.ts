@@ -2,26 +2,37 @@
  * OAuth 2.1 bearer authentication for the @room MCP server.
  *
  * The authorization server is the Supabase Auth instance of this project.
- * The MCP endpoint is a *protected resource*: it never issues, stores or
- * forwards credentials, it only validates the presented access token and maps
- * it to the pseudonymous identity used by the domain layer.
+ * The MCP endpoint is a *protected resource* (RFC 9728): it never issues,
+ * stores or forwards credentials, it only verifies the presented access token
+ * and maps it to the pseudonymous identity used by the domain layer.
  *
  * SECURITY
- * - Tokens are validated against Supabase (`/auth/v1/user`); a token that this
- *   project's auth server does not recognise is rejected.
+ * - Tokens are verified with the official Supabase client (`auth.getClaims`),
+ *   which validates the ES256 signature against the project's JWKS. No hand
+ *   rolled or unverified JWT parsing decides authorisation.
+ * - Beyond the signature every token must be *bound to this resource*: it needs
+ *   a non-empty `client_id` (so ordinary web sessions are never accepted), an
+ *   `aud` and a `room_resource` claim equal to the canonical MCP resource, and
+ *   `room_scopes` containing at least `openid` and `profile`. Those claims are
+ *   added by the `custom_access_token_hook` database function.
  * - Tokens are never logged, never returned to the model and never stored.
- * - The raw auth user id is never persisted in domain tables; only
- *   HMAC-SHA256(secret, "auth:" + userId) is used as the pseudonymous subject.
+ * - The raw auth user id is never persisted: only
+ *   HMAC-SHA256(secret, "auth:" + sub) is used as the pseudonymous subject.
  */
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
 import { requireSecret } from "./config";
 import { hmacSha256Hex } from "./crypto";
 import { roomError } from "./errors";
 import type { Db } from "./store";
 
 export interface AuthUser {
+  /** Verified `sub` claim. Never leaves this module in raw form. */
   userId: string;
-  issuer: string | null;
-  expiresAt: number | null;
+  issuer: string;
+  clientId: string;
+  scopes: string[];
+  expiresAt: number;
 }
 
 interface CacheEntry {
@@ -29,10 +40,13 @@ interface CacheEntry {
   expires: number;
 }
 
-/** Short-lived positive cache so a burst of tool calls does not re-introspect. */
+/** Short-lived positive cache so a burst of tool calls does not re-verify. */
 const tokenCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 60_000;
 const MAX_TOKEN_LENGTH = 8192;
+const VERIFY_TIMEOUT_MS = 5_000;
+const REQUIRED_SCOPES = ["openid", "profile"] as const;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function bearerToken(request: Request): string | null {
   const header = request.headers.get("authorization") ?? request.headers.get("Authorization");
@@ -44,22 +58,88 @@ export function bearerToken(request: Request): string | null {
   return token;
 }
 
-function base64UrlDecode(segment: string): string {
-  const padded = segment.replace(/-/g, "+").replace(/_/g, "/");
-  const withPadding = padded + "=".repeat((4 - (padded.length % 4)) % 4);
-  if (typeof atob === "function") return atob(withPadding);
-  return Buffer.from(withPadding, "base64").toString("binary");
+/* ------------------------------ configuration ----------------------------- */
+
+function supabaseBase(): string {
+  return (process.env["SUPABASE_URL"] ?? "").replace(/\/+$/, "");
 }
 
-/** Unverified read of the payload — used only for cheap pre-checks. */
-export function decodeJwtPayload(token: string): Record<string, unknown> | null {
-  const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  try {
-    return JSON.parse(base64UrlDecode(parts[1] ?? "")) as Record<string, unknown>;
-  } catch {
-    return null;
+/** Canonical OAuth issuer of this project's authorization server. */
+export function authIssuer(): string {
+  const base = supabaseBase();
+  return base ? `${base}/auth/v1` : "";
+}
+
+/**
+ * Canonical MCP resource identifier.
+ *
+ * Production MUST configure `ROOM_MCP_RESOURCE` with the exact https URL; the
+ * value never derives from a request header, so a spoofed `Host` can never
+ * point the protected-resource metadata at a foreign resource. Only the
+ * automated test harness may fall back to the request origin.
+ */
+export function canonicalResource(requestOrigin?: string): string {
+  const configured = (process.env["ROOM_MCP_RESOURCE"] ?? "").trim().replace(/\/+$/, "");
+  if (configured) {
+    if (!/^https:\/\//i.test(configured)) throw roomError("INTERNAL_ERROR");
+    return configured;
   }
+  if (process.env["NODE_ENV"] === "test" && requestOrigin) {
+    return `${requestOrigin.replace(/\/+$/, "")}/api/public/mcp`;
+  }
+  throw roomError("INTERNAL_ERROR");
+}
+
+let verifyClient: SupabaseClient | null = null;
+
+/** Server-side, non-persisting Supabase client used only for verification. */
+function authClient(): SupabaseClient {
+  if (verifyClient) return verifyClient;
+  const url = process.env["SUPABASE_URL"];
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
+  if (!url || !key) throw roomError("INTERNAL_ERROR");
+  verifyClient = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  return verifyClient;
+}
+
+/** Test-only seam: lets the suite inject verified claims without a network. */
+type ClaimsVerifier = (token: string) => Promise<Record<string, unknown> | null>;
+let testVerifier: ClaimsVerifier | null = null;
+
+export function __setTestClaimsVerifier(verifier: ClaimsVerifier | null): void {
+  if (process.env["NODE_ENV"] !== "test") throw roomError("INTERNAL_ERROR");
+  testVerifier = verifier;
+  tokenCache.clear();
+}
+
+async function verifiedClaims(token: string): Promise<Record<string, unknown> | null> {
+  if (process.env["NODE_ENV"] === "test") {
+    // Offline by construction: the suite never reaches the network.
+    if (testVerifier) return testVerifier(token);
+    throw roomError("INVALID_TOKEN");
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS);
+  try {
+    const { data, error } = await authClient().auth.getClaims(token);
+    if (error) throw roomError("INVALID_TOKEN");
+    const claims = (data as { claims?: Record<string, unknown> } | null)?.claims;
+    return claims ?? null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* -------------------------------- validation ------------------------------ */
+
+function claimList(value: unknown): string[] {
+  if (typeof value === "string") return value.split(/\s+/).filter(Boolean);
+  if (Array.isArray(value))
+    return value.filter((entry): entry is string => typeof entry === "string");
+  return [];
 }
 
 async function cacheKey(token: string): Promise<string> {
@@ -68,44 +148,45 @@ async function cacheKey(token: string): Promise<string> {
 }
 
 /**
- * Validates the access token with the project's Supabase auth server.
- * Throws INVALID_TOKEN for anything that is not a live, non-expired token.
+ * Verifies an MCP access token and its binding to this resource.
+ * Throws INVALID_TOKEN for anything that is not a live, resource-bound token.
  */
-export async function verifyAccessToken(token: string): Promise<AuthUser> {
+export async function verifyAccessToken(token: string, requestOrigin?: string): Promise<AuthUser> {
+  const resource = canonicalResource(requestOrigin);
   const key = await cacheKey(token);
   const cached = tokenCache.get(key);
   if (cached && cached.expires > Date.now()) return cached.user;
 
-  const payload = decodeJwtPayload(token);
-  const exp = typeof payload?.["exp"] === "number" ? (payload["exp"] as number) : null;
-  if (exp !== null && exp * 1000 <= Date.now()) throw roomError("INVALID_TOKEN");
-
-  const baseUrl = process.env["SUPABASE_URL"];
-  const apiKey = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
-  if (!baseUrl || !apiKey) throw roomError("INTERNAL_ERROR");
-
-  let response: Response;
+  let claims: Record<string, unknown> | null;
   try {
-    response = await fetch(`${baseUrl}/auth/v1/user`, {
-      headers: { authorization: `Bearer ${token}`, apikey: apiKey },
-    });
-  } catch {
+    claims = await verifiedClaims(token);
+  } catch (error) {
+    if ((error as { code?: string })?.code === "INVALID_TOKEN") throw error;
     throw roomError("INTERNAL_ERROR");
   }
+  if (!claims) throw roomError("INVALID_TOKEN");
 
-  if (response.status === 401 || response.status === 403) throw roomError("INVALID_TOKEN");
-  if (!response.ok) throw roomError("INTERNAL_ERROR");
+  const issuer = typeof claims["iss"] === "string" ? claims["iss"] : "";
+  if (!issuer || issuer !== authIssuer()) throw roomError("INVALID_TOKEN");
 
-  const body = (await response.json()) as { id?: string };
-  if (!body?.id) throw roomError("INVALID_TOKEN");
+  const sub = typeof claims["sub"] === "string" ? claims["sub"] : "";
+  if (!UUID_RE.test(sub)) throw roomError("INVALID_TOKEN");
 
-  const user: AuthUser = {
-    userId: body.id,
-    issuer: typeof payload?.["iss"] === "string" ? (payload["iss"] as string) : null,
-    expiresAt: exp,
-  };
+  const exp = typeof claims["exp"] === "number" ? claims["exp"] : 0;
+  if (!exp || exp * 1000 <= Date.now()) throw roomError("INVALID_TOKEN");
 
-  const ttl = exp ? Math.min(CACHE_TTL_MS, Math.max(0, exp * 1000 - Date.now())) : CACHE_TTL_MS;
+  const clientId = typeof claims["client_id"] === "string" ? claims["client_id"].trim() : "";
+  if (!clientId) throw roomError("INVALID_TOKEN");
+
+  if (!claimList(claims["aud"]).includes(resource)) throw roomError("INVALID_TOKEN");
+  if (claims["room_resource"] !== resource) throw roomError("INVALID_TOKEN");
+
+  const scopes = claimList(claims["room_scopes"]);
+  if (!REQUIRED_SCOPES.every((scope) => scopes.includes(scope))) throw roomError("INVALID_TOKEN");
+
+  const user: AuthUser = { userId: sub, issuer, clientId, scopes, expiresAt: exp };
+
+  const ttl = Math.min(CACHE_TTL_MS, Math.max(0, exp * 1000 - Date.now()));
   tokenCache.set(key, { user, expires: Date.now() + ttl });
   if (tokenCache.size > 500) {
     for (const [entryKey, entry] of tokenCache)
@@ -114,61 +195,74 @@ export async function verifyAccessToken(token: string): Promise<AuthUser> {
   return user;
 }
 
-/** Stable pseudonym for an authenticated account when no legacy identity exists. */
-export async function authSubjectHash(userId: string): Promise<string> {
+/* --------------------------------- identity -------------------------------- */
+
+/** Keyed, non-reversible digest of the auth account. Nothing else is stored. */
+export async function authUserHash(userId: string): Promise<string> {
   return hmacSha256Hex(requireSecret("SUBJECT_HASH_SECRET"), `auth:${userId}`);
 }
 
+/** Stable pseudonym of an authenticated account (identical to its hash). */
+export async function authSubjectHash(userId: string): Promise<string> {
+  return authUserHash(userId);
+}
+
 /**
- * Maps an authenticated user onto the pseudonymous subject used everywhere else.
- * A previously anonymous identity (from `openai/subject`) is claimed once, so
- * existing rooms, profiles, followers and messages stay with the same person.
+ * Maps a verified account onto the pseudonymous subject used everywhere else.
+ *
+ * There is deliberately NO automatic takeover of a legacy `openai/subject`
+ * identity: an unauthenticated MCP `_meta` value is not proof of ownership.
+ * Legacy rows stay untouched; linking them is a controlled manual migration.
  */
-export async function resolveAuthSubject(
-  db: Db,
-  userId: string,
-  legacySubjectHash: string | null,
-): Promise<string> {
-  const { data: linked } = await db
+export async function resolveAuthSubject(db: Db, userId: string): Promise<string> {
+  const hash = await authUserHash(userId);
+
+  const { data: existing, error: readError } = await db
     .from("anonymous_identities")
     .select("subject_hash")
-    .eq("auth_user_id", userId)
+    .eq("auth_user_hash", hash)
     .maybeSingle();
-  if ((linked as any)?.subject_hash) return (linked as any).subject_hash as string;
-
-  if (legacySubjectHash) {
-    const { data: claimed } = await db
-      .from("anonymous_identities")
-      .update({ auth_user_id: userId, last_seen_at: new Date().toISOString() })
-      .eq("subject_hash", legacySubjectHash)
-      .is("auth_user_id", null)
-      .select("subject_hash");
-    const row = ((claimed ?? []) as any[])[0];
-    if (row?.subject_hash) return row.subject_hash as string;
+  if (readError) throw roomError("INTERNAL_ERROR");
+  if ((existing as { subject_hash?: string } | null)?.subject_hash) {
+    return (existing as { subject_hash: string }).subject_hash;
   }
 
-  const hash = await authSubjectHash(userId);
-  await db
+  const now = new Date().toISOString();
+  const { error: writeError } = await db
     .from("anonymous_identities")
     .upsert(
-      { subject_hash: hash, auth_user_id: userId, last_seen_at: new Date().toISOString() },
+      { subject_hash: hash, auth_user_hash: hash, last_seen_at: now },
       { onConflict: "subject_hash" },
     );
+
+  if (writeError) {
+    // Unique race on auth_user_hash: re-read instead of creating a second identity.
+    const { data: raced, error: raceError } = await db
+      .from("anonymous_identities")
+      .select("subject_hash")
+      .eq("auth_user_hash", hash)
+      .maybeSingle();
+    if (raceError || !(raced as { subject_hash?: string } | null)?.subject_hash) {
+      throw roomError("INTERNAL_ERROR");
+    }
+    return (raced as { subject_hash: string }).subject_hash;
+  }
   return hash;
 }
 
+/* -------------------------------- discovery -------------------------------- */
+
 /** Discovery document for RFC 9728 (OAuth 2.0 Protected Resource Metadata). */
-export function protectedResourceMetadata(origin: string) {
-  const base = (process.env["SUPABASE_URL"] ?? "").replace(/\/$/, "");
-  // Canonical OAuth issuer of the project's auth server (OpenID discovery).
-  const issuer = base ? `${base}/auth/v1` : "";
+export function protectedResourceMetadata(requestOrigin?: string) {
+  const issuer = authIssuer();
+  const resource = canonicalResource(requestOrigin);
   return {
-    resource: `${origin}/api/public/mcp`,
+    resource,
     authorization_servers: issuer ? [issuer] : [],
     bearer_methods_supported: ["header"],
-    scopes_supported: ["openid", "email", "profile"],
+    scopes_supported: [...REQUIRED_SCOPES],
     resource_name: "@room",
-    resource_documentation: `${origin}/`,
+    resource_documentation: new URL(resource).origin + "/",
   };
 }
 

@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { fakeDb } from "@/test/fake-db";
 import {
   canManage,
+  publicGetOrganization,
+  publicListOrganizations,
   removeOrgMember,
   slugify,
   updateCommunity,
@@ -12,6 +14,7 @@ import { followRoom, unfollowRoom, type PersonalRoom } from "./personal";
 import { addLike } from "./profile";
 import { publicRoomView } from "./tools.personal";
 import { publicProfileView } from "./tools.profile";
+import { isPublicAction } from "./mcp.surface";
 import { validateMessage } from "./validation";
 import { profileCard, analyticsCard } from "./mcp.render";
 
@@ -189,5 +192,47 @@ describe("public reads never write", () => {
     await publicProfileView(db, "someone").catch(() => undefined);
     expect(db.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
     expect(db.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
+  });
+
+  it("keeps the public organization reads read-only and free of personal data", async () => {
+    const row = {
+      id: "22222222-2222-4222-8222-222222222222",
+      slug: "acme",
+      name: "Acme",
+      description: "Public org",
+      website: "https://acme.test",
+      logo_path: null,
+      verified: true,
+      created_at: new Date().toISOString(),
+      owner_account_id: "secret-account",
+      suspended_at: null,
+    };
+
+    const listDb = fakeDb({ organizations: { data: [row] } });
+    const orgs = await publicListOrganizations(listDb).catch(() => []);
+    expect(listDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
+    for (const org of orgs as any[]) {
+      expect(org.owner_account_id).toBeUndefined();
+      expect(org.my_role).toBeUndefined();
+      expect(org.is_member).toBeUndefined();
+      expect(org.can_manage).toBeUndefined();
+      expect(JSON.stringify(org)).not.toContain("secret-account");
+    }
+
+    const getDb = fakeDb({ organizations: { data: row } });
+    const single = (await publicGetOrganization(getDb, "acme").catch(() => null)) as any;
+    expect(getDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
+    expect(getDb.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
+    if (single) {
+      expect(single.owner_account_id).toBeUndefined();
+      expect(single.members).toBeUndefined();
+      expect(JSON.stringify(single)).not.toContain("secret-account");
+    }
+  });
+
+  it("serves the public organization actions without a token", async () => {
+    for (const action of ["list_organizations", "get_organization"]) {
+      expect(isPublicAction("communities_organizations", action)).toBe(true);
+    }
   });
 });
