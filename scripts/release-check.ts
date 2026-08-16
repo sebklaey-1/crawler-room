@@ -151,15 +151,18 @@ check(
       : `env VITE_PUBLIC_SUPPORT_EMAIL «${configuredSupport}» conflicts with info@crawler.today`,
 );
 
-// Moderation staffing: a named responsible person plus at least one configured
-// moderator subject hash in `moderator_subjects`. Confirmed operationally by
-// setting ROOM_MODERATION_OWNER; the allowlist itself is never read from here.
+// The publicly named moderation owner is canonical in source. An env override
+// is tolerated only when it repeats the exact same name. The operational
+// moderator allowlist (`moderator_subjects`) is verified by release:check:submit.
+const configuredOwner = (process.env["ROOM_MODERATION_OWNER"] ?? "").trim();
 check(
-  "moderation staffing confirmed (ROOM_MODERATION_OWNER)",
-  envSet("ROOM_MODERATION_OWNER"),
-  envSet("ROOM_MODERATION_OWNER")
-    ? "named responsible person recorded"
-    : "missing — manual release blocker: name a moderator and add their subject hash to moderator_subjects",
+  `public moderation owner canonical (${MODERATION_OWNER})`,
+  moderationOwnerEnvMatches(configuredOwner),
+  configuredOwner === ""
+    ? "source of truth in src/lib/room/legal.ts"
+    : moderationOwnerEnvMatches(configuredOwner)
+      ? "env matches canonical owner"
+      : `env ROOM_MODERATION_OWNER «${configuredOwner}» conflicts with ${MODERATION_OWNER}`,
 );
 
 /* ------------------------------- 7. branding -------------------------------- */
