@@ -41,7 +41,10 @@ function leafSchema(node: any): Json {
   const typeName = node?._def?.typeName;
 
   if (typeName === "ZodEnum") return { type: "string", enum: [...node._def.values] };
-  if (typeName === "ZodLiteral") return { type: "string", const: node._def.value };
+  if (typeName === "ZodLiteral") {
+    const value = node._def.value;
+    return { type: typeof value === "number" ? "integer" : "string", const: value };
+  }
   if (typeName === "ZodBoolean") return { type: "boolean" };
 
   if (typeName === "ZodString") {
@@ -75,7 +78,6 @@ function leafSchema(node: any): Json {
     return { anyOf: options };
   }
 
-  if (typeName === "ZodLiteral") return { const: node._def.value };
   return {};
 }
 
