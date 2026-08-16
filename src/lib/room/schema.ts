@@ -12,6 +12,7 @@ type Json = Record<string, unknown>;
 interface StringCheck {
   kind: string;
   value?: number;
+  regex?: RegExp;
 }
 
 function unwrap(schema: any): { inner: any; optional: boolean; nullable: boolean } {
@@ -52,6 +53,7 @@ function leafSchema(node: any): Json {
     for (const check of (node._def.checks ?? []) as StringCheck[]) {
       if (check.kind === "max") out["maxLength"] = check.value;
       if (check.kind === "min") out["minLength"] = check.value;
+      if (check.kind === "regex" && check.regex) out["pattern"] = check.regex.source;
     }
     return out;
   }
