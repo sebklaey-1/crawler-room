@@ -1161,15 +1161,38 @@ async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> 
 
 /* ============================== tool registry ============================= */
 
+/**
+ * Foreign messages are quoted as inert, clearly marked untrusted content:
+ * Markdown, HTML and control characters from other people are escaped so they
+ * cannot inject images, links or instructions into the summary.
+ */
 function messageLines(messages: any[] | undefined): string {
   if (!messages?.length) return "_Noch keine Nachrichten._";
-  return messages.map((message) => `- **${message.alias}**: ${message.text}`).join("\n");
+  return ugcBlock(messages.map((message) => quoteUgcLine(message.alias, message.text)));
 }
 
+/**
+ * Only the server-issued signed storage URL is rendered as an image; the alt
+ * text and the alias come from other people and stay escaped.
+ */
 function imageLines(images: any[] | undefined): string {
-  const shown = (images ?? []).filter((image) => image.url);
+  const shown = (images ?? []).filter((image) => typeof image.url === "string" && image.url);
   if (!shown.length) return "";
-  return `\n\n${shown.map((image) => `![${image.alt_text || "Bild"}](${image.url})\n_${image.alias}_`).join("\n\n")}`;
+  return `\n\n${shown
+    .map(
+      (image) =>
+        `![Bild](${encodeURI(String(image.url))})\n_${sanitizeUgcLabel(image.alias)}_${
+          image.alt_text ? `\n${sanitizeUgcText(image.alt_text, 200)}` : ""
+        }`,
+    )
+    .join("\n\n")}`;
+}
+
+/** Report confirmations never echo the reported content. */
+function reportSummary(result: any): string {
+  return result.already_reported
+    ? "Diese Meldung liegt bereits vor und wird geprüft."
+    : `Meldung eingegangen (Status: ${result.status}). Ein Mensch prüft sie. Inhalte werden dadurch nicht automatisch entfernt.`;
 }
 
 export const SURFACE_TOOLS: SurfaceTool[] = [
@@ -1244,7 +1267,9 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     annotations: TOOL_ANNOTATIONS["universal_room"]!,
     handler: universalHandler,
     summary: (result) =>
-      `Universal Room — ${result.room?.online_now ?? 0} gerade online\n\n${messageLines(result.messages)}`,
+      result.reported
+        ? reportSummary(result)
+        : `Universal Room — ${result.room?.online_now ?? 0} gerade online\n\n${messageLines(result.messages)}`,
   },
   {
     name: "public_room",
@@ -1343,6 +1368,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     annotations: TOOL_ANNOTATIONS["public_room"]!,
     handler: publicRoomHandler,
     summary: (result) => {
+      if (result.reported) return reportSummary(result);
       const room = result.room ?? {};
       const head = room.room_name
         ? `## ${room.room_name}\n${room.followers ?? 0} followers · ${room.people_here_now ?? 0} people here now`
@@ -1411,8 +1437,16 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     ),
     annotations: TOOL_ANNOTATIONS["profile"]!,
     handler: profileHandler,
-    summary: (result) =>
-      result.profile ? profileCard(result) : String(result.message ?? "Fertig."),
+    summary: (result) => {
+      if (result.reported) return reportSummary(result);
+      if (result.blocks) {
+        const list = (result.blocks as any[])
+          .map((entry) => `- @${entry.handle} (${sanitizeUgcLabel(entry.display_name)})`)
+          .join("\n");
+        return list || "Du blockierst niemanden.";
+      }
+      return result.profile ? profileCard(result) : String(result.message ?? "Fertig.");
+    },
   },
   {
     name: "followers_notifications",
@@ -1460,17 +1494,19 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     summary: (result) => {
       if (result.notifications) {
         const list = (result.notifications as any[])
-          .map((entry) => `- ${entry.message}`)
+          .map((entry) => `- ${sanitizeUgcText(entry.message, 300)}`)
           .join("\n");
         return list || "Keine neuen Meldungen.";
       }
       if (result.followers) {
-        const list = (result.followers as any[]).map((entry) => `- ${entry.alias}`).join("\n");
+        const list = (result.followers as any[])
+          .map((entry) => `- ${sanitizeUgcLabel(entry.alias)}`)
+          .join("\n");
         return `${result.total ?? 0} Follower\n${list}`;
       }
       if (result.rooms) {
         const list = (result.rooms as any[])
-          .map((room) => `- @${room.handle} (${room.followers} followers)`)
+          .map((room) => `- @${sanitizeUgcLabel(room.handle)} (${room.followers} followers)`)
           .join("\n");
         return list || "Du folgst noch keinem Raum.";
       }
@@ -1586,36 +1622,37 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     annotations: TOOL_ANNOTATIONS["communities_organizations"]!,
     handler: communitiesHandler,
     summary: (result) => {
+      if (result.reported) return reportSummary(result);
       if (result.communities) {
         const list = (result.communities as any[])
           .map(
             (entry) =>
-              `- **${entry.title}** (${entry.slug ?? entry.id}) · ${entry.members} Mitglieder`,
+              `- **${sanitizeUgcLabel(entry.title)}** (${sanitizeUgcLabel(entry.slug ?? entry.id)}) · ${entry.members} Mitglieder`,
           )
           .join("\n");
         return list || "Noch keine Communities.";
       }
       if (result.organizations) {
         const list = (result.organizations as any[])
-          .map((entry) => `- **${entry.name}** (${entry.slug ?? entry.id})`)
+          .map((entry) => `- **${sanitizeUgcLabel(entry.name)}** (${sanitizeUgcLabel(entry.slug ?? entry.id)})`)
           .join("\n");
         return list || "Noch keine Organisationen.";
       }
       if (result.members) {
         return (result.members as any[])
-          .map((entry) => `- ${entry.alias} · ${entry.role}`)
+          .map((entry) => `- ${sanitizeUgcLabel(entry.alias)} · ${entry.role}`)
           .join("\n");
       }
       if (result.messages) {
-        return `## ${result.community?.title ?? "Community"}\n\n${messageLines(result.messages as any[])}`;
+        return `## ${sanitizeUgcLabel(result.community?.title ?? "Community")}\n\n${messageLines(result.messages as any[])}`;
       }
       if (result.community) {
         const community = result.community as any;
-        return `## ${community.title}\n${community.description}\n\n${community.members} Mitglieder · ${community.people_here_now} gerade hier`;
+        return `## ${sanitizeUgcLabel(community.title)}\n${sanitizeUgcText(community.description, 500)}\n\n${community.members} Mitglieder · ${community.people_here_now} gerade hier`;
       }
       if (result.organization) {
         const org = result.organization as any;
-        return `## ${org.name}\n${org.description}`;
+        return `## ${sanitizeUgcLabel(org.name)}\n${sanitizeUgcText(org.description, 500)}`;
       }
       return String(result.message ?? "Fertig.");
     },
