@@ -456,10 +456,11 @@ async function anonymousUniversal(
 
 async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(universalInput, input);
-  const db = await getDb();
 
+  // Authorisation is decided before any database connection is opened.
   if (!isAuthenticated(meta)) {
     if (data.action !== "read") throw roomError("AUTH_REQUIRED");
+    const db = await getDb();
     return anonymousUniversal(db, {
       ...(data.limit !== undefined ? { limit: data.limit } : {}),
       cursor: data.cursor,
@@ -467,6 +468,7 @@ async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
   }
 
   const identity = await resolveIdentity(meta);
+  const db = await getDb();
   await touchPresence(db, identity.subjectHash);
 
   if (data.action === "report") {
@@ -966,12 +968,13 @@ const communitiesInput = z
 
 async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(communitiesInput, input);
-  const db = await getDb();
 
   // Signed-out callers may only read public community data — never write,
-  // join, leave or manage anything.
+  // join, leave or manage anything. Authorisation is decided before any
+  // database connection is opened.
   if (!isAuthenticated(meta)) {
     if (!isPublicAction("communities_organizations", data.action)) throw roomError("AUTH_REQUIRED");
+    const db = await getDb();
     const anon = ANONYMOUS_SUBJECT;
     if (data.action === "list_communities") {
       return tag("list_communities", {
@@ -1021,6 +1024,7 @@ async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> 
   }
 
   const identity = await resolveIdentity(meta);
+  const db = await getDb();
   await touchPresence(db, identity.subjectHash);
   const me = identity.subjectHash;
 

@@ -11,7 +11,33 @@ import { roomError } from "./errors";
 
 export type Db = SupabaseClient;
 
+/** True only inside the vitest process. Never true in a deployed runtime. */
+function isTestRuntime(): boolean {
+  return process.env["NODE_ENV"] === "test";
+}
+
+let testDb: Db | null = null;
+
+/**
+ * Test-only database injection. Outside `NODE_ENV=test` this is a no-op and
+ * the override is never consulted, so it cannot weaken production. Inside the
+ * test runtime `getDb()` is fail-closed: without an explicit override it
+ * refuses to load the real service-role client, so a normal `bun run test`
+ * can never open a connection to a live database.
+ */
+export function __setTestDb(db: Db | null): void {
+  if (!isTestRuntime()) return;
+  testDb = db;
+}
+
 export async function getDb(): Promise<Db> {
+  if (isTestRuntime()) {
+    if (testDb) return testDb;
+    throw new Error(
+      "getDb() is disabled in tests: inject a fake with __setTestDb(db). " +
+        "Real database access belongs in the opt-in contract suite (bun run test:db).",
+    );
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin as unknown as Db;
 }

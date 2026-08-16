@@ -190,9 +190,90 @@ for (const file of BRANDED_FILES) {
 /* --------------------------------- 8. scripts -------------------------------- */
 
 const pkg = JSON.parse(read("package.json") || "{}") as { scripts?: Record<string, string> };
-for (const script of ["test", "build", "typecheck", "release:check", "release:check:submit"]) {
+for (const script of [
+  "test",
+  "test:db",
+  "build",
+  "typecheck",
+  "release:check",
+  "release:check:submit",
+]) {
   check(`package script «${script}»`, Boolean(pkg.scripts?.[script]), "defined");
 }
+
+/* ------------------------------ 9. test isolation ---------------------------- */
+
+const testScript = pkg.scripts?.["test"] ?? "";
+const dbScript = pkg.scripts?.["test:db"] ?? "";
+check(
+  "standard test script carries no database opt-in",
+  !/ROOM_RUN_DB_CONTRACT_TESTS|ROOM_TEST_SUPABASE|SUPABASE_SERVICE_ROLE_KEY|db\.config/.test(
+    testScript,
+  ),
+  `«${testScript}»`,
+);
+check(
+  "database contract suite is a separate script",
+  dbScript.includes("vitest.db.config.ts"),
+  `«${dbScript}»`,
+);
+check(
+  "database contract config excluded from the default run",
+  read("vitest.config.ts").includes('include: ["src/**/*.test.ts"]') &&
+    read("vitest.db.config.ts").includes('include: ["src/**/*.db.spec.ts"]'),
+  "default run matches *.test.ts only",
+);
+
+const contract = read("src/lib/room/uniqueness.db.spec.ts");
+check(
+  "database contract suite requires its own credentials and an explicit acknowledgement",
+  contract.includes("ROOM_TEST_SUPABASE_URL") &&
+    contract.includes("ROOM_TEST_SUPABASE_SERVICE_ROLE_KEY") &&
+    contract.includes("ROOM_RUN_DB_CONTRACT_TESTS") &&
+    contract.includes("ROOM_DB_CONTRACT_WRITE_ACK") &&
+    !/process\.env\["SUPABASE_SERVICE_ROLE_KEY"\]/.test(contract),
+  "fail-closed opt-in, never the connected project credentials",
+);
+
+// No standard test may reach the service-role client or the normal service key.
+const standardTests = [
+  "auth.test.ts",
+  "branding.test.ts",
+  "consent.test.ts",
+  "docs.test.ts",
+  "guards.test.ts",
+  "legal.test.ts",
+  "phase2.test.ts",
+  "phase3.test.ts",
+  "retention.test.ts",
+  "support.test.ts",
+  "surface.test.ts",
+  "testdb.test.ts",
+  "uniqueness.test.ts",
+];
+const leaking = standardTests.filter((file) => {
+  const text = read(`src/lib/room/${file}`);
+  return (
+    text.includes("integrations/supabase/client.server") ||
+    text.includes("SUPABASE_SERVICE_ROLE_KEY = ") ||
+    /createClient\(/.test(text)
+  );
+});
+check(
+  "no standard test uses service-role database access",
+  leaking.length === 0,
+  leaking.join(", ") || "clean",
+);
+
+const store = read("src/lib/room/store.ts");
+check(
+  "test-only database override cannot be activated in production",
+  store.includes("__setTestDb") &&
+    store.includes('process.env["NODE_ENV"] === "test"') &&
+    /if \(!isTestRuntime\(\)\) return;/.test(store) &&
+    store.includes("getDb() is disabled in tests"),
+  "override is inert outside NODE_ENV=test and getDb() fails closed inside it",
+);
 
 /* --------------------------------- report ------------------------------------ */
 
