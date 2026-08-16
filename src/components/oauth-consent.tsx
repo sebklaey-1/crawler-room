@@ -264,6 +264,17 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
               Verbindung abbrechen
             </Button>
           </div>
+          <nav aria-label="Legal and support" className="flex flex-wrap gap-x-4 gap-y-2 pt-2">
+            {LEGAL_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-xs text-muted-foreground underline underline-offset-4"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
         </section>
       ) : null}
     </main>
