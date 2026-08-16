@@ -61,6 +61,19 @@ import {
   PROFILE_DISPLAY_INSTRUCTION,
 } from "./tools.profile";
 import { enterUniversal, sendUniversalMessage } from "./universal";
+import {
+  REPORT_DETAILS_HINT,
+  REPORT_DETAILS_MAX,
+  REPORT_REASONS,
+  normalizeDetails,
+  resolveCommunityTarget,
+  resolveProfileTarget,
+  resolvePublicRoomTarget,
+  resolveUniversalTarget,
+  submitReport,
+} from "./reports";
+import { listBlocks, unblockPerson } from "./profile";
+import { quoteUgcLine, sanitizeUgcLabel, sanitizeUgcText, ugcBlock } from "./ugc";
 import { findRoomByHandle, normalizeHandleInput } from "./personal";
 import { profileCard, analyticsCard } from "./mcp.render";
 import { publicRoomView } from "./tools.personal";
@@ -315,6 +328,34 @@ const imageUrlField = z
   .max(2000)
   .refine(isSafeImageUrl, "Bilder sind nur über eine öffentliche https-Adresse möglich.");
 
+/** Report reason: a closed enum, never free text. */
+const reasonField = z.enum(REPORT_REASONS);
+
+/** Optional context for a report. Trimmed, max 500 characters, never empty. */
+const detailsField = z
+  .string()
+  .trim()
+  .min(1, "Die Zusatzangabe darf nicht leer sein.")
+  .max(REPORT_DETAILS_MAX);
+
+const REPORT_OUTPUT_KEYS = [
+  "reported",
+  "already_reported",
+  "status",
+  "receipt",
+  "message",
+] as const;
+
+const REPORT_OUTPUT_PROPERTIES: Json = {
+  reported: { type: "boolean" },
+  already_reported: { type: "boolean" },
+  status: { type: "string", enum: ["received", "reviewing", "actioned", "dismissed"] },
+  receipt: { type: "string" },
+};
+
+const REPORT_DESCRIPTION =
+  `action=report meldet einen Inhalt zur menschlichen Prüfung. reason ist ein fester Grund (${REPORT_REASONS.join(", ")}), details ist optional und höchstens ${REPORT_DETAILS_MAX} Zeichen. ${REPORT_DETAILS_HINT} Eine Meldung entfernt oder sperrt nichts automatisch.`;
+
 function tag<T extends Json>(action: string, result: T): Json {
   return { action, ...result };
 }
@@ -323,8 +364,12 @@ function tag<T extends Json>(action: string, result: T): Json {
 
 const universalInput = z
   .object({
-    action: z.enum(["enter", "read", "send"]),
+    action: z.enum(["enter", "read", "send", "report"]),
     text: z.string().max(2000).optional(),
+    target_type: z.enum(["message", "image"]).optional(),
+    target_id: z.string().trim().min(1).max(200).optional(),
+    reason: reasonField.optional(),
+    details: detailsField.optional(),
     limit: z.number().int().min(1).max(50).optional(),
     cursor: z.string().max(40).optional(),
     idempotency_key: z.string().max(80).optional(),
@@ -421,6 +466,22 @@ async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const identity = await resolveIdentity(meta);
   await touchPresence(db, identity.subjectHash);
 
+  if (data.action === "report") {
+    const target = await resolveUniversalTarget(
+      db,
+      need(data.target_type, "Bitte gib an, ob eine Nachricht oder ein Bild gemeldet wird."),
+      need(data.target_id, "Bitte gib die id des gemeldeten Inhalts an."),
+    );
+    return tag("report", {
+      ...(await submitReport(db, {
+        reporterSubjectHash: identity.subjectHash,
+        target,
+        reason: need(data.reason, "Bitte wähle einen Meldegrund."),
+        details: normalizeDetails(data.details),
+      })),
+    });
+  }
+
   const membership = await enterUniversal(db, identity.subjectHash);
   const online = await countOnline(db, membership.roomId);
 
@@ -471,11 +532,15 @@ async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
 
 const publicRoomInput = z
   .object({
-    action: z.enum(["mine", "open", "update", "leave", "send"]),
+    action: z.enum(["mine", "open", "update", "leave", "send", "report"]),
     username: handleField(64).optional(),
     text: z.string().max(2000).optional(),
     room_name: name(80).optional(),
     description: text(500).optional(),
+    target_type: z.enum(["room", "message", "image"]).optional(),
+    target_id: z.string().trim().min(1).max(200).optional(),
+    reason: reasonField.optional(),
+    details: detailsField.optional(),
   })
   .strict();
 
@@ -489,6 +554,26 @@ async function publicRoomHandler(input: unknown, meta: McpMeta): Promise<Json> {
       "open",
       (await publicRoomView(db, need(data.username, "Bitte nenne den @handle des Raums."))) as Json,
     );
+  }
+
+  if (data.action === "report") {
+    const db = await getDb();
+    const identity = await resolveIdentity(meta);
+    const targetType = need(data.target_type, "Bitte gib an, was gemeldet wird.");
+    const target = await resolvePublicRoomTarget(
+      db,
+      targetType,
+      need(data.username, "Bitte nenne den @handle des Raums."),
+      data.target_id,
+    );
+    return tag("report", {
+      ...(await submitReport(db, {
+        reporterSubjectHash: identity.subjectHash,
+        target,
+        reason: need(data.reason, "Bitte wähle einen Meldegrund."),
+        details: normalizeDetails(data.details),
+      })),
+    });
   }
 
   switch (data.action) {
@@ -539,7 +624,17 @@ async function publicRoomHandler(input: unknown, meta: McpMeta): Promise<Json> {
 
 const profileInput = z
   .object({
-    action: z.enum(["get", "update", "change_handle", "set_image", "open_link", "block"]),
+    action: z.enum([
+      "get",
+      "update",
+      "change_handle",
+      "set_image",
+      "open_link",
+      "block",
+      "unblock",
+      "list_blocks",
+      "report",
+    ]),
     username: handleField(64).optional(),
     display_name: name(80).optional(),
     bio: text(280).optional(),
@@ -553,7 +648,8 @@ const profileInput = z
     kind: z.enum(["avatar", "banner"]).optional(),
     image_url: imageUrlField.nullable().optional(),
     remove: z.boolean().optional(),
-    reason: text(200).optional(),
+    reason: reasonField.optional(),
+    details: detailsField.optional(),
   })
   .strict();
 
@@ -620,6 +716,54 @@ async function profileHandler(input: unknown, meta: McpMeta): Promise<Json> {
           meta,
         )) as Json,
       );
+    case "unblock": {
+      const db = await getDb();
+      const identity = await resolveIdentity(meta);
+      const room = await findRoomByHandle(
+        db,
+        normalizeHandleInput(need(data.username, "Bitte nenne das Profil.")),
+      );
+      if (!room) throw roomError("NOT_FOUND", "Dieses Profil gibt es nicht.");
+      const removed = await unblockPerson(db, identity.subjectHash, room.ownerSubjectHash);
+      return tag("unblock", {
+        unblocked: true,
+        handle: room.handle,
+        message: removed
+          ? `@${room.handle} ist nicht mehr blockiert.`
+          : `@${room.handle} war nicht blockiert.`,
+      });
+    }
+    case "list_blocks": {
+      const db = await getDb();
+      const identity = await resolveIdentity(meta);
+      const blocks = await listBlocks(db, identity.subjectHash);
+      return tag("list_blocks", {
+        blocks: blocks.map((entry) => ({
+          handle: entry.handle,
+          display_name: sanitizeUgcLabel(entry.display_name),
+        })),
+        total: blocks.length,
+        message: blocks.length
+          ? `Du blockierst ${blocks.length} Profile.`
+          : "Du blockierst niemanden.",
+      });
+    }
+    case "report": {
+      const db = await getDb();
+      const identity = await resolveIdentity(meta);
+      const target = await resolveProfileTarget(
+        db,
+        need(data.username, "Bitte nenne das @handle des Profils."),
+      );
+      return tag("report", {
+        ...(await submitReport(db, {
+          reporterSubjectHash: identity.subjectHash,
+          target,
+          reason: need(data.reason, "Bitte wähle einen Meldegrund."),
+          details: normalizeDetails(data.details),
+        })),
+      });
+    }
   }
 }
 
@@ -786,7 +930,12 @@ const communitiesInput = z
       "list_members",
       "add_member",
       "remove_member",
+      "report",
     ]),
+    target_type: z.enum(["community", "organization", "message"]).optional(),
+    target_id: z.string().trim().min(1).max(200).optional(),
+    reason: reasonField.optional(),
+    details: detailsField.optional(),
     community: handleField(120).optional(),
     organization: handleField(120).optional(),
     title: name(120).optional(),
@@ -868,6 +1017,23 @@ async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> 
   const identity = await resolveIdentity(meta);
   await touchPresence(db, identity.subjectHash);
   const me = identity.subjectHash;
+
+  if (data.action === "report") {
+    const targetType = need(data.target_type, "Bitte gib an, was gemeldet wird.");
+    const reference =
+      targetType === "organization"
+        ? need(data.organization, "Bitte nenne die Organisation.")
+        : need(data.community, "Bitte nenne die Community.");
+    const target = await resolveCommunityTarget(db, targetType, reference, data.target_id);
+    return tag("report", {
+      ...(await submitReport(db, {
+        reporterSubjectHash: me,
+        target,
+        reason: need(data.reason, "Bitte wähle einen Meldegrund."),
+        details: normalizeDetails(data.details),
+      })),
+    });
+  }
 
   switch (data.action) {
     case "list_communities":
