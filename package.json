@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:db": "vitest run --config vitest.db.config.ts",
     "test:watch": "vitest",
     "release:check": "bun run scripts/release-check.ts",
     "release:check:submit": "bun run scripts/release-submit-check.ts",

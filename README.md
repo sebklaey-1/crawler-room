@@ -60,9 +60,28 @@ writing action requires an OAuth 2.1 access token bound to the canonical resourc
 ```sh
 bun install
 bun run dev        # http://localhost:8080
-bun run test       # Vitest suite
+bun run test       # Vitest suite — no network, no database, no writes
 bun run typecheck
 bun run lint
 ```
+
+`bun run test` is completely side-effect free: `getDb()` is fail-closed under
+`NODE_ENV=test` and only returns a fake injected through the test-only
+`__setTestDb()` hook, so a test run can never touch a live database — even when
+production Supabase credentials are present in the environment.
+
+Database contract tests write rows and are therefore opt-in only:
+
+```sh
+ROOM_RUN_DB_CONTRACT_TESTS=1 \
+ROOM_DB_CONTRACT_WRITE_ACK=i-write-to-a-disposable-test-database \
+ROOM_TEST_SUPABASE_URL=... \
+ROOM_TEST_SUPABASE_SERVICE_ROLE_KEY=... \
+bun run test:db
+```
+
+Use an isolated, disposable Supabase test project. The normal `SUPABASE_*`
+credentials are rejected, and a missing or unsafe value aborts before any
+network call.
 
 Built by SEBKLAEY Agency — Sebastian Kläy, Bern, Switzerland.

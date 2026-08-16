@@ -18,6 +18,8 @@ import {
 } from "./auth";
 import { AUTH_META_KEY, isAuthenticated, readAuthMeta, sanitizeClientMeta } from "./identity";
 import { handleMcpRequest } from "./mcp";
+import { __setTestDb } from "./store";
+import { fakeDb } from "@/test/fake-db";
 import { isPublicAction, PUBLIC_ACTIONS, SURFACE_TOOLS } from "./mcp.surface";
 
 const URL_MCP = "http://localhost/api/public/mcp";
@@ -127,8 +129,14 @@ describe("authentication policy", () => {
 });
 
 describe("test-only auth context", () => {
+  // The whole point of this block is that the request is *accepted*; it must
+  // never reach a real database. A fake db is injected for the single call and
+  // removed again afterwards.
+  afterEach(() => __setTestDb(null));
+
   it("accepts x-room-test-user while NODE_ENV is test", async () => {
     expect(process.env["NODE_ENV"]).toBe("test");
+    __setTestDb(fakeDb());
     const response = await toolCall(
       "likes",
       { action: "like", target_type: "profile", username: "someone" },
