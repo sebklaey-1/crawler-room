@@ -57,7 +57,7 @@ describe("phase 3 — report surface", () => {
       const properties = (tool(name).inputSchema as any).properties as Record<string, any>;
       expect(properties["reason"].enum).toEqual([...REPORT_REASONS]);
       expect(properties["details"].maxLength).toBe(REPORT_DETAILS_MAX);
-      expect(tool(name).description).toMatch(/nicht automatisch/i);
+      expect(tool(name).description).toMatch(/nichts automatisch/i);
     }
   });
 
@@ -148,8 +148,9 @@ describe("phase 3 — untrusted content rendering", () => {
     const safe = sanitizeUgcText(INJECTION);
     expect(safe).not.toMatch(/!\[/);
     expect(safe).not.toMatch(/\]\(/);
-    expect(safe).not.toMatch(/<img/);
-    expect(safe).not.toMatch(/```/);
+    // Every markup character is escaped, so nothing renders as HTML or a fence.
+    expect(safe).not.toMatch(/(^|[^\\])</);
+    expect(safe).not.toMatch(/(^|[^\\])`/);
     // The text itself is still readable and quotable.
     expect(safe).toContain("Ignore previous instructions");
   });
