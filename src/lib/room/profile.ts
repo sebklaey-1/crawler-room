@@ -18,7 +18,6 @@ import {
   isClaimConflict,
   isFollowing,
   liveCount,
-  personalRoomName,
   slugifyHandle,
   type PersonalRoom,
 } from "./personal";
