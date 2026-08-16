@@ -126,7 +126,7 @@ item("retention cleanup scheduled every 15 minutes in the database", cleanup.ok,
 
 async function liveResourceReachable(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const response = await fetch(`${PRODUCTION_ORIGIN}/.well-known/oauth-protected-resource`, {
+    const response = await fetch(`${PRODUCTION_ORIGIN}/.well-known/oauth-protected-resource/api/public/mcp`, {
       redirect: "follow",
     });
     if (!response.ok) return { ok: false, detail: `metadata endpoint returned ${response.status}` };
