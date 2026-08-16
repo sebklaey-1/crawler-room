@@ -28,7 +28,26 @@ export interface PersonalRoom {
 
 /* --------------------------------- handles -------------------------------- */
 
-/** Turns any display name into a URL/mention-safe handle. */
+/**
+ * Handles are one single global namespace (`user_rooms.handle` plus every old
+ * handle kept in `handle_redirects`). The canonical form is lowercase ASCII
+ * `[a-z0-9_]{3,30}`; case and surrounding whitespace never create a second
+ * name. The database is the authority — see `public.normalize_handle`.
+ */
+export const HANDLE_PATTERN = /^[a-z0-9_]{3,30}$/;
+
+/** Canonical form of a handle, or null when the input is not a valid handle. */
+export function canonicalHandle(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.normalize("NFKC").trim().replace(/^@+/, "").toLowerCase();
+  return HANDLE_PATTERN.test(value) ? value : null;
+}
+
+/**
+ * Derives a *base* handle from an arbitrary display name. Only used to seed
+ * automatic first-time assignment and suggestions — an explicitly chosen
+ * handle is never silently slugified.
+ */
 export function slugifyHandle(alias: string): string {
   const base = alias
     .normalize("NFKD")
@@ -36,27 +55,27 @@ export function slugifyHandle(alias: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
-    .slice(0, 24);
-  return base || "member";
+    .slice(0, 30);
+  return base.length >= 3 ? base : "member";
 }
 
-/** Strips a leading "@" and normalises a handle the user typed. */
+/** Strips a leading "@" and normalises a handle the user typed; never slugifies. */
 export function normalizeHandleInput(raw: unknown): string {
-  if (typeof raw !== "string" || !raw.trim()) throw roomError("INVALID_INPUT");
-  return slugifyHandle(raw.trim().replace(/^@+/, ""));
+  const handle = canonicalHandle(raw);
+  if (!handle) {
+    throw roomError(
+      "INVALID_INPUT",
+      "Handles bestehen aus 3–30 Zeichen: Kleinbuchstaben, Zahlen und Unterstriche, keine Leerzeichen.",
+    );
+  }
+  return handle;
 }
 
-async function uniqueHandle(db: Db, subjectHash: string, desired: string): Promise<string> {
-  for (let attempt = 0; attempt < 25; attempt += 1) {
-    const candidate = attempt === 0 ? desired : `${desired}${attempt + 1}`;
-    const { data } = await db
-      .from("user_rooms")
-      .select("owner_subject_hash")
-      .eq("handle", candidate)
-      .maybeSingle();
-    if (!data || data.owner_subject_hash === subjectHash) return candidate;
-  }
-  return `${desired}_${subjectHash.slice(0, 6)}`;
+/** True when a Postgres error signals a lost handle/alias claim race. */
+export function isClaimConflict(error: unknown): boolean {
+  const value = error as { code?: string; message?: string } | null;
+  if (!value) return false;
+  return value.code === "23505" || /ALIAS_TAKEN/.test(value.message ?? "");
 }
 
 /* ------------------------------ personal room ----------------------------- */
