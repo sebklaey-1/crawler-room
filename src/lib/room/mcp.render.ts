@@ -2,7 +2,24 @@
  * Ready-to-display Markdown renderers for chat surfaces.
  * The assistant is instructed to output these strings verbatim so that banner,
  * avatar and charts appear as real images / text graphics.
+ *
+ * Everything a person typed — display name, bio, location, link, message text,
+ * alt text, alias — is untrusted UGC and is escaped before it is rendered.
+ * Only server-issued signed image URLs are emitted as active Markdown images.
  */
+import { quoteUgcLine, sanitizeUgcLabel, sanitizeUgcText, UGC_BANNER } from "./ugc";
+
+/** Escapes a URL and only allows https targets produced by the server. */
+function safeUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !value) return null;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return null;
+    return encodeURI(url.toString());
+  } catch {
+    return null;
+  }
+}
 
 export function profileCard(result: any): string {
   const p = result.profile ?? {};
@@ -11,17 +28,19 @@ export function profileCard(result: any): string {
 
   const parts: string[] = [];
 
-  if (p.banner_image_url) parts.push(`![Banner von @${p.handle}](${p.banner_image_url})`);
-  if (p.profile_image_url) parts.push(`![Profilbild von @${p.handle}](${p.profile_image_url})`);
+  const handle = sanitizeUgcLabel(p.handle);
+  const banner = safeUrl(p.banner_image_url);
+  const avatar = safeUrl(p.profile_image_url);
+  if (banner) parts.push(`![Banner von @${handle}](${banner})`);
+  if (avatar) parts.push(`![Profilbild von @${handle}](${avatar})`);
 
-  parts.push(`## ${p.display_name}\n**@${p.handle}**`);
-  if (p.bio) parts.push(`> ${String(p.bio).replace(/\n/g, "\n> ")}`);
+  parts.push(`## ${sanitizeUgcLabel(p.display_name)}\n**@${handle}**`);
+  if (p.bio) parts.push(`${UGC_BANNER}\n> ${sanitizeUgcText(p.bio, 500).replace(/\n/g, "\n> ")}`);
 
+  const externalUrl = safeUrl(p.external_url);
   const meta = [
-    p.location ? `📍 ${p.location}` : null,
-    p.external_url
-      ? `🔗 [${p.external_url}](${/^https?:\/\//.test(p.external_url) ? p.external_url : `https://${p.external_url}`})`
-      : null,
+    p.location ? `📍 ${sanitizeUgcText(p.location, 60)}` : null,
+    externalUrl ? `🔗 ${externalUrl}` : null,
     p.joined_at ? `📅 seit ${String(p.joined_at).slice(0, 10)}` : null,
   ].filter(Boolean);
   if (meta.length) parts.push(meta.join(" · "));
@@ -44,7 +63,9 @@ export function profileCard(result: any): string {
   parts.push(
     `### 💬 Nachrichten\n${
       messages.length
-        ? messages.map((m) => `- **${m.alias}**: ${m.text}  ♥ ${m.likes}`).join("\n")
+        ? `${UGC_BANNER}\n${messages
+            .map((m) => `${quoteUgcLine(m.alias, m.text)}  ♥ ${m.likes}`)
+            .join("\n")}`
         : "_Noch keine Nachrichten._"
     }`,
   );
@@ -52,7 +73,11 @@ export function profileCard(result: any): string {
   if (images.length) {
     parts.push(
       `### 🖼️ Bilder\n${images
-        .map((i) => `![${i.alt_text || "Bild"}](${i.url})\n_${i.alias} · ♥ ${i.likes}_`)
+        .map((i) => {
+          const url = safeUrl(i.url);
+          const caption = `_${sanitizeUgcLabel(i.alias)} · ♥ ${i.likes}_`;
+          return url ? `![Bild](${url})\n${caption}` : caption;
+        })
         .join("\n\n")}`,
     );
   }
@@ -100,7 +125,7 @@ export function analyticsCard(result: any): string {
     : "Noch keine Daten in diesem Zeitraum.";
 
   return [
-    `## 📊 Statistik für @${result.handle} · ${result.range_days} Tage`,
+    `## 📊 Statistik für @${sanitizeUgcLabel(result.handle)} · ${result.range_days} Tage`,
     "```text",
     chart,
     "```",
