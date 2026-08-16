@@ -208,7 +208,7 @@ describe("public reads never write", () => {
       suspended_at: null,
     };
 
-    const listDb = fakeDb({ organizations: { list: [row] } });
+    const listDb = fakeDb({ organizations: { data: [row] } });
     const orgs = await publicListOrganizations(listDb).catch(() => []);
     expect(listDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
     for (const org of orgs as any[]) {
