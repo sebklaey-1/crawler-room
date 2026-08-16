@@ -85,15 +85,22 @@ export function personalRoomName(alias: string): string {
   return /s$/i.test(trimmed) ? `${trimmed}' Room` : `${trimmed}'s Room`;
 }
 
-/** Idempotent: returns the person's permanent room, creating it on first use. */
+/**
+ * Idempotent: returns the person's permanent room, creating it on first use.
+ *
+ * Handle and public user name are claimed transactionally inside
+ * `get_or_create_personal_room`. Two people starting from the same base name
+ * at the same time therefore end up with two different valid names.
+ */
 export async function ensurePersonalRoom(db: Db, subjectHash: string): Promise<PersonalRoom> {
-  const alias = (await getCustomAlias(db, subjectHash)) ?? generateAlias(`${subjectHash}:personal`);
-  const handle = await uniqueHandle(db, subjectHash, slugifyHandle(alias));
+  const stored = await getCustomAlias(db, subjectHash);
+  const seed = stored ?? generateAlias(`${subjectHash}:personal`);
 
   const { data, error } = await db.rpc("get_or_create_personal_room", {
     p_subject_hash: subjectHash,
-    p_handle: handle,
-    p_room_name: personalRoomName(alias),
+    p_handle: slugifyHandle(seed),
+    p_room_name: personalRoomName(seed),
+    p_display_name: seed,
   });
   if (error) throw roomError("ROOM_UNAVAILABLE");
   const row = data as {
@@ -103,11 +110,14 @@ export async function ensurePersonalRoom(db: Db, subjectHash: string): Promise<P
     description?: string | null;
     created_at?: string;
   } | null;
-  if (!row?.room_id) throw roomError("ROOM_UNAVAILABLE");
+  if (!row?.room_id || !row.handle) throw roomError("ROOM_UNAVAILABLE");
+
+  // The database may have resolved a collision, so re-read the effective name.
+  const alias = stored ?? (await getCustomAlias(db, subjectHash)) ?? seed;
 
   return {
     roomId: row.room_id,
-    handle: row.handle ?? handle,
+    handle: row.handle,
     roomName: row.room_name ?? personalRoomName(alias),
     description: row.description ?? null,
     ownerSubjectHash: subjectHash,
@@ -116,23 +126,34 @@ export async function ensurePersonalRoom(db: Db, subjectHash: string): Promise<P
   };
 }
 
-/** Keeps handle and room name in sync after a display-name change. */
+/**
+ * Keeps the room name in sync after a display-name change.
+ * The handle is deliberately left untouched: only `profile/change_handle`
+ * moves a handle, so existing @mentions and links stay valid.
+ */
 export async function syncPersonalRoomName(db: Db, subjectHash: string, alias: string) {
-  const { data } = await db
+  const { data, error } = await db
     .from("user_rooms")
-    .select("id, handle, room_name")
+    .select("id, room_id, handle")
     .eq("owner_subject_hash", subjectHash)
     .maybeSingle();
+  if (error) throw roomError("INTERNAL_ERROR");
   if (!data) return null;
 
-  const handle = await uniqueHandle(db, subjectHash, slugifyHandle(alias));
   const roomName = personalRoomName(alias);
-  await db.from("user_rooms").update({ handle, room_name: roomName }).eq("id", data.id);
-  await db
+  const { error: updateError } = await db
+    .from("user_rooms")
+    .update({ room_name: roomName })
+    .eq("id", data.id);
+  if (updateError) throw roomError("INTERNAL_ERROR");
+
+  const { error: roomsError } = await db
     .from("rooms")
     .update({ title: roomName })
-    .eq("id", (data as { room_id?: string | null }).room_id ?? undefined);
-  return { handle, roomName };
+    .eq("id", data.room_id);
+  if (roomsError) throw roomError("INTERNAL_ERROR");
+
+  return { handle: data.handle, roomName };
 }
 
 export async function findRoomByHandle(db: Db, handle: string): Promise<PersonalRoom | null> {
