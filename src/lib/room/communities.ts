@@ -197,9 +197,17 @@ export async function createOrganization(
     .single();
   if (error || !data) throw roomError("INTERNAL_ERROR");
 
-  await db
+  // The owner is defined by `organizations.owner_account_id`; the membership
+  // row must use a role the database constraint allows.
+  const { error: memberError } = await db
     .from("organization_members")
-    .insert({ organization_id: (data as any).id, account_id: accountId, role: "owner" });
+    .insert({
+      organization_id: (data as any).id,
+      account_id: accountId,
+      role: toDbRole("admin"),
+    });
+  if (memberError) throw roomError("INTERNAL_ERROR");
+
 
   return serializeOrg(data, "owner");
 }
