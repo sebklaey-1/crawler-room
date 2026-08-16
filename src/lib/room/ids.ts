@@ -136,3 +136,34 @@ export async function decodeCampaignId(external: unknown): Promise<string | null
   if (!safeEqual(await campaignSignature(uuid), decoded.slice(separator + 1))) return null;
   return uuid;
 }
+
+/* ---------------------------- organization ids ---------------------------- */
+
+const ORG_PREFIX = "oid_";
+
+async function orgSignature(uuid: string): Promise<string> {
+  const secret = requireSecret("MESSAGE_ID_SECRET");
+  const digest = await hmacSha256Hex(secret, `organization:${uuid}`);
+  return digest.slice(0, SIGNATURE_LENGTH);
+}
+
+/** Opaque, signed organization reference. Raw account/owner UUIDs never leave the server. */
+export async function encodeOrgId(uuid: string): Promise<string> {
+  return ORG_PREFIX + base64UrlEncode(`${uuid}.${await orgSignature(uuid)}`);
+}
+
+export async function decodeOrgId(external: unknown): Promise<string | null> {
+  if (typeof external !== "string" || !external.startsWith(ORG_PREFIX)) return null;
+  let decoded: string;
+  try {
+    decoded = base64UrlDecode(external.slice(ORG_PREFIX.length));
+  } catch {
+    return null;
+  }
+  const separator = decoded.lastIndexOf(".");
+  if (separator <= 0) return null;
+  const uuid = decoded.slice(0, separator);
+  if (!/^[0-9a-f-]{36}$/i.test(uuid)) return null;
+  if (!safeEqual(await orgSignature(uuid), decoded.slice(separator + 1))) return null;
+  return uuid;
+}

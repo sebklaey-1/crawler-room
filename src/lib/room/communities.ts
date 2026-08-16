@@ -9,7 +9,7 @@
 import { generateAlias } from "./alias";
 import { config, retentionCutoffIso, retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
-import { encodeMessageId, encodeRoomId } from "./ids";
+import { decodeOrgId, encodeMessageId, encodeOrgId, encodeRoomId } from "./ids";
 import { normalizeHandleInput } from "./personal";
 import { countOnline, getCustomAlias, type Db } from "./store";
 import { validateMessage } from "./validation";
@@ -162,9 +162,9 @@ export async function orgRoleOf(
   return fromDbRole((data as any)?.role as string | undefined);
 }
 
-function serializeOrg(row: any, role: OrgRole | null) {
+async function serializeOrg(row: any, role: OrgRole | null) {
   return {
-    id: row.id as string,
+    id: await encodeOrgId(row.id as string),
     slug: row.slug as string | null,
     name: row.name as string,
     description: row.description ?? "",
@@ -206,7 +206,7 @@ export async function createOrganization(
   });
   if (memberError) throw roomError("INTERNAL_ERROR");
 
-  return serializeOrg(data, "owner");
+  return await serializeOrg(data, "owner");
 }
 
 export async function listOrganizations(db: Db, subjectHash: string, limit = 50) {
@@ -221,7 +221,7 @@ export async function listOrganizations(db: Db, subjectHash: string, limit = 50)
 
   const rows = (data ?? []) as any[];
   const out = [];
-  for (const row of rows) out.push(serializeOrg(row, await orgRoleOf(db, row.id, accountId)));
+  for (const row of rows) out.push(await serializeOrg(row, await orgRoleOf(db, row.id, accountId)));
   return out;
 }
 
@@ -230,6 +230,12 @@ async function findOrg(db: Db, reference: string) {
     .trim()
     .replace(/^@/, "");
   if (!value) throw roomError("INVALID_INPUT");
+  const opaque = await decodeOrgId(value);
+  if (opaque) {
+    const { data } = await db.from("organizations").select("*").eq("id", opaque).maybeSingle();
+    if (!data) throw roomError("NOT_FOUND", "Diese Organisation gibt es nicht.");
+    return data as any;
+  }
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   const query = db.from("organizations").select("*");
   const { data } = isUuid
@@ -262,13 +268,13 @@ export async function getOrganization(db: Db, subjectHash: string, reference: st
     });
   }
 
-  return { organization: serializeOrg(org, role), communities: list };
+  return { organization: await serializeOrg(org, role), communities: list };
 }
 
 /** Public, side-effect-free organization DTO: no accounts, roles or members. */
-function serializePublicOrg(row: any) {
+async function serializePublicOrg(row: any) {
   return {
-    id: row.id as string,
+    id: await encodeOrgId(row.id as string),
     slug: (row.slug as string | null) ?? null,
     name: row.name as string,
     description: row.description ?? "",
@@ -288,7 +294,7 @@ export async function publicListOrganizations(db: Db, limit = 50) {
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw roomError("INTERNAL_ERROR");
-  return ((data ?? []) as any[]).map(serializePublicOrg);
+  return await Promise.all(((data ?? []) as any[]).map(serializePublicOrg));
 }
 
 /** Anonymous organization view with its public communities. Reads only. */
@@ -314,7 +320,7 @@ export async function publicGetOrganization(db: Db, reference: string) {
   }
 
   return {
-    organization: serializePublicOrg(org),
+    organization: await serializePublicOrg(org),
     communities: list,
     community_count: list.length,
   };
@@ -337,7 +343,7 @@ export async function updateOrganization(
   if (patch.name !== undefined) update["name"] = patch.name.trim();
   if (patch.description !== undefined) update["description"] = patch.description.trim() || null;
   if (patch.website !== undefined) update["website"] = patch.website.trim() || null;
-  if (!Object.keys(update).length) return serializeOrg(org, role);
+  if (!Object.keys(update).length) return await serializeOrg(org, role);
 
   const { data, error } = await db
     .from("organizations")
@@ -346,7 +352,7 @@ export async function updateOrganization(
     .select("*")
     .single();
   if (error || !data) throw roomError("INTERNAL_ERROR");
-  return serializeOrg(data, role);
+  return await serializeOrg(data, role);
 }
 
 export async function listOrgMembers(db: Db, subjectHash: string, reference: string) {
@@ -363,7 +369,7 @@ export async function listOrgMembers(db: Db, subjectHash: string, reference: str
   if (error) throw roomError("INTERNAL_ERROR");
 
   return {
-    organization: serializeOrg(org, role),
+    organization: await serializeOrg(org, role),
     members: ((data ?? []) as any[]).map((row) => ({
       alias: row.accounts?.display_alias ?? "Mitglied",
       role: row.account_id === org.owner_account_id ? "owner" : (fromDbRole(row.role) ?? "member"),
@@ -420,7 +426,7 @@ export async function addOrgMember(
     added: !existing,
     role: safeRole,
     alias: await aliasFor(db, targetSubject),
-    organization: serializeOrg(org, myRole),
+    organization: await serializeOrg(org, myRole),
   };
 }
 
@@ -456,7 +462,7 @@ export async function removeOrgMember(
   return {
     removed: true,
     alias: await aliasFor(db, targetSubject),
-    organization: serializeOrg(org, myRole),
+    organization: await serializeOrg(org, myRole),
   };
 }
 
@@ -519,7 +525,13 @@ async function serializeCommunity(db: Db, row: CommunityRow, subjectHash: string
       .select("id, name, slug")
       .eq("id", row.organization_id)
       .maybeSingle();
-    if (org) organization = org as any;
+    if (org) {
+      organization = {
+        id: await encodeOrgId((org as any).id as string),
+        name: (org as any).name as string,
+        slug: ((org as any).slug as string | null) ?? null,
+      };
+    }
   }
 
   return {

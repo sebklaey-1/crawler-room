@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { LegalFooter } from "@/components/legal-footer";
+import { SupportContact } from "@/components/support-contact";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -208,6 +209,9 @@ function SupportPage() {
           </form>
         )}
       </main>
+      <div className="mx-auto max-w-5xl px-6 pb-8">
+        <SupportContact />
+      </div>
       <LegalFooter note="Support" />
     </div>
   );

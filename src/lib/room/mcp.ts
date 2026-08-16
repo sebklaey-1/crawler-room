@@ -28,6 +28,7 @@ import { SERVICE_NAME, SERVICE_VERSION } from "./config";
 import { RoomError, toRoomError } from "./errors";
 import { AUTH_META_KEY, sanitizeClientMeta, type McpMeta } from "./identity";
 import { PUBLIC_ACTIONS, SURFACE_TOOLS, type SurfaceTool } from "./mcp.surface";
+import { enforceOutputContract } from "./output";
 import { getDb } from "./store";
 
 const PROTOCOL_VERSION = "2025-06-18";
@@ -78,10 +79,35 @@ function rpcError(id: unknown, code: number, message: string) {
   return { jsonrpc: "2.0", id, error: { code, message } };
 }
 
-function logEvent(event: Record<string, unknown>) {
-  // Structured logs, never message content and never tokens.
+/**
+ * Structured operational log. Only tool name, action, result code, duration
+ * and a non-reversible random request id. Never arguments, message bodies,
+ * URLs, tokens, subject hashes or user identifiers.
+ */
+function logEvent(event: {
+  tool: string;
+  action?: string | undefined;
+  ok: boolean;
+  code?: string;
+  ms: number;
+  requestId: string;
+}) {
   console.log(JSON.stringify({ service: SERVICE_NAME, ...event }));
 }
+
+/** Random, non-reversible correlation id — derived from nothing about the caller. */
+function newRequestId(): string {
+  return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+}
+
+/** Only the literal action discriminator is log-safe; anything else is dropped. */
+function safeAction(params: any, tool: SurfaceTool): string | undefined {
+  const value = params?.arguments?.action;
+  if (typeof value !== "string") return undefined;
+  const allowed = ((tool.inputSchema as any)?.properties?.action?.enum ?? []) as string[];
+  return allowed.includes(value) ? value : undefined;
+}
+
 
 /** Builds the `_meta` a handler sees: client data minus `room/*`, plus auth. */
 async function buildMeta(params: any, context: RequestContext): Promise<McpMeta> {
@@ -111,26 +137,39 @@ async function callTool(params: any, context: RequestContext) {
   }
 
   const started = Date.now();
+  const requestId = newRequestId();
+  const action = safeAction(params, tool);
   try {
     const meta = await buildMeta(params, context);
     const result = (await tool.handler(params?.arguments ?? {}, meta)) as Record<string, unknown>;
-    logEvent({
-      tool: tool.name,
-      ok: true,
-      authenticated: Boolean(context.auth),
-      ms: Date.now() - started,
-    });
+
     // `_content` carries MCP content blocks (e.g. an image) and never ships as data.
-    const { _content, ...structured } = result as { _content?: unknown[] };
+    const { _content, ...raw } = result as { _content?: unknown[] };
+
+    let structured: Json;
+    try {
+      structured = enforceOutputContract(tool.outputSchema, raw);
+    } catch {
+      logEvent({ tool: tool.name, action, ok: false, code: "INTERNAL_ERROR", ms: Date.now() - started, requestId });
+      const failure = new RoomError("INTERNAL_ERROR");
+      return {
+        content: [{ type: "text", text: failure.message }],
+        structuredContent: failure.toPayload(),
+        isError: true,
+      };
+    }
+
+    logEvent({ tool: tool.name, action, ok: true, ms: Date.now() - started, requestId });
     return {
-      content: _content ?? [{ type: "text", text: tool.summary(result as Json) }],
+      content: _content ?? [{ type: "text", text: tool.summary(structured as Json) }],
       structuredContent: structured,
     };
+
   } catch (unknownError) {
     const error = toRoomError(unknownError);
     if (error.code === "AUTH_REQUIRED") context.authRequired = true;
     if (error.code === "INVALID_TOKEN") context.challenge = "invalid_token";
-    logEvent({ tool: tool.name, ok: false, code: error.code, ms: Date.now() - started });
+    logEvent({ tool: tool.name, action, ok: false, code: error.code, ms: Date.now() - started, requestId });
     const needsAuth = error.code === "AUTH_REQUIRED" || error.code === "INVALID_TOKEN";
     return {
       content: [{ type: "text", text: error.message }],
