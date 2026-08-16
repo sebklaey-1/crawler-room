@@ -194,12 +194,9 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-5xl px-6 py-8 text-sm text-muted-foreground">
-          @room {data?.version ? `v${data.version}` : ""} — anonymous rooms, profiles and
-          communities.
-        </div>
-      </footer>
+      <LegalFooter
+        note={`@room ${data?.version ? `v${data.version}` : ""} — anonymous rooms, profiles and communities`}
+      />
     </div>
   );
 }
