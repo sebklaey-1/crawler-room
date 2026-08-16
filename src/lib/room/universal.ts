@@ -38,17 +38,27 @@ export async function enterUniversal(
     p_alias: alias,
   });
   if (error) throw roomError("ROOM_UNAVAILABLE");
-  const result = data as Record<string, any> | null;
-  if (!result || result["error"]) throw roomError("ROOM_UNAVAILABLE");
+  const result = data as {
+    error?: string;
+    room_id?: string;
+    membership_id?: string;
+    alias?: string;
+    joined_at?: string;
+    last_read_message_id?: number | null;
+    presence?: number;
+    joined_now?: boolean;
+  } | null;
+  if (!result || result.error || !result.room_id || !result.membership_id)
+    throw roomError("ROOM_UNAVAILABLE");
 
   return {
-    roomId: result["room_id"],
-    membershipId: result["membership_id"],
-    alias: result["alias"],
-    joinedAt: result["joined_at"],
-    lastReadMessageId: result["last_read_message_id"] ?? null,
-    presence: Number(result["presence"] ?? 0),
-    joinedNow: Boolean(result["joined_now"]),
+    roomId: result.room_id,
+    membershipId: result.membership_id,
+    alias: result.alias ?? alias,
+    joinedAt: result.joined_at ?? new Date().toISOString(),
+    lastReadMessageId: result.last_read_message_id ?? null,
+    presence: Number(result.presence ?? 0),
+    joinedNow: Boolean(result.joined_now),
   };
 }
 

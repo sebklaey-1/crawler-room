@@ -1,4 +1,9 @@
-import { asRecord } from "./jsonschema";
+import { asRecord, branchesOf } from "./jsonschema";
+
+/** The `tools` array of a `tools/list` response body. */
+function toolList(body: unknown): unknown[] {
+  return (asRecord(asRecord(body)["result"])["tools"] ?? []) as unknown[];
+}
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -105,17 +110,19 @@ describe("authentication policy", () => {
 
   it("advertises which actions need an account in tools/list", async () => {
     const response = await post({ jsonrpc: "2.0", id: 1, method: "tools/list" });
-    const body = await response.json();
-    const likes = body.result.tools.find((tool: any) => tool.name === "likes");
-    expect(likes._meta["room/public_actions"]).toEqual([]);
-    expect(likes._meta["room/authenticated_actions"]).toEqual(["like", "unlike"]);
-    const universal = body.result.tools.find((tool: any) => tool.name === "universal_room");
+    const tools = toolList(await response.json());
+    const likes = asRecord(tools.find((tool) => asRecord(tool)["name"] === "likes"));
+    const likesMeta = asRecord(likes["_meta"]);
+    expect(likesMeta["room/public_actions"]).toEqual([]);
+    expect(likesMeta["room/authenticated_actions"]).toEqual(["like", "unlike"]);
+    const universal = asRecord(tools.find((tool) => asRecord(tool)["name"] === "universal_room"));
     expect(
-      universal.outputSchema.oneOf.map((branch: any) => branch.properties.action.const),
+      branchesOf(universal["outputSchema"]).map((branch) => branch.properties?.["action"]?.const),
     ).toEqual(["enter", "read", "send", "report"]);
-    expect(universal._meta["room/public_actions"]).toEqual(["read"]);
+    const universalMeta = asRecord(universal["_meta"]);
+    expect(universalMeta["room/public_actions"]).toEqual(["read"]);
     // Reporting is a safety action and always needs a verified OAuth identity.
-    expect(universal._meta["room/authenticated_actions"]).toContain("report");
+    expect(universalMeta["room/authenticated_actions"]).toContain("report");
   });
 });
 
@@ -151,16 +158,20 @@ describe("test-only auth context", () => {
 
   it("advertises security schemes per tool", async () => {
     const response = await post({ jsonrpc: "2.0", id: 1, method: "tools/list" });
-    const body = await response.json();
-    for (const tool of body.result.tools) {
-      expect(tool.securitySchemes).toEqual(tool._meta.securitySchemes);
-      const types = tool.securitySchemes.map((scheme: any) => scheme.type);
+    const tools = toolList(await response.json());
+    for (const entry of tools) {
+      const tool = asRecord(entry);
+      const schemes = (tool["securitySchemes"] ?? []) as Array<{ type?: string }>;
+      expect(schemes).toEqual(asRecord(tool["_meta"])["securitySchemes"]);
+      const types = schemes.map((scheme) => scheme.type);
       expect(types).toContain("oauth2");
-      expect(types.includes("noauth")).toBe((PUBLIC_ACTIONS[tool.name] ?? []).length > 0);
+      expect(types.includes("noauth")).toBe(
+        (PUBLIC_ACTIONS[String(tool["name"])] ?? []).length > 0,
+      );
     }
     for (const name of ["followers_notifications", "likes", "analytics"]) {
-      const tool = body.result.tools.find((entry: any) => entry.name === name);
-      expect(tool.securitySchemes).toEqual([{ type: "oauth2", scopes: ["openid", "profile"] }]);
+      const tool = asRecord(tools.find((entry) => asRecord(entry)["name"] === name));
+      expect(tool["securitySchemes"]).toEqual([{ type: "oauth2", scopes: ["openid", "profile"] }]);
     }
   });
 });
