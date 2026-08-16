@@ -62,6 +62,60 @@ export async function enterUniversal(
   };
 }
 
+/* ------------------------- profile-based identity ------------------------- */
+
+/**
+ * The Universal Room is profile-based public, not anonymous: a message is
+ * shown under the author's personal room handle (`@satoshi`).
+ *
+ * SECURITY: the handle is resolved server-side from the pseudonymous subject
+ * hash stored on the membership row. A handle supplied as tool input is never
+ * trusted, so spoofing another profile is impossible.
+ *
+ * Fallback: subjects without a personal room (no handle) keep their generated
+ * membership alias, so historical rows stay renderable and no data is touched.
+ */
+export async function universalHandles(
+  db: Db,
+  subjectHashes: Array<string | null | undefined>,
+): Promise<Map<string, string>> {
+  const unique = [...new Set(subjectHashes.filter((value): value is string => Boolean(value)))];
+  const map = new Map<string, string>();
+  if (!unique.length) return map;
+
+  const { data } = await db
+    .from("user_rooms")
+    .select("owner_subject_hash, handle")
+    .in("owner_subject_hash", unique);
+
+  for (const row of (data ?? []) as Array<{ owner_subject_hash?: string; handle?: string }>) {
+    if (row.owner_subject_hash && row.handle) {
+      map.set(row.owner_subject_hash, `@${row.handle}`);
+    }
+  }
+  return map;
+}
+
+/** Visible sender label: profile handle when present, generated alias otherwise. */
+export function universalSender(
+  handle: string | null | undefined,
+  fallbackAlias: string | null | undefined,
+): string {
+  if (handle && handle.trim()) return handle.trim();
+  const alias = fallbackAlias?.trim();
+  return alias || "Unbekannt";
+}
+
+/** Handle of a single subject, or the given fallback alias. */
+export async function universalSelfLabel(
+  db: Db,
+  subjectHash: string,
+  fallbackAlias: string,
+): Promise<string> {
+  const map = await universalHandles(db, [subjectHash]);
+  return universalSender(map.get(subjectHash), fallbackAlias);
+}
+
 /** Never expose exact small numbers or a user list. */
 export function presenceLabel(count: number): { bucket: string; approximate: number } {
   if (count <= 5) return { bucket: "einige Personen online", approximate: 5 };
