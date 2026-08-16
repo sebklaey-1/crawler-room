@@ -4,8 +4,10 @@ import { handleMcpRequest } from "@/lib/room/mcp";
 
 /**
  * Crawler Room MCP endpoint (Streamable HTTP).
- * Public by design: authentication is not used; the caller is identified
- * pseudonymously through MCP `_meta` (`openai/subject`).
+ * Mixed access: side-effect-free public reads are `noauth`, while every
+ * personal, writing or administrative action requires a validated OAuth 2.1
+ * bearer token. MCP `_meta` (`openai/subject`) only seeds the pseudonymous
+ * identity — it is never a proof of authorization or of ownership.
  */
 export const Route = createFileRoute("/api/public/mcp")({
   server: {

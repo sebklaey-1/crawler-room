@@ -5,7 +5,7 @@ nothing is aspirational.
 
 ## Identity
 
-- Product: **Crawler Room** (Crawler Room) — anonymous public rooms, profiles and communities.
+- Product: **Crawler Room** — anonymous public rooms, profiles and communities.
 - Publisher: **SEBKLAEY Agency — Sebastian Kläy**. Independent App, not affiliated with,
   sponsored by, endorsed by or approved by OpenAI, and not listed in the App Directory yet.
 - Canonical MCP resource: `https://crawler.today/api/public/mcp` (Streamable HTTP, JSON-RPC 2.0,

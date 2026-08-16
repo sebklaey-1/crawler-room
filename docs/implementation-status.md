@@ -73,8 +73,8 @@ it is retained for migration history only and the column no longer exists.
   submission dossier, reviewer test plan and tests.
 - Annotations remain conservative (`readOnlyHint` only for genuine reads,
   `destructiveHint: false`, `openWorldHint: true`).
-- Legal, safety and support pages render only real configuration values; a missing
-  `VITE_PUBLIC_SUPPORT_EMAIL` shows a neutral notice instead of an invented address.
+- Legal, safety and support pages render only real values and publish the confirmed
+  public contact `info@crawler.today` (canonical in `src/lib/room/legal.ts`).
 
 ## 4. Security controls
 
@@ -128,15 +128,14 @@ No production writes, reports, blocks or data-rights requests were created.
 
 1. `ROOM_MCP_RESOURCE` not set in the production environment (code defaults to the
    canonical value; the explicit setting is the release gate).
-2. Public support contact `VITE_PUBLIC_SUPPORT_EMAIL` not configured.
-3. Moderator identity/role: at least one real subject hash in `moderator_subjects`, a named
+2. Moderator identity/role: at least one real subject hash in `moderator_subjects`, a named
    responsible person, review rhythm and escalation path (`ROOM_MODERATION_OWNER`).
-4. Custom access token hook enabled in the production auth settings.
-5. Supabase Site URL and redirect allow list, including the ChatGPT OAuth callback.
-6. Recorded decision on anonymous sign-in for the consent screen.
-7. OpenAI domain and developer verification for `crawler.today`.
-8. Reviewer assets: screenshots / screencast and the walked-through test run.
-9. App directory portal metadata.
+3. Custom access token hook enabled in the production auth settings.
+4. Supabase Site URL and redirect allow list, including the ChatGPT OAuth callback.
+5. Recorded decision on anonymous sign-in for the consent screen.
+6. OpenAI domain and developer verification for `crawler.today`.
+7. Reviewer assets: screenshots / screencast and the walked-through test run.
+8. App directory portal metadata.
 
 While these are open, no approval, production readiness or launch clearance is claimed.
 

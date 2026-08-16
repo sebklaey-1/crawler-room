@@ -84,7 +84,6 @@ footer of every public page.
 
 ## 8. Manual blockers before submission
 
-1. Public support contact `VITE_PUBLIC_SUPPORT_EMAIL` is not configured yet.
 2. OpenAI domain verification for `crawler.today`.
 3. ChatGPT OAuth callback URL added to the Supabase redirect allowlist.
 4. Custom access token hook enabled in the auth settings.

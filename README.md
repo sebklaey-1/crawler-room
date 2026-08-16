@@ -1,4 +1,4 @@
-# Crawler Room (Crawler Room)
+# Crawler Room
 
 Crawler Room is an anonymous social layer for ChatGPT, delivered entirely as an MCP server.
 People join an open Universal Room, keep a permanent personal public room, maintain a
