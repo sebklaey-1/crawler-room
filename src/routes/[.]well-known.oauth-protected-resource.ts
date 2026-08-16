@@ -9,6 +9,8 @@ const CORS = {
 };
 
 function metadataResponse(request: Request) {
+  // The canonical resource comes from configuration (ROOM_MCP_RESOURCE), never
+  // from a spoofable Host header. Only the test harness derives it from origin.
   const origin = new URL(request.url).origin;
   return new Response(JSON.stringify(protectedResourceMetadata(origin)), {
     status: 200,
