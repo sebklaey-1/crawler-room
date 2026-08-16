@@ -286,7 +286,7 @@ export function protectedResourceMetadata(requestOrigin?: string) {
     bearer_methods_supported: ["header"],
     scopes_supported: [...REQUIRED_SCOPES],
     resource_name: "Crawler Room",
-    resource_documentation: new URL(resource).origin + "/",
+    resource_documentation: new URL(resource).origin + "/crawler-room",
   };
 }
 
