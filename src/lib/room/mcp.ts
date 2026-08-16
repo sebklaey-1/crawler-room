@@ -28,6 +28,7 @@ import { SERVICE_NAME, SERVICE_VERSION } from "./config";
 import { RoomError, toRoomError } from "./errors";
 import { AUTH_META_KEY, sanitizeClientMeta, type McpMeta } from "./identity";
 import { PUBLIC_ACTIONS, SURFACE_TOOLS, type SurfaceTool } from "./mcp.surface";
+import { enforceOutputContract } from "./output";
 import { getDb } from "./store";
 
 const PROTOCOL_VERSION = "2025-06-18";
@@ -168,7 +169,7 @@ async function callTool(params: any, context: RequestContext) {
     const error = toRoomError(unknownError);
     if (error.code === "AUTH_REQUIRED") context.authRequired = true;
     if (error.code === "INVALID_TOKEN") context.challenge = "invalid_token";
-    logEvent({ tool: tool.name, ok: false, code: error.code, ms: Date.now() - started });
+    logEvent({ tool: tool.name, action, ok: false, code: error.code, ms: Date.now() - started, requestId });
     const needsAuth = error.code === "AUTH_REQUIRED" || error.code === "INVALID_TOKEN";
     return {
       content: [{ type: "text", text: error.message }],
