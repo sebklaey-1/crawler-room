@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { LegalFooter } from "@/components/legal-footer";
+import { SupportContact } from "@/components/support-contact";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -242,6 +243,9 @@ function PrivacyPage() {
           </p>
         </Section>
       </main>
+      <div className="mx-auto max-w-5xl px-6 pb-8">
+        <SupportContact />
+      </div>
       <LegalFooter note="Privacy" />
     </div>
   );
