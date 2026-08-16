@@ -180,7 +180,7 @@ async function requirePublicRoom(db: Db, username: unknown): Promise<PersonalRoo
  * the other room, send into it or follow it. Reading the Universal Room and
  * public community rooms stays unaffected — that is documented on /safety.
  */
-async function refuseWhenBlocked(db: any, me: string, owner: string): Promise<void> {
+async function refuseWhenBlocked(db: Db, me: string, owner: string): Promise<void> {
   if (me === owner) return;
   const { isBlocked } = await import("./profile");
   if (await isBlocked(db, me, owner)) {

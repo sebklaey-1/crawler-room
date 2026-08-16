@@ -77,7 +77,7 @@ export async function joinTopicRoom(
   });
   if (error) throw roomError("ROOM_UNAVAILABLE");
 
-  const result = data as Record<string, any> | null;
+  const result = data as Record<string, unknown> | null;
   if (!result) throw roomError("ROOM_UNAVAILABLE");
   if (result["error"] === "TOPIC_NOT_FOUND") throw roomError("TOPIC_NOT_FOUND");
 

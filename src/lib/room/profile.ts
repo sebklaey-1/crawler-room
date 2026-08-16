@@ -176,7 +176,7 @@ export interface ProfileRow extends PersonalRoom {
 const PROFILE_COLUMNS =
   "room_id, handle, room_name, description, avatar_path, banner_path, location, external_url, profile_visibility, show_online_status, show_follower_count, show_likes, owner_subject_hash, created_at";
 
-function mapProfile(row: any, ownerAlias: string): ProfileRow {
+function mapProfile(row: Record<string, unknown>, ownerAlias: string): ProfileRow {
   return {
     roomId: row.room_id,
     handle: row.handle,

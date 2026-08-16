@@ -163,7 +163,7 @@ export async function orgRoleOf(
   return fromDbRole(data?.role as string | undefined);
 }
 
-async function serializeOrg(row: any, role: OrgRole | null) {
+async function serializeOrg(row: Record<string, unknown>, role: OrgRole | null) {
   return {
     id: await encodeOrgId(row.id as string),
     slug: row.slug as string | null,
@@ -273,7 +273,7 @@ export async function getOrganization(db: Db, subjectHash: string, reference: st
 }
 
 /** Public, side-effect-free organization DTO: no accounts, roles or members. */
-async function serializePublicOrg(row: any) {
+async function serializePublicOrg(row: Record<string, unknown>) {
   return {
     id: await encodeOrgId(row.id as string),
     slug: (row.slug as string | null) ?? null,

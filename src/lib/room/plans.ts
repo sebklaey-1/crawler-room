@@ -90,7 +90,7 @@ const AD_DEFAULTS: AdSettings = {
   default_cost_per_entry_cents: 50,
 };
 
-export async function getSetting<T extends Record<string, any>>(
+export async function getSetting<T extends Record<string, unknown>>(
   db: Db,
   key: string,
   fallback: T,

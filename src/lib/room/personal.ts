@@ -77,7 +77,7 @@ export async function ensurePersonalRoom(db: Db, subjectHash: string): Promise<P
     p_room_name: personalRoomName(alias),
   });
   if (error) throw roomError("ROOM_UNAVAILABLE");
-  const row = data as Record<string, any> | null;
+  const row = data as Record<string, unknown> | null;
   if (!row?.["room_id"]) throw roomError("ROOM_UNAVAILABLE");
 
   return {

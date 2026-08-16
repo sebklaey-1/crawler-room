@@ -35,13 +35,13 @@ const METHODS = [
 ] as const;
 
 function builder(result: TableResult, methodLog: string[] = []) {
-  const target: any = {};
+  const target = {} as Record<string, unknown> & { then?: unknown };
   for (const method of METHODS)
     target[method] = () => {
       methodLog.push(method);
       return target;
     };
-  target.then = (resolve: any, reject: any) =>
+  target.then = (resolve: (value: unknown) => unknown, reject: (reason: unknown) => unknown) =>
     Promise.resolve({ data: null, error: null, count: 0, ...result }).then(resolve, reject);
   return target;
 }
@@ -50,7 +50,7 @@ export function fakeDb(tables: Record<string, TableResult> = {}) {
   const calls: Array<{ table: string }> = [];
   /** Every builder method used, so tests can assert read-only behaviour. */
   const methods: string[] = [];
-  const db: any = {
+  const db = {
     calls,
     methods,
     from(table: string) {

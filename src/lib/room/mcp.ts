@@ -113,7 +113,7 @@ function safeAction(params: JsonRpcParams, tool: SurfaceTool): string | undefine
 }
 
 /** Builds the `_meta` a handler sees: client data minus `room/*`, plus auth. */
-async function buildMeta(params: any, context: RequestContext): Promise<McpMeta> {
+async function buildMeta(params: JsonRpcParams, context: RequestContext): Promise<McpMeta> {
   const meta = sanitizeClientMeta((params?._meta ?? {}) as McpMeta);
   meta["room/origin"] = context.origin;
 
@@ -129,7 +129,7 @@ async function buildMeta(params: any, context: RequestContext): Promise<McpMeta>
   return meta;
 }
 
-async function callTool(params: any, context: RequestContext) {
+async function callTool(params: JsonRpcParams, context: RequestContext) {
   const tool = TOOLS.find((entry) => entry.name === params?.name);
   if (!tool) {
     return {
@@ -254,7 +254,7 @@ export function validateRpcMessage(message: unknown): { code: number; message: s
   return null;
 }
 
-async function handleRpc(message: any, context: RequestContext): Promise<Json | null> {
+async function handleRpc(message: Record<string, unknown>, context: RequestContext): Promise<Json | null> {
   const invalid = validateRpcMessage(message);
   if (invalid) {
     const id =
@@ -262,7 +262,11 @@ async function handleRpc(message: any, context: RequestContext): Promise<Json | 
     return rpcError(id, invalid.code, invalid.message);
   }
 
-  const { id, method, params } = message as { id?: unknown; method: string; params?: any };
+  const { id, method, params } = message as {
+    id?: unknown;
+    method: string;
+    params?: JsonRpcParams;
+  };
   const isNotification = !("id" in (message as object));
 
   switch (method) {
