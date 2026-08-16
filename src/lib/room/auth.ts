@@ -169,9 +169,14 @@ export function protectedResourceMetadata(origin: string) {
   };
 }
 
-export function challengeHeader(origin: string, error?: "invalid_token" | "insufficient_scope"): string {
+export function challengeHeader(
+  origin: string,
+  error?: "invalid_token" | "insufficient_scope",
+  description?: string,
+): string {
   const metadata = `${origin}/.well-known/oauth-protected-resource`;
   const parts = [`Bearer resource_metadata="${metadata}"`];
   if (error) parts.push(`error="${error}"`);
+  if (description) parts.push(`error_description="${description.replace(/"/g, "'")}"`);
   return parts.join(", ");
 }

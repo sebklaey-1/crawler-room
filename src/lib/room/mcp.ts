@@ -110,10 +110,24 @@ async function callTool(params: any, context: RequestContext) {
     if (error.code === "AUTH_REQUIRED") context.authRequired = true;
     if (error.code === "INVALID_TOKEN") context.challenge = "invalid_token";
     logEvent({ tool: tool.name, ok: false, code: error.code, ms: Date.now() - started });
+    const needsAuth = error.code === "AUTH_REQUIRED" || error.code === "INVALID_TOKEN";
     return {
       content: [{ type: "text", text: error.message }],
       structuredContent: error.toPayload(),
       isError: true,
+      ...(needsAuth
+        ? {
+            _meta: {
+              "mcp/www_authenticate": challengeHeader(
+                context.origin,
+                error.code === "INVALID_TOKEN" ? "invalid_token" : undefined,
+                error.code === "INVALID_TOKEN"
+                  ? "The access token is invalid or expired."
+                  : "Sign in to @room to use this action.",
+              ),
+            },
+          }
+        : {}),
     };
   }
 }
@@ -128,7 +142,9 @@ function describeTool(tool: SurfaceTool) {
     inputSchema: tool.inputSchema,
     outputSchema: tool.outputSchema,
     annotations: tool.annotations,
+    securitySchemes: tool.securitySchemes ?? [],
     _meta: {
+      securitySchemes: tool.securitySchemes ?? [],
       "room/public_actions": publicActions,
       "room/authenticated_actions": allActions.filter((action) => !publicActions.includes(action)),
     },

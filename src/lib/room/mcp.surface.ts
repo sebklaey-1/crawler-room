@@ -70,6 +70,8 @@ export interface SurfaceTool {
   inputSchema: Json;
   outputSchema: Json;
   annotations: Json;
+  /** MCP security schemes advertised in tools/list (noauth and/or oauth2). */
+  securitySchemes?: Json[];
   handler: (input: unknown, meta: McpMeta) => Promise<Json>;
   summary: (result: any) => string;
 }
@@ -90,6 +92,19 @@ export const PUBLIC_ACTIONS: Record<string, readonly string[]> = {
   analytics: [],
   communities_organizations: ["list_communities", "get_community", "read_community"],
 };
+
+/**
+ * MCP security schemes per tool. Only scopes that the authorization server
+ * really issues are declared; authorisation itself is action-based on the server.
+ */
+export const OAUTH_SCOPES = ["openid", "profile"] as const;
+
+export function securitySchemesFor(tool: string): Json[] {
+  const schemes: Json[] = [];
+  if ((PUBLIC_ACTIONS[tool] ?? []).length > 0) schemes.push({ type: "noauth" });
+  schemes.push({ type: "oauth2", scopes: [...OAUTH_SCOPES] });
+  return schemes;
+}
 
 export function isPublicAction(tool: string, action: unknown): boolean {
   if (typeof action !== "string") return false;
@@ -1134,3 +1149,6 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
 ];
 
 export const PROFILE_INSTRUCTION = PROFILE_DISPLAY_INSTRUCTION;
+
+// Every tool declares its security schemes from the single authentication policy.
+for (const tool of SURFACE_TOOLS) tool.securitySchemes = securitySchemesFor(tool.name);
