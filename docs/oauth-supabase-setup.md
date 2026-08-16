@@ -1,67 +1,88 @@
-# OAuth-Setup für den @room MCP-Server
+# OAuth 2.1 setup for the @room MCP server
 
-Der MCP-Endpunkt `/api/public/mcp` ist ein OAuth-2.1-_Protected Resource_.
-Autorisierungsserver ist der Auth-Stack des Projekts (Supabase Auth). Die
-folgenden Schritte sind einmalig im Backend-Dashboard bzw. über die
-Lovable-Cloud-Konfiguration zu erledigen — der Code enthält keine erfundenen
-Werte.
+The @room MCP endpoint is an OAuth 2.0 **protected resource** (RFC 9728). The
+authorization server is this project's own Cloud auth service; @room never
+issues, stores or forwards credentials.
 
-## 1. Auth-Provider
+| Value | Setting |
+| --- | --- |
+| App domain | `https://zinga-room.lovable.app` |
+| Canonical MCP resource | `https://zinga-room.lovable.app/api/public/mcp` |
+| Protected resource metadata | `https://zinga-room.lovable.app/.well-known/oauth-protected-resource` |
+| Authorization server (issuer) | `${SUPABASE_URL}/auth/v1` |
+| Consent page | `https://zinga-room.lovable.app/oauth/consent` |
+| Scopes | `openid`, `profile` (no `email`) |
 
-| Einstellung              | Wert                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------ |
-| Email/Passwort-Anmeldung | aktiviert (Standard)                                                                       |
-| Anonymous Sign-Ins       | optional; nur nötig, wenn `Ohne Konto fortfahren` auf der Consent-Seite funktionieren soll |
-| Site URL                 | die kanonische öffentliche App-URL (aktuell `https://crawler.today`)                       |
-| Redirect Allow List      | dieselbe Origin plus Preview-URLs                                                          |
+Clients discover the authorization server through the protected-resource
+metadata and then read the issuer's own discovery documents
+(`/.well-known/openid-configuration`, `/.well-known/oauth-authorization-server`).
+The app does **not** proxy or mirror those documents.
 
-## 2. OAuth-Server
+## Required environment variables
 
-| Einstellung                 | Wert                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------ |
-| OAuth Server                | aktiviert                                                                            |
-| Authorization Path          | `/.lovable/oauth/consent` (identische Seite liegt zusätzlich unter `/oauth/consent`) |
-| Dynamic Client Registration | aktiviert (ChatGPT registriert sich selbst)                                          |
-| Signaturschlüssel           | asymmetrisch (ES256) muss aktiv sein, sonst schlägt die Token-Ausgabe fehl           |
+| Name | Scope | Purpose |
+| --- | --- | --- |
+| `ROOM_MCP_RESOURCE` | server | Canonical https resource identifier, exactly `https://zinga-room.lovable.app/api/public/mcp`. Mandatory in production; the value never derives from a request header. |
+| `SUPABASE_URL` | server | Used to build the issuer `${SUPABASE_URL}/auth/v1`. |
+| `SUPABASE_PUBLISHABLE_KEY` (or `SUPABASE_ANON_KEY`) | server | Used by the non-persisting verification client. |
+| `SUBJECT_HASH_SECRET` | server | HMAC key for pseudonymous subjects. |
 
-## 3. ChatGPT / OpenAI-Portal
+## Manual backend steps (required)
 
-- MCP-Server-URL: `https://<öffentliche-app-domain>/api/public/mcp`
-- Die **Callback-/Redirect-URL** wird von ChatGPT beim Verbinden angezeigt.
-  Genau diesen Wert aus dem OpenAI-Portal in die Redirect-Allow-List des
-  Auth-Servers eintragen; er darf nicht geraten oder erfunden werden.
-- Discovery-Dokumente, die der Client automatisch liest:
-  - `https://<app-domain>/.well-known/oauth-protected-resource`
-  - `https://<projekt-ref>.supabase.co/auth/v1/.well-known/oauth-authorization-server`
+1. **Signing keys** — asymmetric ES256 keys must be active (already migrated).
+   Symmetric HS256 has an empty JWKS and breaks MCP OAuth.
+2. **OAuth server** — enabled, with:
+   - Authorization path: `/oauth/consent`
+     (`/.lovable/oauth/consent` stays available as a redirect alias)
+   - Dynamic client registration: enabled
+   - Site URL: `https://zinga-room.lovable.app`
+3. **Custom Access Token Hook** — Authentication → Hooks → *Custom Access Token*:
+   select the Postgres function `public.custom_access_token_hook` and enable it.
+   **This step cannot be automated and must be done in the backend settings.**
+   Without it, tokens carry no `aud` / `room_resource` / `room_scopes` claims and
+   every MCP call is rejected as `INVALID_TOKEN`.
+4. **Redirect allow-list** — add the callback URL that the MCP client (ChatGPT)
+   displays while connecting. Use exactly the value the client shows; do not
+   invent one.
+5. **Anonymous sign-ins** — only enable if the "continue without an account"
+   button on the consent page should work. Otherwise the button reports a
+   friendly error and users sign in normally.
 
-## 4. Serverseitige Umgebungsvariablen
+## The custom access token hook
 
-| Name                                                  | Zweck                                                |
-| ----------------------------------------------------- | ---------------------------------------------------- |
-| `SUPABASE_URL`                                        | Basis-URL des Auth-Servers für die Token-Validierung |
-| `SUPABASE_PUBLISHABLE_KEY` (oder `SUPABASE_ANON_KEY`) | API-Key für den Aufruf von `/auth/v1/user`           |
-| `SUPABASE_SERVICE_ROLE_KEY`                           | Datenzugriff des MCP-Servers                         |
-| `SUBJECT_HASH_SECRET`                                 | HMAC-Schlüssel für den pseudonymen `subjectHash`     |
-| `MESSAGE_ID_SECRET`                                   | HMAC-Schlüssel für Nachrichten-IDs                   |
+```sql
+public.custom_access_token_hook(event jsonb) returns jsonb
+```
 
-## 5. Autorisierungsregeln (im Code durchgesetzt)
+It only touches tokens that carry a non-empty `claims.client_id`, i.e. tokens
+issued through the OAuth server to a registered client. For those it sets:
 
-| Tool                        | Ohne Anmeldung                                                                                  | Mit Anmeldung                                                               |
-| --------------------------- | ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `universal_room`            | `read`                                                                                          | `enter`, `send`                                                             |
-| `public_room`               | `open`                                                                                          | `mine`, `update`, `leave`, `send`                                           |
-| `profile`                   | `get` mit fremdem `username`                                                                    | eigenes `get`, `update`, `change_handle`, `set_image`, `open_link`, `block` |
-| `followers_notifications`   | –                                                                                               | alle Aktionen                                                               |
-| `likes`                     | –                                                                                               | alle Aktionen                                                               |
-| `analytics`                 | –                                                                                               | alle Aktionen                                                               |
-| `communities_organizations` | `list_communities`, `get_community`, `read_community`, `list_organizations`, `get_organization` | alle übrigen Aktionen                                                       |
+- `aud` → `https://zinga-room.lovable.app/api/public/mcp`
+- `room_resource` → the same value
+- `room_scopes` → `["openid","profile"]`
 
-Öffentliche Reads lösen keine Account-, Membership- oder Presence-Schreibvorgänge
-aus. Fehlt für eine geschützte Aktion ein gültiger Token, antwortet der Server mit
-`isError: true`, dem Fehlercode `AUTH_REQUIRED` bzw. `INVALID_TOKEN` und einer
-`Bearer`-Challenge inklusive `resource_metadata`-URL.
+Ordinary web session tokens keep their existing claims untouched. The function
+is **not** `SECURITY DEFINER`; only `supabase_auth_admin` may execute it.
 
-## 6. Test-Hilfe
+## Threat model
 
-Nur mit `NODE_ENV=test` akzeptiert der Transport den Header `x-room-test-user`
-als simulierten AuthContext. In Preview und Produktion wird er ignoriert.
+- **A normal web access token cannot call the MCP server.** Verification
+  requires a non-empty `client_id`, an `aud` containing the canonical resource
+  and a matching `room_resource` claim. Browser sessions have none of these, so
+  a stolen or copied app session token is rejected with `INVALID_TOKEN`.
+- **Token verification is signature-based.** `supabase.auth.getClaims(token)`
+  validates the ES256 signature against the project's JWKS. Nothing is trusted
+  from an unverified JWT payload. Issuer, `sub` (UUID), and `exp` are checked
+  explicitly, with a request timeout on any network path.
+- **Resource binding is fixed by configuration.** `ROOM_MCP_RESOURCE` is the
+  only source of the canonical resource, so a spoofed `Host` header can neither
+  redirect discovery nor make a token for another resource acceptable.
+- **`openai/subject` authorises nothing.** It is an unauthenticated MCP `_meta`
+  value. It never grants access and never links or migrates an existing legacy
+  identity — that would be an ownership claim without proof. Legacy rows stay
+  untouched; linking them to an account is a controlled manual migration only.
+- **Data minimisation.** Only `HMAC-SHA256(SUBJECT_HASH_SECRET, "auth:" + sub)`
+  is stored (`anonymous_identities.auth_user_hash`). The raw account UUID never
+  reaches a domain table, a log line, tool `_meta` or a tool result.
+- **Public reads stay anonymous and side-effect free.** They never resolve an
+  identity, touch presence, join a room or write analytics.
