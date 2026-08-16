@@ -10,16 +10,16 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/data-deletion")({
   head: () => ({
     meta: [
-      { title: "Delete your @room data" },
+      { title: "Delete your Crawler Room data" },
       {
         name: "description",
         content:
-          "Request deletion of your @room profile, rooms, messages and social data. Verified through your signed-in session; unverified requests go through support.",
+          "Request deletion of your Crawler Room profile, rooms, messages and social data. Verified through your signed-in session; unverified requests go through support.",
       },
-      { property: "og:title", content: "Delete your @room data" },
+      { property: "og:title", content: "Delete your Crawler Room data" },
       {
         property: "og:description",
-        content: "How to request deletion of your @room data and what exactly is removed.",
+        content: "How to request deletion of your Crawler Room data and what exactly is removed.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -87,11 +87,11 @@ function DataDeletionPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="mx-auto max-w-3xl px-6 py-14">
-        <h1 className="text-3xl font-semibold tracking-tight">Delete your @room data</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Delete your Crawler Room data</h1>
 
         <section className="mt-6 space-y-3 text-sm text-muted-foreground">
           <p>
-            A deletion request removes the data that belongs to your pseudonymous @room identity:
+            A deletion request removes the data that belongs to your pseudonymous Crawler Room identity:
           </p>
           <ul className="list-disc space-y-1 pl-5">
             <li>your profile (handle, display name, bio, location, link, avatar, banner)</li>
@@ -147,7 +147,7 @@ function DataDeletionPage() {
             </div>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">
-              You are not signed in on the web. Sign in through the @room authorization flow in
+              You are not signed in on the web. Sign in through the Crawler Room authorization flow in
               ChatGPT and open this page again, or send an unverified request through{" "}
               <a className="underline" href="/support">
                 /support

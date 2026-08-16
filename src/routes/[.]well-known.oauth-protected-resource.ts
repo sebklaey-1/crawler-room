@@ -23,7 +23,7 @@ function metadataResponse(request: Request) {
 }
 
 /**
- * RFC 9728 — OAuth 2.0 Protected Resource Metadata for the @room MCP endpoint.
+ * RFC 9728 — OAuth 2.0 Protected Resource Metadata for the Crawler Room MCP endpoint.
  * MCP clients read this after a 401 challenge to discover the authorization server.
  */
 export const Route = createFileRoute("/.well-known/oauth-protected-resource")({

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LEGAL_LINKS } from "@/lib/room/legal";
 
 /**
- * OAuth 2.1 consent screen for the @room MCP server.
+ * OAuth 2.1 consent screen for the Crawler Room MCP server.
  *
  * Accountless by design: there is no e-mail, password, sign-up or MFA step.
  * When no Supabase session exists, exactly one anonymous session is created
@@ -37,8 +37,8 @@ function oauthApi(): OAuthNamespace | null {
 }
 
 const SCOPE_LABELS: Record<string, string> = {
-  openid: "Deine anonyme @room-Verbindung bestätigen",
-  profile: "Dein öffentliches @room-Basisprofil teilen",
+  openid: "Deine anonyme Crawler-Room-Verbindung bestätigen",
+  profile: "Dein öffentliches Crawler Room-Basisprofil teilen",
 };
 
 export const ANONYMOUS_UNAVAILABLE =
@@ -128,7 +128,7 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
       <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-6">
         <h1 className="text-2xl font-semibold">Verbindung bestätigen</h1>
         <p className="text-muted-foreground">
-          Diese Seite öffnet sich automatisch, wenn du @room in ChatGPT verbindest.
+          Diese Seite öffnet sich automatisch, wenn du Crawler Room in ChatGPT verbindest.
         </p>
       </main>
     );
@@ -142,7 +142,7 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-6 py-12">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold">{clientName} mit @room verbinden</h1>
+        <h1 className="text-2xl font-semibold">{clientName} mit Crawler Room verbinden</h1>
         <p className="text-sm text-muted-foreground">
           Ohne Konto, ohne Registrierung, ohne E-Mail oder Passwort. Lesen bleibt anonym; Schreiben,
           Folgen, Liken, Verwalten und Analytics laufen über eine pseudonyme, kontolose Verbindung,
@@ -163,10 +163,10 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
       {connected ? (
         <section className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Verbunden als anonyme @room-Identität. Es wurde kein Konto erstellt.
+            Verbunden als anonyme Crawler Room-Identität. Es wurde kein Konto erstellt.
           </p>
           <p className="text-sm">
-            <strong>{clientName}</strong> darf @room für dich nutzen: Nachrichten schreiben, deinen
+            <strong>{clientName}</strong> darf Crawler Room für dich nutzen: Nachrichten schreiben, deinen
             Raum und dein Profil verwalten, folgen und liken.
           </p>
           <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">

@@ -81,7 +81,7 @@ describe("submission dossier", () => {
 
   it("ships exactly three starter prompts", () => {
     const section = SUBMISSION.split("## Starter prompts")[1]?.split("\n## ")[0] ?? "";
-    const prompts = section.match(/^\d\. `@room/gm) ?? [];
+    const prompts = section.match(/^\d\. `Crawler Room/gm) ?? [];
     expect(prompts).toHaveLength(3);
   });
 

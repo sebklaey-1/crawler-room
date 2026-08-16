@@ -7,13 +7,13 @@ import { LegalFooter } from "@/components/legal-footer";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "@room — anonymous rooms, profiles and communities in ChatGPT" },
+      { title: "Crawler Room — anonymous rooms, profiles and communities in ChatGPT" },
       {
         name: "description",
         content:
-          "@room connects people inside ChatGPT: an open Universal Room, permanent personal public rooms, social profiles, followers, likes, analytics, communities and organisations.",
+          "Crawler Room connects people inside ChatGPT: an open Universal Room, permanent personal public rooms, social profiles, followers, likes, analytics, communities and organisations.",
       },
-      { property: "og:title", content: "@room — anonymous rooms and profiles in ChatGPT" },
+      { property: "og:title", content: "Crawler Room — anonymous rooms and profiles in ChatGPT" },
       {
         property: "og:description",
         content:
@@ -47,7 +47,7 @@ const AREAS = [
   },
   {
     name: "Followers and notifications",
-    body: "Follow rooms you care about. Notifications are pull-based and appear the next time you talk to @room.",
+    body: "Follow rooms you care about. Notifications are pull-based and appear the next time you talk to Crawler Room.",
   },
   {
     name: "Likes",
@@ -66,15 +66,15 @@ const AREAS = [
 const STEPS = [
   {
     title: "Say hello",
-    body: "Type “@room” in ChatGPT. You land in the Universal Room and immediately see what people are saying.",
+    body: "Type “Crawler Room” in ChatGPT. You land in the Universal Room and immediately see what people are saying.",
   },
   {
     title: "Your own room",
-    body: "Say “@room my room”. Your permanent public room already exists — you only sign in once for writing.",
+    body: "Say “Crawler Room my room”. Your permanent public room already exists — you only sign in once for writing.",
   },
   {
     title: "Your profile",
-    body: "Set a display name, bio, banner and profile picture. Others open it with “@room open @handle”.",
+    body: "Set a display name, bio, banner and profile picture. Others open it with “Crawler Room open @handle”.",
   },
   {
     title: "Follow and like",
@@ -114,12 +114,12 @@ function Landing() {
         <span className="flex items-center gap-3">
           <img
             src={roomIcon.url}
-            alt="@room app icon: two glowing speech bubbles forming an infinity loop"
+            alt="Crawler Room app icon: two glowing speech bubbles forming an infinity loop"
             width={40}
             height={40}
             className="h-10 w-10 rounded-xl"
           />
-          <span className="text-lg font-semibold tracking-tight">@room</span>
+          <span className="text-lg font-semibold tracking-tight">Crawler Room</span>
         </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
           <span
@@ -136,13 +136,13 @@ function Landing() {
         <section className="py-14 sm:py-20">
           <img
             src={roomIcon.url}
-            alt="@room logo"
+            alt="Crawler Room logo"
             width={96}
             height={96}
             className="mb-8 h-24 w-24 rounded-3xl shadow-lg"
           />
           <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            @room connects people through the Universal Room, personal rooms and profiles.
+            Crawler Room connects people through the Universal Room, personal rooms and profiles.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
             An anonymous social layer that lives entirely inside ChatGPT: open rooms, your own
@@ -151,14 +151,14 @@ function Landing() {
           </p>
           <div className="mt-8 rounded-xl border border-border bg-card p-5 font-mono text-sm text-card-foreground">
             <p className="text-muted-foreground">In ChatGPT:</p>
-            <p className="mt-2">@room</p>
-            <p>@room my room</p>
-            <p>@room open @handle</p>
+            <p className="mt-2">Crawler Room</p>
+            <p>Crawler Room my room</p>
+            <p>Crawler Room open @handle</p>
           </div>
         </section>
 
         <section className="border-t border-border py-14">
-          <h2 className="text-2xl font-semibold tracking-tight">What @room is</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">What Crawler Room is</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {AREAS.map((area) => (
               <div key={area.name} className="rounded-lg border border-border bg-card p-5">
@@ -196,7 +196,7 @@ function Landing() {
       </main>
 
       <LegalFooter
-        note={`@room ${data?.version ? `v${data.version}` : ""} — anonymous rooms, profiles and communities`}
+        note={`Crawler Room ${data?.version ? `v${data.version}` : ""} — anonymous rooms, profiles and communities`}
       />
     </div>
   );

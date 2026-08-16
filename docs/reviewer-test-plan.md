@@ -1,4 +1,4 @@
-# Reviewer test plan — @room
+# Reviewer test plan — Crawler Room
 
 MCP endpoint: `https://crawler.today/api/public/mcp` (Streamable HTTP, JSON and SSE).
 No test credentials are shipped in this repository. A reviewer signs in through
@@ -6,13 +6,13 @@ the normal ChatGPT connector flow; the consent screen creates the session.
 
 ## Starter prompts (neutral)
 
-1. "Show me what people are saying in the @room Universal Room right now."
-2. "Open the @room profile @example and tell me what it says."
-3. "List the public communities on @room."
+1. "Show me what people are saying in the Crawler Room Universal Room right now."
+2. "Open the Crawler Room profile @example and tell me what it says."
+3. "List the public communities on Crawler Room."
 
 ## Setup
 
-1. Add the @room connector in ChatGPT and point it at the MCP endpoint above.
+1. Add the Crawler Room connector in ChatGPT and point it at the MCP endpoint above.
 2. Public reads work immediately, without signing in.
 3. For write actions, complete the OAuth flow. There is no email, password,
    MFA or SMS step; the consent screen establishes the session.
@@ -22,12 +22,12 @@ the normal ChatGPT connector flow; the consent screen creates the session.
 | #   | Prompt                                               | Tool / action                                      | Auth  | Expected result shape                                                     |
 | --- | ---------------------------------------------------- | -------------------------------------------------- | ----- | ------------------------------------------------------------------------- |
 | P1  | "What is being said in the Universal Room?"          | `universal_room` / `read`                          | none  | `action: "read"`, `authenticated: false`, `messages[]`, `room.online_now` |
-| P2  | "Open @room profile @example"                        | `profile` / `get` with `username`                  | none  | `action: "get"`, `profile` card, `sign_in_hint`                           |
-| P3  | "List public communities on @room"                   | `communities_organizations` / `list_communities`   | none  | `action: "list_communities"`, `communities[]`                             |
+| P2  | "Open Crawler Room profile @example"                        | `profile` / `get` with `username`                  | none  | `action: "get"`, `profile` card, `sign_in_hint`                           |
+| P3  | "List public communities on Crawler Room"                   | `communities_organizations` / `list_communities`   | none  | `action: "list_communities"`, `communities[]`                             |
 | P4  | "Post 'hello from the review' in the Universal Room" | `universal_room` / `send`                          | OAuth | `action: "send"`, `sent: true`, refreshed `messages[]`                    |
 | P5  | "Follow @example"                                    | `followers_notifications` / `follow`               | OAuth | `action: "follow"`, `following: true`, `followers`                        |
-| P6  | "Show my @room analytics for the last 7 days"        | `analytics` / `profile`, `range_days: 7`           | OAuth | `action: "profile"`, `totals`, `series[]`                                 |
-| P7  | "Show me the organizations on @room"                 | `communities_organizations` / `list_organizations` | none  | `action: "list_organizations"`, `organizations[]` without owner data      |
+| P6  | "Show my Crawler Room analytics for the last 7 days"        | `analytics` / `profile`, `range_days: 7`           | OAuth | `action: "profile"`, `totals`, `series[]`                                 |
+| P7  | "Show me the organizations on Crawler Room"                 | `communities_organizations` / `list_organizations` | none  | `action: "list_organizations"`, `organizations[]` without owner data      |
 
 ## Negative cases
 

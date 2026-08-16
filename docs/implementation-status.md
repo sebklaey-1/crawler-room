@@ -1,4 +1,4 @@
-# @room — consolidated implementation status
+# Crawler Room — consolidated implementation status
 
 **Date:** 2026-08-16 (UTC)
 **Baseline commit:** `4d1ccb067bdc7ec69f39e0424ac3c67b47313cbc` (OAuth/MCP auth phase 1A)

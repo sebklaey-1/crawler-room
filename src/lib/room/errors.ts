@@ -48,7 +48,7 @@ const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   NOT_A_MEMBER: "Du bist in diesem Thema aktuell in keinem Raum.",
   TOPIC_NOT_FOUND: "Dieses Thema kenne ich nicht.",
   IDENTITY_UNAVAILABLE:
-    "Ich konnte deine anonyme Kennung nicht ermitteln. Bitte öffne @room in einer unterstützten ChatGPT-Oberfläche, die Plugin-Kennungen übermittelt.",
+    "Ich konnte deine anonyme Kennung nicht ermitteln. Bitte öffne Crawler Room in einer unterstützten ChatGPT-Oberfläche, die Plugin-Kennungen übermittelt.",
   ROOM_UNAVAILABLE: "Dein Raum ist gerade nicht verfügbar. Bitte versuche es erneut.",
   INVALID_INPUT: "Die Angaben waren unvollständig oder ungültig.",
   ALIAS_TAKEN: "Dieser Name ist bereits vergeben. Bitte wähle einen anderen.",
@@ -68,14 +68,14 @@ const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   FORBIDDEN: "Dafür fehlt dir die Berechtigung.",
   ORGANIZATION_REQUIRED: "Dafür wird eine verifizierte Organisation mit Business-Abo benötigt.",
   CAMPAIGN_INVALID: "Die Kampagnendaten sind unvollständig oder unzulässig.",
-  POLICY_VIOLATION: "Dieser Inhalt verstösst gegen die Werberichtlinien von @room.",
+  POLICY_VIOLATION: "Dieser Inhalt verstösst gegen die Werberichtlinien von Crawler Room.",
   DUPLICATE_REQUEST: "Diese Anfrage wurde bereits verarbeitet.",
   BILLING_REQUIRED: "Diese Aktion ist derzeit nicht möglich.",
   REVIEW_INVALID: "Die Prüfung konnte nicht bestätigt werden. Bitte starte die Prüfung neu.",
   AUTH_REQUIRED:
-    "Dafür musst du dich bei @room anmelden. Bitte verbinde @room in ChatGPT (Anmeldung) und versuche es dann erneut.",
+    "Dafür musst du dich bei Crawler Room anmelden. Bitte verbinde Crawler Room in ChatGPT (Anmeldung) und versuche es dann erneut.",
   INVALID_TOKEN:
-    "Deine Anmeldung ist abgelaufen oder ungültig. Bitte melde dich erneut bei @room an.",
+    "Deine Anmeldung ist abgelaufen oder ungültig. Bitte melde dich erneut bei Crawler Room an.",
   INSUFFICIENT_SCOPE: "Deine Anmeldung erlaubt diese Aktion nicht.",
   PAYLOAD_TOO_LARGE: "Diese Anfrage ist zu gross.",
   UNSUPPORTED_PROTOCOL_VERSION: "Diese MCP-Protokollversion wird nicht unterstützt.",

@@ -1,11 +1,11 @@
-# @room — OpenAI App submission dossier
+# Crawler Room — OpenAI App submission dossier
 
 Phase 1D.1. Everything below reflects the shipped code and the live `tools/list` response;
 nothing is aspirational.
 
 ## Identity
 
-- Product: **@room** (Room Chat) — anonymous public rooms, profiles and communities.
+- Product: **Crawler Room** (Crawler Room) — anonymous public rooms, profiles and communities.
 - Publisher: **SEBKLAEY Agency — Sebastian Kläy**. Independent App, not affiliated with,
   sponsored by, endorsed by or approved by OpenAI, and not listed in the App Directory yet.
 - Canonical MCP resource: `https://crawler.today/api/public/mcp` (Streamable HTTP, JSON-RPC 2.0,
@@ -122,13 +122,13 @@ declare only public DTO fields.
 
 ## Starter prompts
 
-1. `@room what is happening in the Universal Room right now?`
-2. `@room set up my public room: display name, short bio and a link.`
-3. `@room show me the public communities and open the most active one.`
+1. `Crawler Room what is happening in the Universal Room right now?`
+2. `Crawler Room set up my public room: display name, short bio and a link.`
+3. `Crawler Room show me the public communities and open the most active one.`
 
 ## Reviewer setup
 
-- **No reviewer credentials are needed and none exist.** Connecting @room in ChatGPT opens
+- **No reviewer credentials are needed and none exist.** Connecting Crawler Room in ChatGPT opens
   `/oauth/consent`, which creates an anonymous session automatically and shows a single
   "Verbindung erlauben" button. There is no MFA, no SMS step, no e-mail confirmation, no sign-up
   form and no private-network requirement.
@@ -146,7 +146,7 @@ declare only public DTO fields.
 | --- | ---------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | P1  | "What is happening in the Universal Room?"                 | `universal_room` / `read`                                              | none                         | any public messages (seeded demo messages are enough) | `{ action: "read", messages: [...], has_more, cursor? }`                                              | Anonymous read succeeds, no sign-in prompt, no ids or hashes in the payload.                   |
 | P2  | "Post 'hello from review' in the Universal Room."          | `universal_room` / `send`                                              | accountless OAuth connection | none                                                  | `{ action: "send", message: {...}, recent: [...] }`                                                   | Message is written, the model reads back recent room content, rate limit allows a single post. |
-| P3  | "Show my public room and set my bio to 'Reviewing @room'." | `public_room` / `mine`, then `profile` / `update`                      | accountless OAuth connection | the reviewer's own room (auto-created)                | `{ action: "mine", room: {...} }`, `{ action: "update", profile: {...} }`                             | Only the caller's own room and profile change; handle stays unique.                            |
+| P3  | "Show my public room and set my bio to 'Reviewing Crawler Room'." | `public_room` / `mine`, then `profile` / `update`                      | accountless OAuth connection | the reviewer's own room (auto-created)                | `{ action: "mine", room: {...} }`, `{ action: "update", profile: {...} }`                             | Only the caller's own room and profile change; handle stays unique.                            |
 | P4  | "List the public communities and read the newest one."     | `communities_organizations` / `list_communities` then `read_community` | none                         | one seeded public demo community with 2–3 messages    | `{ action: "list_communities", communities: [...] }`, `{ action: "read_community", messages: [...] }` | Anonymous community browsing works, private/organisation-internal fields are absent.           |
 | P5  | "Show my profile analytics."                               | `analytics` / `profile`                                                | accountless OAuth connection | demo room with a few views/likes                      | `{ action: "profile", analytics: {...} }`                                                             | Owner-only aggregates rendered as text charts; no visitor identity, no other person's numbers. |
 | P6  | "Follow the demo room and show my notifications."          | `followers_notifications` / `follow`, `list_notifications`             | accountless OAuth connection | a second seeded demo handle to follow                 | `{ action: "follow", following: true }`, `{ action: "list_notifications", notifications: [...] }`     | Follow is recorded, self-follow is impossible, notifications are pull-based only.              |

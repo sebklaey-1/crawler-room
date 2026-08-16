@@ -373,7 +373,7 @@ export async function handleListFollowing(_input: unknown, meta: McpMeta) {
     rooms,
     message: rooms.length
       ? `Du folgst ${rooms.length} Raum/Räumen.`
-      : "Du folgst noch keinem Raum. Sag «@rooms follow @name».",
+      : "Du folgst noch keinem Raum. Sag «Crawler Room: folge @name».",
   };
 }
 
@@ -462,6 +462,6 @@ export async function publicRoomView(db: Db, username: unknown) {
     display_instruction: DISPLAY_INSTRUCTION,
     notice: PERSONAL_NOTICE,
     sign_in_hint:
-      "Nur Lesen: Zum Schreiben, Folgen oder Liken muss sich die Person bei @room anmelden (Verbinden in ChatGPT).",
+      "Nur Lesen: Zum Schreiben, Folgen oder Liken muss sich die Person bei Crawler Room anmelden (Verbinden in ChatGPT).",
   };
 }

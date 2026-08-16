@@ -1,5 +1,5 @@
 /**
- * Deterministic release gate for @room.
+ * Deterministic release gate for Crawler Room.
  *
  * Verifies everything that can be verified from the repository plus the
  * presence (never the value) of the required runtime configuration. No secret

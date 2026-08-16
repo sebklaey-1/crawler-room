@@ -1,5 +1,5 @@
 /**
- * Runtime configuration for the @room MCP server.
+ * Runtime configuration for the Crawler Room MCP server.
  * All values are read lazily inside functions — never at module scope —
  * because the Worker runtime injects env per request.
  */

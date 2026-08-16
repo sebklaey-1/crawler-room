@@ -15,7 +15,7 @@ export function LegalFooter({ note }: { note?: string }) {
           ))}
         </nav>
         <p>
-          {note ? `${note} — ` : ""}@room is published by {PUBLISHER}. Not affiliated with, or
+          {note ? `${note} — ` : ""}Crawler Room is published by {PUBLISHER}. Not affiliated with, or
           endorsed by, OpenAI.
         </p>
       </div>

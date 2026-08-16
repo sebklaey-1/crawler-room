@@ -56,7 +56,7 @@ async function callTool(name: string, args: unknown, meta?: Record<string, unkno
 describe("MCP surface", () => {
   it("initializes and advertises the seven product areas", async () => {
     const body = await rpc("initialize", { protocolVersion: "2025-06-18" });
-    expect(body.result.serverInfo.title).toBe("@room");
+    expect(body.result.serverInfo.title).toBe("Crawler Room");
     for (const name of EXPECTED) expect(body.result.instructions).toContain(name);
     expect(body.result.instructions).not.toMatch(/Kampagne|Sponsor|Abonnement|Bezahlung/);
   });

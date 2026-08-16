@@ -465,6 +465,6 @@ export async function publicProfileView(db: Db, username: unknown) {
     edit_hint: null,
     display_instruction: PROFILE_DISPLAY_INSTRUCTION,
     sign_in_hint:
-      "Nur Lesen: Folgen, Liken, Blockieren und Bearbeiten sind erst nach Anmeldung bei @room möglich.",
+      "Nur Lesen: Folgen, Liken, Blockieren und Bearbeiten sind erst nach Anmeldung bei Crawler Room möglich.",
   };
 }

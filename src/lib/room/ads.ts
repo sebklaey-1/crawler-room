@@ -24,7 +24,7 @@ import type { Db } from "./store";
 const CAMPAIGN_COLUMNS =
   "id, organization_id, room_id, title, description, cover_path, cta_label, cta_url, topics, languages, starts_at, ends_at, status, safety_status, rejection_reason, created_at";
 
-/** Content that may never be advertised on @room. */
+/** Content that may never be advertised on Crawler Room. */
 const PROHIBITED_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
   {
     label: "sexual_services",

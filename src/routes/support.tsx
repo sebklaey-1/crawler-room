@@ -11,16 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
-      { title: "Support and abuse reports — @room" },
+      { title: "Support and abuse reports — Crawler Room" },
       {
         name: "description",
         content:
-          "Contact @room support, report abuse in a room, or send a privacy request. Every submission returns an opaque case reference.",
+          "Contact Crawler Room support, report abuse in a room, or send a privacy request. Every submission returns an opaque case reference.",
       },
-      { property: "og:title", content: "Support and abuse reports — @room" },
+      { property: "og:title", content: "Support and abuse reports — Crawler Room" },
       {
         property: "og:description",
-        content: "Report abuse, ask for help or send a privacy request to @room.",
+        content: "Report abuse, ask for help or send a privacy request to Crawler Room.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
