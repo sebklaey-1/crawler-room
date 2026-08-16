@@ -39,12 +39,7 @@ export const REPORT_STATUSES = ["received", "reviewing", "actioned", "dismissed"
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 export type ReportTargetKind =
-  | "profile"
-  | "room"
-  | "message"
-  | "image"
-  | "community"
-  | "organization";
+  "profile" | "room" | "message" | "image" | "community" | "organization";
 
 export const REPORT_DETAILS_MAX = 500;
 
@@ -58,7 +53,10 @@ export function normalizeDetails(raw: unknown): string | null {
   const value = raw.trim();
   if (!value) throw roomError("INVALID_INPUT", "Die Zusatzangabe darf nicht leer sein.");
   if (value.length > REPORT_DETAILS_MAX)
-    throw roomError("INVALID_INPUT", `Die Zusatzangabe darf höchstens ${REPORT_DETAILS_MAX} Zeichen haben.`);
+    throw roomError(
+      "INVALID_INPUT",
+      `Die Zusatzangabe darf höchstens ${REPORT_DETAILS_MAX} Zeichen haben.`,
+    );
   return value;
 }
 
@@ -143,7 +141,12 @@ async function imageTarget(
 }
 
 export async function universalRoomId(db: Db): Promise<string> {
-  const { data } = await db.from("rooms").select("id").eq("kind", "universal").limit(1).maybeSingle();
+  const { data } = await db
+    .from("rooms")
+    .select("id")
+    .eq("kind", "universal")
+    .limit(1)
+    .maybeSingle();
   const id = (data as any)?.id as string | undefined;
   if (!id) throw roomError("ROOM_UNAVAILABLE");
   return id;
@@ -206,7 +209,9 @@ export async function resolveCommunityTarget(
   reference: unknown,
   targetId: unknown,
 ): Promise<ResolvedTarget> {
-  const raw = String(reference ?? "").trim().replace(/^@/, "");
+  const raw = String(reference ?? "")
+    .trim()
+    .replace(/^@/, "");
 
   if (targetType === "organization") {
     if (!raw) throw roomError("INVALID_INPUT", "Bitte nenne die Organisation.");

@@ -355,8 +355,7 @@ const REPORT_OUTPUT_PROPERTIES: Json = {
   message: { type: "string" },
 };
 
-const REPORT_DESCRIPTION =
-  `action=report meldet einen Inhalt zur menschlichen Prüfung. reason ist ein fester Grund (${REPORT_REASONS.join(", ")}), details ist optional und höchstens ${REPORT_DETAILS_MAX} Zeichen. ${REPORT_DETAILS_HINT} Eine Meldung entfernt oder sperrt nichts automatisch.`;
+const REPORT_DESCRIPTION = `action=report meldet einen Inhalt zur menschlichen Prüfung. reason ist ein fester Grund (${REPORT_REASONS.join(", ")}), details ist optional und höchstens ${REPORT_DETAILS_MAX} Zeichen. ${REPORT_DETAILS_HINT} Eine Meldung entfernt oder sperrt nichts automatisch.`;
 
 function tag<T extends Json>(action: string, result: T): Json {
   return { action, ...result };
@@ -949,7 +948,10 @@ const communitiesInput = z
       .trim()
       .min(1)
       .max(60)
-      .regex(/^[a-z0-9][a-z0-9-]*$/i, "Slugs dürfen nur Buchstaben, Zahlen und Bindestriche enthalten.")
+      .regex(
+        /^[a-z0-9][a-z0-9-]*$/i,
+        "Slugs dürfen nur Buchstaben, Zahlen und Bindestriche enthalten.",
+      )
       .optional(),
     text: z.string().trim().min(1).max(2000).optional(),
     username: handleField(64).optional(),
@@ -1636,7 +1638,10 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       }
       if (result.organizations) {
         const list = (result.organizations as any[])
-          .map((entry) => `- **${sanitizeUgcLabel(entry.name)}** (${sanitizeUgcLabel(entry.slug ?? entry.id)})`)
+          .map(
+            (entry) =>
+              `- **${sanitizeUgcLabel(entry.name)}** (${sanitizeUgcLabel(entry.slug ?? entry.id)})`,
+          )
           .join("\n");
         return list || "Noch keine Organisationen.";
       }

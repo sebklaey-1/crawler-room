@@ -92,10 +92,12 @@ function SupportPage() {
         <p className="mt-3 text-sm text-muted-foreground">
           Use this form to report abuse in a room, ask for help, or send a privacy request (access,
           correction, deletion). Inside ChatGPT you can also report content or block a profile
-          directly — see the safety rules at <a className="underline" href="/safety">crawler.today/safety</a>.
-          You do not need an account to write to us. Reports are reviewed by
-          a person when capacity allows — there is no automatic review and no promised response
-          deadline.
+          directly — see the safety rules at{" "}
+          <a className="underline" href="/safety">
+            crawler.today/safety
+          </a>
+          . You do not need an account to write to us. Reports are reviewed by a person when
+          capacity allows — there is no automatic review and no promised response deadline.
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
           If someone is in immediate danger, contact your local emergency services first. To delete

@@ -47,9 +47,7 @@ describe("phase 3 — report surface", () => {
 
   it("adds block management to the profile group", () => {
     const actions = actionsOf("profile");
-    expect(actions).toEqual(
-      expect.arrayContaining(["block", "unblock", "list_blocks", "report"]),
-    );
+    expect(actions).toEqual(expect.arrayContaining(["block", "unblock", "list_blocks", "report"]));
   });
 
   it("publishes the reason enum and the details limit in every report schema", () => {
