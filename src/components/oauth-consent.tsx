@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { LEGAL_LINKS } from "@/lib/room/legal";
 
 /**
  * OAuth 2.1 consent screen for the @room MCP server.
