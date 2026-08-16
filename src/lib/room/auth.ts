@@ -224,7 +224,6 @@ export async function verifyAccessToken(token: string, requestOrigin?: string): 
   // domain layer against the pseudonymous subject, never by a scope value.
   const scopes = claimList(claims["room_scopes"] ?? claims["scope"]);
 
-
   const user: AuthUser = { userId: sub, issuer, clientId, scopes, expiresAt: exp };
 
   const ttl = Math.min(CACHE_TTL_MS, Math.max(0, exp * 1000 - Date.now()));

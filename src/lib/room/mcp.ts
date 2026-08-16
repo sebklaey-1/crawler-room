@@ -196,7 +196,7 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
       isError: true,
       ...(needsAuth
         ? {
-          _meta: {
+            _meta: {
               "mcp/www_authenticate": challengeHeader(
                 context.origin,
                 "invalid_token",
@@ -205,7 +205,6 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
                   : "Sign in to Crawler Room to use this action.",
               ),
             },
-
           }
         : {}),
     };
