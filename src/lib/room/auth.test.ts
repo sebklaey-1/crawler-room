@@ -111,7 +111,10 @@ describe("authentication policy", () => {
     const universal = body.result.tools.find((tool: any) => tool.name === "universal_room");
     expect(
       universal.outputSchema.oneOf.map((branch: any) => branch.properties.action.const),
-    ).toEqual(["enter", "read", "send"]);
+    ).toEqual(["enter", "read", "send", "report"]);
+    expect(universal._meta["room/public_actions"]).toEqual(["read"]);
+    // Reporting is a safety action and always needs a verified OAuth identity.
+    expect(universal._meta["room/authenticated_actions"]).toContain("report");
   });
 });
 
