@@ -134,12 +134,18 @@ function PrivacyPage() {
           </ul>
         </Section>
 
-        <Section title="Retention that is actually enforced">
+        <Section title="Retention">
+          <p className="mb-3">
+            Rolling limits below are applied immediately when new content is written. The
+            time-based limits are executed by a maintenance job that has to be triggered by the
+            operator, so they describe the target retention window rather than a guaranteed
+            deletion moment.
+          </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong>Text messages:</strong> a room keeps only its newest 7 messages; older ones
-              are deleted by the retention job. Time-based rooms additionally expire messages after
-              their retention window (24 hours by default).
+              <strong>Text messages:</strong> a room keeps only its newest 7 messages, applied on
+              every new message. Time-based rooms additionally expire messages after their
+              retention window (24 hours by default) when the maintenance job runs.
             </li>
             <li>
               <strong>Images:</strong> a room keeps only its newest 3 approved images. Rejected,
