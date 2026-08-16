@@ -69,13 +69,16 @@ is **not** `SECURITY DEFINER`; only `supabase_auth_admin` may execute it.
 ## Threat model
 
 - **A normal web access token cannot call the MCP server.** Verification
-  requires a non-empty `client_id`, an `aud` containing the canonical resource
-  and a matching `room_resource` claim. Browser sessions have none of these, so
-  a stolen or copied app session token is rejected with `INVALID_TOKEN`.
+  requires a non-empty `client_id`, which only tokens issued through the OAuth
+  server to a registered client carry. Browser sessions have none, so a stolen
+  or copied app session token is rejected with `INVALID_TOKEN`. When the
+  optional hook is active, `room_resource` must additionally match the
+  canonical resource; a token bound to another resource is always rejected.
 - **Token verification is signature-based.** `supabase.auth.getClaims(token)`
   validates the ES256 signature against the project's JWKS. Nothing is trusted
   from an unverified JWT payload. Issuer, `sub` (UUID), and `exp` are checked
   explicitly, with a request timeout on any network path.
+
 - **Resource binding is fixed by configuration.** `ROOM_MCP_RESOURCE` is the
   only source of the canonical resource, so a spoofed `Host` header can neither
   redirect discovery nor make a token for another resource acceptable.
