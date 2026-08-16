@@ -35,6 +35,7 @@ export function validateMessage(raw: unknown, limits: MessageLimits): string {
   const normalized = raw
     .normalize("NFKC")
     // control characters except newline and tab
+    // eslint-disable-next-line no-control-regex -- intentional control/bidi character sanitiser
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
     .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
     .replace(/[ \t]+\n/g, "\n")

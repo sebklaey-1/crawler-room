@@ -15,6 +15,7 @@
 
 /** Unicode control, bidi-override and zero-width characters. */
 const CONTROL =
+  // eslint-disable-next-line no-control-regex -- intentional control/bidi character sanitiser
   /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u200B-\u200F\u2028\u2029\u202A-\u202E\u2066-\u2069\uFEFF]/g;
 
 /** Markdown/HTML characters that could start an image, link, tag or fence. */

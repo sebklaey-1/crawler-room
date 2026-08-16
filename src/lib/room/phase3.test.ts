@@ -155,6 +155,7 @@ describe("phase 3 — untrusted content rendering", () => {
 
   it("removes unicode control and bidi override characters", () => {
     const safe = sanitizeUgcText("a\u202Eb\u0000c\u200Bd");
+    // eslint-disable-next-line no-control-regex -- intentional control/bidi character sanitiser
     expect(safe).not.toMatch(/[\u202E\u0000\u200B]/);
     expect(safe.replace(/\s+/g, "")).toBe("abcd");
   });
