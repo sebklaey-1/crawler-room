@@ -13,7 +13,6 @@ function post(body: unknown, init: RequestInit = {}) {
       method: "POST",
       headers: { "content-type": "application/json", ...((init.headers ?? {}) as Record<string, string>) },
       body: JSON.stringify(body),
-      ...init,
     }),
   );
 }
