@@ -9,7 +9,7 @@
  *
  *   bun run release:check
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import {
