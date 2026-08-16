@@ -129,10 +129,17 @@ for (const secret of ["SUBJECT_HASH_SECRET", "MESSAGE_ID_SECRET"]) {
 for (const key of ["SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY"]) {
   check(`${key} configured`, envSet(key), envSet(key) ? "set" : "missing");
 }
+// The public support contact is canonical in source (`SUPPORT_EMAIL`). An env
+// override is tolerated only when it carries the exact same address.
+const configuredSupport = (process.env["VITE_PUBLIC_SUPPORT_EMAIL"] ?? "").trim();
 check(
-  "public support contact configured (VITE_PUBLIC_SUPPORT_EMAIL)",
-  envSet("VITE_PUBLIC_SUPPORT_EMAIL"),
-  envSet("VITE_PUBLIC_SUPPORT_EMAIL") ? "set" : "missing — manual release blocker",
+  "public support contact canonical (info@crawler.today)",
+  supportEmailEnvMatches(configuredSupport),
+  configuredSupport === ""
+    ? "source of truth in src/lib/room/legal.ts"
+    : supportEmailEnvMatches(configuredSupport)
+      ? "env matches canonical address"
+      : `env VITE_PUBLIC_SUPPORT_EMAIL «${configuredSupport}» conflicts with info@crawler.today`,
 );
 
 // Moderation staffing: a named responsible person plus at least one configured

@@ -10,13 +10,23 @@ export const LEGAL_LINKS = [
 export const PUBLISHER = "SEBKLAEY Agency — Sebastian Kläy";
 
 /**
- * Public support contact. Configured through the public build variable
- * `VITE_PUBLIC_SUPPORT_EMAIL`. There is deliberately no invented fallback: if
- * the value is missing the pages show a neutral notice and `release:check`
- * reports a release blocker.
+ * The confirmed public support, privacy, deletion and abuse contact. This
+ * address is published on the legal pages, so it is not a secret and lives in
+ * source as the single source of truth.
  */
-export function publicSupportEmail(): string | null {
-  const raw = import.meta.env?.["VITE_PUBLIC_SUPPORT_EMAIL"];
-  const value = typeof raw === "string" ? raw.trim() : "";
-  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) ? value : null;
+export const SUPPORT_EMAIL = "info@crawler.today" as const;
+
+/**
+ * Public support contact. Always returns the canonical address. A build may
+ * set `VITE_PUBLIC_SUPPORT_EMAIL`, but only to the exact same value; any other
+ * value is ignored here and reported as an error by `release:check`.
+ */
+export function publicSupportEmail(): string {
+  return SUPPORT_EMAIL;
+}
+
+/** True when no conflicting support address is configured for the build. */
+export function supportEmailEnvMatches(configured: string | undefined | null): boolean {
+  const value = typeof configured === "string" ? configured.trim() : "";
+  return value === "" || value.toLowerCase() === SUPPORT_EMAIL;
 }
