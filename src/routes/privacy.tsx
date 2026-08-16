@@ -6,16 +6,16 @@ import { SupportContact } from "@/components/support-contact";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — @room" },
+      { title: "Privacy Policy — Crawler Room" },
       {
         name: "description",
         content:
-          "How @room processes pseudonymous room data: categories, purposes, recipients, retention, hashing, OAuth and your controls.",
+          "How Crawler Room processes pseudonymous room data: categories, purposes, recipients, retention, hashing, OAuth and your controls.",
       },
-      { property: "og:title", content: "Privacy Policy — @room" },
+      { property: "og:title", content: "Privacy Policy — Crawler Room" },
       {
         property: "og:description",
-        content: "Data categories, purposes, retention and your controls in @room.",
+        content: "Data categories, purposes, retention and your controls in Crawler Room.",
       },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
@@ -39,15 +39,15 @@ function PrivacyPage() {
       <main className="mx-auto max-w-3xl px-6 py-14">
         <h1 className="text-3xl font-semibold tracking-tight">Privacy Policy</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          This policy describes exactly what @room (also referred to as “Room Chat”) processes
-          today. It contains no placeholder providers, no promised legal deadlines and no
+          This policy describes exactly what Crawler Room (also referred to as “Crawler Room”)
+          processes today. It contains no placeholder providers, no promised legal deadlines and no
           certifications.
         </p>
 
-        <Section title="Who runs @room">
+        <Section title="Who runs Crawler Room">
           <p>
-            @room is published by SEBKLAEY Agency (Sebastian Kläy). @room is an independent product.
-            It is not affiliated with, sponsored by, or endorsed by OpenAI.
+            Crawler Room is published by SEBKLAEY Agency (Sebastian Kläy). Crawler Room is an
+            independent product. It is not affiliated with, sponsored by, or endorsed by OpenAI.
           </p>
           <p>
             Contact for privacy questions, access, correction and deletion:{" "}
@@ -118,7 +118,7 @@ function PrivacyPage() {
         <Section title="Recipients">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong>ChatGPT / OpenAI as the client.</strong> You use @room through ChatGPT.
+              <strong>ChatGPT / OpenAI as the client.</strong> You use Crawler Room through ChatGPT.
               Whatever a tool returns is delivered to the ChatGPT client you are talking to and is
               subject to OpenAI’s own terms and privacy policy. We do not send data to OpenAI for
               training.
@@ -129,7 +129,7 @@ function PrivacyPage() {
               Supabase Postgres database and its object storage bucket for images.
             </li>
             <li>
-              Other people using @room see everything you publish publicly (messages, images,
+              Other people using Crawler Room see everything you publish publicly (messages, images,
               profile, community posts).
             </li>
           </ul>
@@ -137,8 +137,8 @@ function PrivacyPage() {
 
         <Section title="Retention">
           <p className="mb-3">
-            No message and no image stays in @room longer than 24 hours, in every room type. The
-            database caps every expiry at creation time plus 24 hours, reads never return older
+            No message and no image stays in Crawler Room longer than 24 hours, in every room type.
+            The database caps every expiry at creation time plus 24 hours, reads never return older
             content, every write path deletes what has expired in that room, and a maintenance job
             sweeps the rest including the stored files. The rolling limits below apply on top of
             that, immediately when new content is written.
@@ -224,7 +224,7 @@ function PrivacyPage() {
 
         <Section title="Children">
           <p>
-            @room is not directed to children under 13 and must not be used by them. See the{" "}
+            Crawler Room is not directed to children under 13 and must not be used by them. See the{" "}
             <a className="underline" href="/terms">
               Terms
             </a>{" "}

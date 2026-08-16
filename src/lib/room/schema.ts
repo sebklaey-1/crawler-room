@@ -9,13 +9,21 @@ import type { z } from "zod";
 
 type Json = Record<string, unknown>;
 
+/**
+ * Structural view of the internal zod definition this converter walks.
+ * zod does not expose a stable public type for `_def`, and every access below
+ * is guarded, so this is the one deliberate escape hatch in the converter.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- zod `_def` internals are untyped by design.
+type ZodNode = any;
+
 interface StringCheck {
   kind: string;
   value?: number;
   regex?: RegExp;
 }
 
-function unwrap(schema: any): { inner: any; optional: boolean; nullable: boolean } {
+function unwrap(schema: ZodNode): { inner: ZodNode; optional: boolean; nullable: boolean } {
   let inner = schema;
   let optional = false;
   let nullable = false;
@@ -38,7 +46,7 @@ function unwrap(schema: any): { inner: any; optional: boolean; nullable: boolean
   }
 }
 
-function leafSchema(node: any): Json {
+function leafSchema(node: ZodNode): Json {
   const typeName = node?._def?.typeName;
 
   if (typeName === "ZodEnum") return { type: "string", enum: [...node._def.values] };
@@ -69,7 +77,7 @@ function leafSchema(node: any): Json {
   }
 
   if (typeName === "ZodUnion") {
-    const options = (node._def.options ?? []).map((option: any) => leafSchema(option));
+    const options = (node._def.options ?? []).map((option: ZodNode) => leafSchema(option));
     const literals = options.filter((option: Json) => "const" in option);
     if (literals.length === options.length && options.length > 0) {
       return {
@@ -88,7 +96,7 @@ export function inputSchemaFor(
   schema: z.ZodTypeAny,
   descriptions: Record<string, string> = {},
 ): Json {
-  const shape = (schema as any)._def.shape();
+  const shape = schema._def.shape();
   const properties: Json = {};
   const required: string[] = [];
 

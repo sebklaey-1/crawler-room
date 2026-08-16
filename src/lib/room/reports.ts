@@ -13,6 +13,7 @@
  * - Reported text is never copied in full: only a short tamper-evident hash of
  *   the target content is stored next to the existing target reference.
  */
+import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { retentionCutoffIso } from "./config";
 import { sha256Hex } from "./crypto";
 import { roomError } from "./errors";
@@ -99,7 +100,7 @@ async function messageTarget(
     .eq("id", internalId)
     .gte("created_at", retentionCutoffIso())
     .maybeSingle();
-  const row = data as any;
+  const row = data;
   if (!row) throw roomError("MESSAGE_NOT_FOUND");
   if (scope.roomId && row.room_id !== scope.roomId)
     throw roomError("MESSAGE_NOT_FOUND", "Diese Nachricht gehört nicht zu diesem Raum.");
@@ -107,7 +108,8 @@ async function messageTarget(
     kind: "message",
     ref: String(row.id),
     roomId: row.room_id,
-    ownerSubjectHash: row.memberships?.subject_hash ?? null,
+    ownerSubjectHash:
+      embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash ?? null,
     snapshot: await snapshotHash(String(row.body ?? "")),
     label: "Nachricht",
   };
@@ -126,7 +128,7 @@ async function imageTarget(
     .eq("id", internalId)
     .gte("created_at", retentionCutoffIso())
     .maybeSingle();
-  const row = data as any;
+  const row = data;
   if (!row) throw roomError("IMAGE_NOT_FOUND");
   if (scope.roomId && row.room_id !== scope.roomId)
     throw roomError("IMAGE_NOT_FOUND", "Dieses Bild gehört nicht zu diesem Raum.");
@@ -134,7 +136,8 @@ async function imageTarget(
     kind: "image",
     ref: String(row.id),
     roomId: row.room_id,
-    ownerSubjectHash: row.memberships?.subject_hash ?? null,
+    ownerSubjectHash:
+      embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash ?? null,
     snapshot: await snapshotHash(String(row.storage_path ?? "")),
     label: "Bild",
   };
@@ -147,7 +150,7 @@ export async function universalRoomId(db: Db): Promise<string> {
     .eq("kind", "universal")
     .limit(1)
     .maybeSingle();
-  const id = (data as any)?.id as string | undefined;
+  const id = data?.id as string | undefined;
   if (!id) throw roomError("ROOM_UNAVAILABLE");
   return id;
 }
@@ -220,7 +223,7 @@ export async function resolveCommunityTarget(
     const { data } = decoded
       ? await base.eq("id", decoded).maybeSingle()
       : await base.ilike("slug", raw).maybeSingle();
-    const row = data as any;
+    const row = data;
     if (!row) throw roomError("NOT_FOUND", "Diese Organisation gibt es nicht.");
     return {
       kind: "organization",
@@ -242,7 +245,7 @@ export async function resolveCommunityTarget(
   const { data } = decodedRoom
     ? await base.eq("id", decodedRoom).maybeSingle()
     : await base.ilike("slug", raw).maybeSingle();
-  const community = data as any;
+  const community = data;
   if (!community) throw roomError("NOT_FOUND", "Diese Community gibt es nicht.");
 
   if (targetType === "message") return messageTarget(db, targetId, { roomId: community.id });
@@ -360,7 +363,7 @@ async function findOpenReport(
     .eq("target_ref", target.ref)
     .in("status", ["received", "reviewing"])
     .maybeSingle();
-  const row = data as any;
+  const row = data;
   return row ? { receipt: row.receipt, status: row.status as ReportStatus } : null;
 }
 

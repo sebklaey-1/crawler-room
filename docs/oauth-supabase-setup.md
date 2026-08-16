@@ -1,7 +1,7 @@
-# OAuth 2.1 setup for the @room MCP server
+# OAuth 2.1 setup for the Crawler Room MCP server
 
-The @room MCP endpoint is an OAuth 2.0 **protected resource** (RFC 9728). The
-authorization server is this project's own Cloud auth service; @room never
+The Crawler Room MCP endpoint is an OAuth 2.0 **protected resource** (RFC 9728). The
+authorization server is this project's own Cloud auth service; Crawler Room never
 issues, stores or forwards credentials.
 
 | Value                         | Setting                                                      |

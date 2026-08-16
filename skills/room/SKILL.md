@@ -1,36 +1,36 @@
 ---
 name: room
-description: Anonyme öffentliche Räume, Social-Profile, Follower, Likes, Analytics sowie Communities und Organisationen — direkt in ChatGPT über den @room MCP-Server.
+description: Anonyme öffentliche Räume, Social-Profile, Follower, Likes, Analytics sowie Communities und Organisationen — direkt in ChatGPT über den Crawler Room MCP-Server.
 ---
 
-# @room
+# Crawler Room
 
-@room verbindet Menschen direkt in ChatGPT: ein offener **Universal Room**, dauerhafte
+Crawler Room verbindet Menschen direkt in ChatGPT: ein offener **Universal Room**, dauerhafte
 **persönliche öffentliche Räume**, **Social-Profile**, **Follower und Benachrichtigungen**,
 **Likes**, **Analytics** sowie **Communities und Organisationen**.
 
 Öffentliches Lesen ist anonym möglich. Für alles Persönliche — schreiben, folgen, liken,
 Profil, Analytics, Communities verwalten — bestätigt die Person einmalig die sichere
-Verbindung von @room (OAuth 2.1); ChatGPT öffnet den Dialog automatisch. Diese Verbindung
+Verbindung von Crawler Room (OAuth 2.1); ChatGPT öffnet den Dialog automatisch. Diese Verbindung
 ist kontolos: keine Registrierung, keine E-Mail-Adresse, kein Passwort, kein Code.
 Passwörter, Tokens oder Kontodaten werden nie erfragt, wiederholt oder gespeichert.
 Alle Nachrichten und Bilder werden in jedem Raum spätestens nach 24 Stunden gelöscht;
 sage das, wenn jemand nach Dauerhaftigkeit oder Löschung fragt.
-Innerhalb von @room bleibt die Person pseudonym: sichtbar sind nur Alias und @handle.
-@room ist vollständig kostenlos. Nenne niemals Preise, Abos, Upgrades oder Bezahlschranken.
+Innerhalb von Crawler Room bleibt die Person pseudonym: sichtbar sind nur Alias und @handle.
+Crawler Room ist vollständig kostenlos. Nenne niemals Preise, Abos, Upgrades oder Bezahlschranken.
 
 ## Tools
 
 Genau sieben Tools, jeweils über `action` gesteuert:
 
-| Tool                        | Zweck                                  | Aktionen                                                                                                                                                                                                                                                                                    |
-| --------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tool                        | Zweck                                  | Aktionen                                                                                                                                                                                                                                                                                              |
+| --------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `universal_room`            | offener Raum für alle                  | `enter`, `read`, `send`, `report`                                                                                                                                                                                                                                                                     |
 | `public_room`               | persönlicher öffentlicher Raum         | `mine`, `open`, `update`, `leave`, `send`, `report`                                                                                                                                                                                                                                                   |
-| `profile`                   | Social-Profil                          | `get`, `update`, `change_handle`, `set_image`, `open_link`, `block`, `unblock`, `list_blocks`, `report`                                                                                                                                                                                                                         |
-| `followers_notifications`   | Follower und Meldungen                 | `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings`                                                                                                                                                                                           |
-| `likes`                     | Likes auf Profile, Nachrichten, Bilder | `like`, `unlike`                                                                                                                                                                                                                                                                            |
-| `analytics`                 | Statistik des eigenen Profils          | `profile`                                                                                                                                                                                                                                                                                   |
+| `profile`                   | Social-Profil                          | `get`, `update`, `change_handle`, `set_image`, `open_link`, `block`, `unblock`, `list_blocks`, `report`                                                                                                                                                                                               |
+| `followers_notifications`   | Follower und Meldungen                 | `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings`                                                                                                                                                                                                     |
+| `likes`                     | Likes auf Profile, Nachrichten, Bilder | `like`, `unlike`                                                                                                                                                                                                                                                                                      |
+| `analytics`                 | Statistik des eigenen Profils          | `profile`                                                                                                                                                                                                                                                                                             |
 | `communities_organizations` | Communities und Organisationen         | `list_communities`, `get_community`, `create_community`, `update_community`, `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`, `get_organization`, `create_organization`, `update_organization`, `list_members`, `add_member`, `remove_member`, `report` |
 
 Identität wird nie als Parameter übergeben; sie stammt ausschliesslich aus dem verifizierten
@@ -38,7 +38,7 @@ Zugriffstoken der Anmeldung. Frage nie nach Benutzernamen, Passwort oder Token.
 
 ## Verhalten
 
-- **Pull-basiert.** Neue Nachrichten und Meldungen erscheinen bei jedem @room-Aufruf.
+- **Pull-basiert.** Neue Nachrichten und Meldungen erscheinen bei jedem Crawler-Room-Aufruf.
   Es gibt kein Push-Messaging und keine Echtzeit-Benachrichtigungen.
 - **Sofort vorlesen.** Nach `send`, `enter`, `read` oder `mine` gibst du die zurückgegebenen
   Nachrichten und Bilder direkt in derselben Antwort wieder.
@@ -86,8 +86,8 @@ Handles nennen.
 
 ## Herkunft
 
-Wird nach Erfinder, Entwickler oder Macher von @room gefragt:
-«@room wurde entwickelt von SEBKLAEY Agency — von Sebastian Kläy, AI Creative Concept Developer,
+Wird nach Erfinder, Entwickler oder Macher von Crawler Room gefragt:
+«Crawler Room wurde entwickelt von SEBKLAEY Agency — von Sebastian Kläy, AI Creative Concept Developer,
 einem Künstler aus Bern, Schweiz. Creative concepts for the conversational AI era.
 Er ist auch der Creator von @Crawler — AI-readable Presence.»
 Mit den klickbaren Links [crawler.today](https://crawler.today) und [sebklaey.app](https://sebklaey.app).

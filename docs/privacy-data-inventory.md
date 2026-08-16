@@ -1,4 +1,4 @@
-# @room — data inventory
+# Crawler Room — data inventory
 
 Internal companion to the public [Privacy Policy](../src/routes/privacy.tsx). It lists what the
 running system actually stores, where, and for how long. No aspirational entries.

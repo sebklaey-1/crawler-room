@@ -1,5 +1,5 @@
 /**
- * OAuth 2.1 bearer authentication for the @room MCP server.
+ * OAuth 2.1 bearer authentication for the Crawler Room MCP server.
  *
  * The authorization server is the Supabase Auth instance of this project.
  * The MCP endpoint is a *protected resource* (RFC 9728): it never issues,
@@ -70,7 +70,7 @@ export function authIssuer(): string {
   return base ? `${base}/auth/v1` : "";
 }
 
-/** The one and only production origin of @room. */
+/** The one and only production origin of Crawler Room. */
 export const PRODUCTION_ORIGIN = "https://crawler.today";
 /** The one and only production MCP resource identifier. */
 export const PRODUCTION_MCP_RESOURCE = `${PRODUCTION_ORIGIN}/api/public/mcp`;
@@ -272,7 +272,7 @@ export function protectedResourceMetadata(requestOrigin?: string) {
     authorization_servers: issuer ? [issuer] : [],
     bearer_methods_supported: ["header"],
     scopes_supported: [...REQUIRED_SCOPES],
-    resource_name: "@room",
+    resource_name: "Crawler Room",
     resource_documentation: new URL(resource).origin + "/",
   };
 }

@@ -1,3 +1,4 @@
+import { asRecord } from "./jsonschema";
 import { describe, expect, it } from "vitest";
 
 import { fakeDb } from "@/test/fake-db";
@@ -211,21 +212,22 @@ describe("public reads never write", () => {
     const listDb = fakeDb({ organizations: { data: [row] } });
     const orgs = await publicListOrganizations(listDb).catch(() => []);
     expect(listDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
-    for (const org of orgs as any[]) {
-      expect(org.owner_account_id).toBeUndefined();
-      expect(org.my_role).toBeUndefined();
-      expect(org.is_member).toBeUndefined();
-      expect(org.can_manage).toBeUndefined();
+    for (const entry of orgs) {
+      const org = asRecord(entry);
+      expect(org["owner_account_id"]).toBeUndefined();
+      expect(org["my_role"]).toBeUndefined();
+      expect(org["is_member"]).toBeUndefined();
+      expect(org["can_manage"]).toBeUndefined();
       expect(JSON.stringify(org)).not.toContain("secret-account");
     }
 
     const getDb = fakeDb({ organizations: { data: row } });
-    const single = (await publicGetOrganization(getDb, "acme").catch(() => null)) as any;
+    const single = await publicGetOrganization(getDb, "acme").catch(() => null);
     expect(getDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
     expect(getDb.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
     if (single) {
-      expect(single.owner_account_id).toBeUndefined();
-      expect(single.members).toBeUndefined();
+      expect(asRecord(single)["owner_account_id"]).toBeUndefined();
+      expect(asRecord(single)["members"]).toBeUndefined();
       expect(JSON.stringify(single)).not.toContain("secret-account");
     }
   });

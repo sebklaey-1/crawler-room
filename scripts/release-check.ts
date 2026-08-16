@@ -1,5 +1,5 @@
 /**
- * Deterministic release gate for @room.
+ * Deterministic release gate for Crawler Room.
  *
  * Verifies everything that can be verified from the repository plus the
  * presence (never the value) of the required runtime configuration. No secret
@@ -146,7 +146,25 @@ check(
     : "missing — manual release blocker: name a moderator and add their subject hash to moderator_subjects",
 );
 
-/* --------------------------------- 7. scripts -------------------------------- */
+/* ------------------------------- 7. branding -------------------------------- */
+
+const BRANDED_FILES = [
+  "src/routes/index.tsx",
+  "src/components/oauth-consent.tsx",
+  "README.md",
+  "skills/room/SKILL.md",
+];
+for (const file of BRANDED_FILES) {
+  const text = read(file) || "";
+  check(`public name «Crawler Room» in ${file}`, text.includes("Crawler Room"), "present");
+  check(
+    `no retired public name in ${file}`,
+    !/@room\b/i.test(text) && !/\bRoom Chat\b/.test(text) && !/\bCrawler Social\b/.test(text),
+    "clean",
+  );
+}
+
+/* --------------------------------- 8. scripts -------------------------------- */
 
 const pkg = JSON.parse(read("package.json") || "{}") as { scripts?: Record<string, string> };
 for (const script of ["test", "build", "typecheck", "release:check"]) {

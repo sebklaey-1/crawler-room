@@ -7,6 +7,7 @@
  * - aggregated, privacy-safe presence (never a list of online users);
  * - rate limiting, spam heuristics and idempotency keys on writes.
  */
+import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { generateAlias } from "./alias";
 import { config, retentionCutoffIso, retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
@@ -37,17 +38,27 @@ export async function enterUniversal(
     p_alias: alias,
   });
   if (error) throw roomError("ROOM_UNAVAILABLE");
-  const result = data as Record<string, any> | null;
-  if (!result || result["error"]) throw roomError("ROOM_UNAVAILABLE");
+  const result = data as {
+    error?: string;
+    room_id?: string;
+    membership_id?: string;
+    alias?: string;
+    joined_at?: string;
+    last_read_message_id?: number | null;
+    presence?: number;
+    joined_now?: boolean;
+  } | null;
+  if (!result || result.error || !result.room_id || !result.membership_id)
+    throw roomError("ROOM_UNAVAILABLE");
 
   return {
-    roomId: result["room_id"],
-    membershipId: result["membership_id"],
-    alias: result["alias"],
-    joinedAt: result["joined_at"],
-    lastReadMessageId: result["last_read_message_id"] ?? null,
-    presence: Number(result["presence"] ?? 0),
-    joinedNow: Boolean(result["joined_now"]),
+    roomId: result.room_id,
+    membershipId: result.membership_id,
+    alias: result.alias ?? alias,
+    joinedAt: result.joined_at ?? new Date().toISOString(),
+    lastReadMessageId: result.last_read_message_id ?? null,
+    presence: Number(result.presence ?? 0),
+    joinedNow: Boolean(result.joined_now),
   };
 }
 
@@ -94,7 +105,7 @@ export async function universalFeed(
   const { data, error } = await query;
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = (data ?? []) as any[];
+  const rows = data ?? [];
   const hasMore = rows.length > limit;
   const page = rows.slice(0, limit);
 
@@ -102,14 +113,14 @@ export async function universalFeed(
   for (const row of page.reverse()) {
     messages.push({
       id: await encodeMessageId(row.id),
-      alias: row.memberships?.alias ?? "Unbekannt",
+      alias: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias ?? "Unbekannt",
       text: row.body as string,
       created_at: row.created_at as string,
       is_self: row.membership_id === membership.membershipId,
     });
   }
 
-  const nextCursor = hasMore && page.length ? String(page[0].id) : null;
+  const nextCursor = hasMore && page.length ? String(page[0]?.id ?? "") : null;
 
   const [trending, activeRooms, events, placements] = await Promise.all([
     trendingTopics(db),
@@ -152,16 +163,17 @@ export async function trendingTopics(db: Db, limit = 6) {
     .limit(1000);
 
   const counts = new Map<string, { slug: string; display_name: string; count: number }>();
-  for (const row of (data ?? []) as any[]) {
-    const topic = row.topics;
-    if (!topic || topic.slug === "universal") continue;
-    const entry = counts.get(topic.slug) ?? {
-      slug: topic.slug,
-      display_name: topic.display_name,
+  for (const row of data ?? []) {
+    const topic = embedded<EmbeddedShapes["topics"]>(row.topics);
+    const slug = topic?.slug;
+    if (!slug || slug === "universal") continue;
+    const entry = counts.get(slug) ?? {
+      slug,
+      display_name: topic.display_name ?? slug,
       count: 0,
     };
     entry.count += 1;
-    counts.set(topic.slug, entry);
+    counts.set(slug, entry);
   }
   return [...counts.values()].sort((a, b) => b.count - a.count).slice(0, limit);
 }
@@ -176,8 +188,8 @@ export async function activePublicRooms(db: Db, limit = 6) {
     .order("updated_at", { ascending: false })
     .limit(limit);
 
-  return ((data ?? []) as any[]).map((room) => ({
-    title: room.title ?? room.topics?.display_name ?? "Raum",
+  return (data ?? []).map((room) => ({
+    title: room.title ?? embedded<EmbeddedShapes["topics"]>(room.topics)?.display_name ?? "Raum",
     description: room.description ?? "",
     capacity: room.capacity as number,
   }));
@@ -192,7 +204,7 @@ export async function upcomingEvents(db: Db, limit = 5) {
     .gte("starts_at", new Date(Date.now() - 3600 * 1000).toISOString())
     .order("starts_at", { ascending: true })
     .limit(limit);
-  return (data ?? []) as any[];
+  return data ?? [];
 }
 
 /** Lightweight promotional-flood heuristic for the public space. */
@@ -226,10 +238,10 @@ export async function sendUniversalMessage(
       return {
         duplicate: true,
         message: {
-          id: await encodeMessageId((existing as any).id),
+          id: await encodeMessageId(existing.id),
           alias: membership.alias,
-          text: (existing as any).body,
-          created_at: (existing as any).created_at,
+          text: existing.body,
+          created_at: existing.created_at,
           is_self: true,
         },
       };
@@ -269,10 +281,10 @@ export async function sendUniversalMessage(
   return {
     duplicate: false,
     message: {
-      id: await encodeMessageId((data as any).id),
+      id: await encodeMessageId(data.id),
       alias: membership.alias,
-      text: (data as any).body,
-      created_at: (data as any).created_at,
+      text: data.body,
+      created_at: data.created_at,
       is_self: true,
     },
   };

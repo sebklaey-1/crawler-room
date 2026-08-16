@@ -1,6 +1,6 @@
-# OpenAI review checklist — @room
+# OpenAI review checklist — Crawler Room
 
-Status document for the app-directory submission of @room. Nothing here claims
+Status document for the app-directory submission of Crawler Room. Nothing here claims
 that an approval exists or is guaranteed; it records what the implementation
 actually does today.
 

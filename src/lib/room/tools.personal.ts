@@ -2,6 +2,7 @@
  * MCP handlers for personal rooms, the follow graph and notifications.
  * No login: the owner is always the pseudonymous subject from `_meta`.
  */
+import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { z } from "zod";
 
 import { generateAlias, sanitizeAlias } from "./alias";
@@ -67,11 +68,11 @@ async function roomMessages(db: Db, room: PersonalRoom, selfMembershipId: string
     .limit(limit);
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = ((data ?? []) as any[]).reverse();
+  const rows = (data ?? []).reverse();
   return Promise.all(
     rows.map(async (row) => ({
       id: await encodeMessageId(row.id),
-      alias: row.memberships?.alias ?? "Unbekannt",
+      alias: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias ?? "Unbekannt",
       text: row.body as string,
       created_at: new Date(row.created_at).toISOString(),
       is_self: row.membership_id === selfMembershipId,
@@ -179,7 +180,7 @@ async function requirePublicRoom(db: Db, username: unknown): Promise<PersonalRoo
  * the other room, send into it or follow it. Reading the Universal Room and
  * public community rooms stays unaffected — that is documented on /safety.
  */
-async function refuseWhenBlocked(db: any, me: string, owner: string): Promise<void> {
+async function refuseWhenBlocked(db: Db, me: string, owner: string): Promise<void> {
   if (me === owner) return;
   const { isBlocked } = await import("./profile");
   if (await isBlocked(db, me, owner)) {
@@ -372,7 +373,7 @@ export async function handleListFollowing(_input: unknown, meta: McpMeta) {
     rooms,
     message: rooms.length
       ? `Du folgst ${rooms.length} Raum/Räumen.`
-      : "Du folgst noch keinem Raum. Sag «@rooms follow @name».",
+      : "Du folgst noch keinem Raum. Sag «Crawler Room: folge @name».",
   };
 }
 
@@ -461,6 +462,6 @@ export async function publicRoomView(db: Db, username: unknown) {
     display_instruction: DISPLAY_INSTRUCTION,
     notice: PERSONAL_NOTICE,
     sign_in_hint:
-      "Nur Lesen: Zum Schreiben, Folgen oder Liken muss sich die Person bei @room anmelden (Verbinden in ChatGPT).",
+      "Nur Lesen: Zum Schreiben, Folgen oder Liken muss sich die Person bei Crawler Room anmelden (Verbinden in ChatGPT).",
   };
 }

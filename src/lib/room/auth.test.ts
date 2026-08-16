@@ -1,3 +1,9 @@
+import { asRecord, branchesOf } from "./jsonschema";
+
+/** The `tools` array of a `tools/list` response body. */
+function toolList(body: unknown): unknown[] {
+  return (asRecord(asRecord(body)["result"])["tools"] ?? []) as unknown[];
+}
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -65,7 +71,7 @@ describe("authentication policy", () => {
     expect(response.headers.get("www-authenticate")).toContain(
       'resource_metadata="http://localhost/.well-known/oauth-protected-resource"',
     );
-    const body = (await response.json()) as any;
+    const body = await response.json();
     expect(body.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
   });
 
@@ -104,17 +110,19 @@ describe("authentication policy", () => {
 
   it("advertises which actions need an account in tools/list", async () => {
     const response = await post({ jsonrpc: "2.0", id: 1, method: "tools/list" });
-    const body = (await response.json()) as any;
-    const likes = body.result.tools.find((tool: any) => tool.name === "likes");
-    expect(likes._meta["room/public_actions"]).toEqual([]);
-    expect(likes._meta["room/authenticated_actions"]).toEqual(["like", "unlike"]);
-    const universal = body.result.tools.find((tool: any) => tool.name === "universal_room");
+    const tools = toolList(await response.json());
+    const likes = asRecord(tools.find((tool) => asRecord(tool)["name"] === "likes"));
+    const likesMeta = asRecord(likes["_meta"]);
+    expect(likesMeta["room/public_actions"]).toEqual([]);
+    expect(likesMeta["room/authenticated_actions"]).toEqual(["like", "unlike"]);
+    const universal = asRecord(tools.find((tool) => asRecord(tool)["name"] === "universal_room"));
     expect(
-      universal.outputSchema.oneOf.map((branch: any) => branch.properties.action.const),
+      branchesOf(universal["outputSchema"]).map((branch) => branch.properties?.["action"]?.const),
     ).toEqual(["enter", "read", "send", "report"]);
-    expect(universal._meta["room/public_actions"]).toEqual(["read"]);
+    const universalMeta = asRecord(universal["_meta"]);
+    expect(universalMeta["room/public_actions"]).toEqual(["read"]);
     // Reporting is a safety action and always needs a verified OAuth identity.
-    expect(universal._meta["room/authenticated_actions"]).toContain("report");
+    expect(universalMeta["room/authenticated_actions"]).toContain("report");
   });
 });
 
@@ -127,7 +135,7 @@ describe("test-only auth context", () => {
       { "x-room-test-user": "00000000-0000-4000-8000-000000000001" },
     );
     expect(response.status).toBe(200);
-    const body = (await response.json()) as any;
+    const body = await response.json();
     expect(body.result.structuredContent.error?.code).not.toBe("AUTH_REQUIRED");
   });
 
@@ -143,23 +151,27 @@ describe("test-only auth context", () => {
 
   it("carries the challenge inside the tool result meta", async () => {
     const response = await toolCall("analytics", { action: "profile" });
-    const body = (await response.json()) as any;
+    const body = await response.json();
     expect(body.result._meta["mcp/www_authenticate"]).toContain("resource_metadata=");
     expect(body.result._meta["mcp/www_authenticate"]).toContain("error_description=");
   });
 
   it("advertises security schemes per tool", async () => {
     const response = await post({ jsonrpc: "2.0", id: 1, method: "tools/list" });
-    const body = (await response.json()) as any;
-    for (const tool of body.result.tools) {
-      expect(tool.securitySchemes).toEqual(tool._meta.securitySchemes);
-      const types = tool.securitySchemes.map((scheme: any) => scheme.type);
+    const tools = toolList(await response.json());
+    for (const entry of tools) {
+      const tool = asRecord(entry);
+      const schemes = (tool["securitySchemes"] ?? []) as Array<{ type?: string }>;
+      expect(schemes).toEqual(asRecord(tool["_meta"])["securitySchemes"]);
+      const types = schemes.map((scheme) => scheme.type);
       expect(types).toContain("oauth2");
-      expect(types.includes("noauth")).toBe((PUBLIC_ACTIONS[tool.name] ?? []).length > 0);
+      expect(types.includes("noauth")).toBe(
+        (PUBLIC_ACTIONS[String(tool["name"])] ?? []).length > 0,
+      );
     }
     for (const name of ["followers_notifications", "likes", "analytics"]) {
-      const tool = body.result.tools.find((entry: any) => entry.name === name);
-      expect(tool.securitySchemes).toEqual([{ type: "oauth2", scopes: ["openid", "profile"] }]);
+      const tool = asRecord(tools.find((entry) => asRecord(entry)["name"] === name));
+      expect(tool["securitySchemes"]).toEqual([{ type: "oauth2", scopes: ["openid", "profile"] }]);
     }
   });
 });
@@ -336,7 +348,7 @@ describe("streamable http hardening", () => {
       { jsonrpc: "2.0", id: { bad: true }, method: "ping" },
     ];
     for (const message of bad) {
-      const body = (await (await post(message)).json()) as any;
+      const body = await (await post(message)).json();
       expect(body.error.code).toBe(-32600);
     }
   });
@@ -350,7 +362,7 @@ describe("streamable http hardening", () => {
       }),
     );
     expect(response.status).toBe(400);
-    expect(((await response.json()) as any).error.code).toBe(-32700);
+    expect((await response.json()).error.code).toBe(-32700);
   });
 
   it("isolates batch entries so one auth failure never leaks", async () => {
@@ -364,13 +376,16 @@ describe("streamable http hardening", () => {
       },
       { jsonrpc: "2.0", id: 3, method: "tools/list" },
     ]);
-    const body = (await response.json()) as any[];
-    const ping = body.find((entry) => entry.id === 1);
-    const analytics = body.find((entry) => entry.id === 2);
-    const list = body.find((entry) => entry.id === 3);
-    expect(ping.result).toEqual({});
-    expect(analytics.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
-    expect(list.result.tools.length).toBe(7);
+    const body = (await response.json()) as Array<Record<string, unknown>>;
+    const byId = (id: number) => asRecord(body.find((entry) => entry["id"] === id));
+    const ping = byId(1);
+    const analytics = byId(2);
+    const list = byId(3);
+    expect(ping["result"]).toEqual({});
+    expect(
+      asRecord(asRecord(asRecord(analytics["result"])["structuredContent"])["error"])["code"],
+    ).toBe("AUTH_REQUIRED");
+    expect((asRecord(list["result"])["tools"] as unknown[]).length).toBe(7);
   });
 
   it("accepts application/json with a charset", async () => {

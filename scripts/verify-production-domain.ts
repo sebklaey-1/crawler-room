@@ -1,5 +1,5 @@
 /**
- * Manual production domain check for @room.
+ * Manual production domain check for Crawler Room.
  *
  * Read-only: performs GET requests plus, optionally, the two side-effect free
  * JSON-RPC methods `initialize` and `tools/list`. It never sends credentials,

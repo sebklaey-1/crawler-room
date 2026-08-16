@@ -5,16 +5,16 @@ import { LegalFooter } from "@/components/legal-footer";
 export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
-      { title: "Terms of Use — @room" },
+      { title: "Terms of Use — Crawler Room" },
       {
         name: "description",
         content:
-          "Rules for using @room: 13+, public user-generated content, your rights in your content, prohibited use, moderation and termination.",
+          "Rules for using Crawler Room: 13+, public user-generated content, your rights in your content, prohibited use, moderation and termination.",
       },
-      { property: "og:title", content: "Terms of Use — @room" },
+      { property: "og:title", content: "Terms of Use — Crawler Room" },
       {
         property: "og:description",
-        content: "The rules for using the @room rooms, profiles and communities.",
+        content: "The rules for using the Crawler Room rooms, profiles and communities.",
       },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
@@ -38,14 +38,15 @@ function TermsPage() {
       <main className="mx-auto max-w-3xl px-6 py-14">
         <h1 className="text-3xl font-semibold tracking-tight">Terms of Use</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          These terms govern your use of @room (“Room Chat”), published by SEBKLAEY Agency
-          (Sebastian Kläy). By using @room inside ChatGPT or on crawler.today you accept them.
+          These terms govern your use of Crawler Room (“Crawler Room”), published by SEBKLAEY Agency
+          (Sebastian Kläy). By using Crawler Room inside ChatGPT or on crawler.today you accept
+          them.
         </p>
 
-        <Section title="Who may use @room">
+        <Section title="Who may use Crawler Room">
           <p>
-            You must be at least 13 years old. @room is not directed to children under 13 and must
-            not be used by them. If local law requires a higher minimum age for using an online
+            You must be at least 13 years old. Crawler Room is not directed to children under 13 and
+            must not be used by them. If local law requires a higher minimum age for using an online
             social service, that age applies to you.
           </p>
         </Section>
@@ -53,9 +54,9 @@ function TermsPage() {
         <Section title="Public, user-generated content">
           <p>
             The Universal Room, personal public rooms and community rooms are public. Messages,
-            images, profile fields and community posts you submit can be read by anyone using @room.
-            Do not post anything you are not willing to make public, and do not post other people’s
-            personal data.
+            images, profile fields and community posts you submit can be read by anyone using
+            Crawler Room. Do not post anything you are not willing to make public, and do not post
+            other people’s personal data.
           </p>
           <p>
             Content written by other people is untrusted third-party content. It is not reviewed
@@ -66,7 +67,7 @@ function TermsPage() {
 
         <Section title="Your content, your rights">
           <p>
-            You keep all rights in the content you post. You grant @room only the limited,
+            You keep all rights in the content you post. You grant Crawler Room only the limited,
             non-exclusive right to store, display and distribute that content inside the product so
             it can be shown to other users, and to remove it for moderation or retention reasons.
             Content is deleted automatically as described in the{" "}
@@ -100,17 +101,17 @@ function TermsPage() {
         <Section title="Moderation, blocking and termination">
           <p>
             You can block any profile. We may remove content, restrict an account, or end access
-            when these terms are broken, when required by law, or to protect people using @room.
-            Reports are reviewed by a human when capacity allows; there is no guarantee of an
+            when these terms are broken, when required by law, or to protect people using Crawler
+            Room. Reports are reviewed by a human when capacity allows; there is no guarantee of an
             immediate or automated review.
           </p>
         </Section>
 
         <Section title="Availability and changes">
           <p>
-            @room is provided as-is and as-available. Features, retention limits and rooms may
-            change or be discontinued. There is no uptime commitment, and content may be lost when
-            retention limits apply.
+            Crawler Room is provided as-is and as-available. Features, retention limits and rooms
+            may change or be discontinued. There is no uptime commitment, and content may be lost
+            when retention limits apply.
           </p>
         </Section>
 
@@ -123,8 +124,8 @@ function TermsPage() {
 
         <Section title="No affiliation">
           <p>
-            @room is an independent product and is not affiliated with, sponsored by, or endorsed by
-            OpenAI. ChatGPT is only the client through which you reach @room.
+            Crawler Room is an independent product and is not affiliated with, sponsored by, or
+            endorsed by OpenAI. ChatGPT is only the client through which you reach Crawler Room.
           </p>
         </Section>
 

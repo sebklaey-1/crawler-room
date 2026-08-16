@@ -90,13 +90,9 @@ const AD_DEFAULTS: AdSettings = {
   default_cost_per_entry_cents: 50,
 };
 
-export async function getSetting<T extends Record<string, any>>(
-  db: Db,
-  key: string,
-  fallback: T,
-): Promise<T> {
+export async function getSetting<T extends object>(db: Db, key: string, fallback: T): Promise<T> {
   const { data } = await db.from("platform_settings").select("value").eq("key", key).maybeSingle();
-  const value = (data as any)?.value;
+  const value = data?.value;
   return value && typeof value === "object" ? { ...fallback, ...value } : fallback;
 }
 

@@ -1,4 +1,4 @@
-# Release checklist — @room
+# Release checklist — Crawler Room
 
 Run `bun run release:check`. It is deterministic, prints no secret values and
 exits non-zero while a blocker remains. The production domain check is a
@@ -30,7 +30,7 @@ The canonical resource is only valid if `crawler.today` is served by _this_
 project. Confirm all of the following before enabling anything that binds to
 the domain:
 
-- [ ] `crawler.today` **and** `www.crawler.today` are attached to this Room Chat
+- [ ] `crawler.today` **and** `www.crawler.today` are attached to this Crawler Room
       project in Project Settings → Domains and both report **Active**.
       Verified on 2026-08-16: both domains are active on this project.
 - [ ] DNS: A records for `@` and `www` point at the Lovable address, the

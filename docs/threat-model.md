@@ -1,4 +1,4 @@
-# Threat model — @room
+# Threat model — Crawler Room
 
 ## Trust boundaries
 
@@ -54,7 +54,7 @@ content through `/support`.
 ## Account linking
 
 An account exists only as `auth_user_hash`. There is no email, phone or social
-graph import, so linking a @room identity to a real-world identity requires
+graph import, so linking a Crawler Room identity to a real-world identity requires
 information the service does not hold.
 
 ## Privacy

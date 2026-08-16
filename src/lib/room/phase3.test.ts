@@ -3,6 +3,7 @@
  * minimisation and prompt-injection safe UGC rendering.
  * Everything here is offline — no database and no network calls.
  */
+import { actionEnum, asRecord, branchesOf, propertiesOf } from "./jsonschema";
 import { describe, expect, it } from "vitest";
 
 import { SURFACE_TOOLS, PUBLIC_ACTIONS } from "./mcp.surface";
@@ -21,7 +22,7 @@ function tool(name: string) {
 }
 
 function actionsOf(name: string): string[] {
-  return (tool(name).inputSchema as any).properties.action.enum as string[];
+  return actionEnum(tool(name).inputSchema);
 }
 
 describe("phase 3 — report surface", () => {
@@ -52,20 +53,18 @@ describe("phase 3 — report surface", () => {
 
   it("publishes the reason enum and the details limit in every report schema", () => {
     for (const name of REPORT_TOOLS) {
-      const properties = (tool(name).inputSchema as any).properties as Record<string, any>;
-      expect(properties["reason"].enum).toEqual([...REPORT_REASONS]);
-      expect(properties["details"].maxLength).toBe(REPORT_DETAILS_MAX);
+      const properties = propertiesOf(tool(name).inputSchema);
+      expect(properties["reason"]?.enum).toEqual([...REPORT_REASONS]);
+      expect(properties["details"]?.maxLength).toBe(REPORT_DETAILS_MAX);
       expect(tool(name).description).toMatch(/nichts automatisch/i);
     }
   });
 
   it("declares a minimal report output branch without identifiers", () => {
     for (const name of REPORT_TOOLS) {
-      const branch = ((tool(name).outputSchema as any).oneOf as any[]).find(
-        (entry) => entry.title === "report",
-      );
+      const branch = branchesOf(tool(name).outputSchema).find((entry) => entry.title === "report");
       expect(branch).toBeTruthy();
-      expect(Object.keys(branch.properties).sort()).toEqual([
+      expect(Object.keys(branch?.properties ?? {}).sort()).toEqual([
         "action",
         "already_reported",
         "message",
@@ -73,8 +72,8 @@ describe("phase 3 — report surface", () => {
         "reported",
         "status",
       ]);
-      expect(branch.properties.status.enum).toEqual([...REPORT_STATUSES]);
-      expect(branch.additionalProperties).toBe(false);
+      expect(branch?.properties?.["status"]?.enum).toEqual([...REPORT_STATUSES]);
+      expect(branch?.additionalProperties).toBe(false);
     }
   });
 
@@ -111,7 +110,10 @@ describe("phase 3 — report surface", () => {
       message: "ok",
     });
     expect(JSON.stringify(result)).not.toContain("secret");
-    expect((result as any).blocks[0]).toEqual({ handle: "anna", display_name: "Anna" });
+    expect((asRecord(result)["blocks"] as unknown[])[0]).toEqual({
+      handle: "anna",
+      display_name: "Anna",
+    });
   });
 });
 
