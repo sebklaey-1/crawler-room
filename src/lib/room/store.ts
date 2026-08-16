@@ -106,7 +106,7 @@ export async function joinTopicRoom(
     memberCount: result.member_count ?? 0,
     topic: {
       slug: result.topic_slug ?? topicSlug,
-      display_name: result.topic_display_name ?? (result.topic_slug ?? topicSlug),
+      display_name: result.topic_display_name ?? result.topic_slug ?? topicSlug,
     },
     joinedNow: Boolean(result.joined_now),
   };

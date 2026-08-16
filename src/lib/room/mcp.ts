@@ -144,7 +144,10 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
   const action = safeAction(params, tool);
   try {
     const meta = await buildMeta(params, context);
-    const result = (await tool.handler(params?.["arguments"] ?? {}, meta)) as Record<string, unknown>;
+    const result = (await tool.handler(params?.["arguments"] ?? {}, meta)) as Record<
+      string,
+      unknown
+    >;
 
     // `_content` carries MCP content blocks (e.g. an image) and never ships as data.
     const { _content, ...raw } = result as { _content?: unknown[] };
@@ -254,7 +257,10 @@ export function validateRpcMessage(message: unknown): { code: number; message: s
   return null;
 }
 
-async function handleRpc(message: Record<string, unknown>, context: RequestContext): Promise<Json | null> {
+async function handleRpc(
+  message: Record<string, unknown>,
+  context: RequestContext,
+): Promise<Json | null> {
   const invalid = validateRpcMessage(message);
   if (invalid) {
     const rawId = message?.["id"];
