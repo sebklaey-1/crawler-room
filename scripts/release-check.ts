@@ -259,10 +259,15 @@ check(
     : "no standard test file found — fail closed",
 );
 const leaking = standardTests.filter((file) => {
-  const text = read(file);
+  // A dummy assignment inside the fail-closed guard test is allowed; reading
+  // the real service key, importing the service-role client or constructing a
+  // Supabase client directly is not.
+  const text = read(file)
+    .replace(/ROOM_TEST_SUPABASE_SERVICE_ROLE_KEY/g, "")
+    .replace(/process\.env\["SUPABASE_SERVICE_ROLE_KEY"\]\s*=\s*"sb_secret_dummy[^"]*"/g, "");
   return (
     text.includes("integrations/supabase/client.server") ||
-    /\bSUPABASE_SERVICE_ROLE_KEY\b/.test(text.replace(/ROOM_TEST_SUPABASE_SERVICE_ROLE_KEY/g, "")) ||
+    /\bSUPABASE_SERVICE_ROLE_KEY\b/.test(text) ||
     /\bcreateClient\s*\(/.test(text)
   );
 });
