@@ -100,18 +100,18 @@ function DataDeletionPage() {
             <li>your community memberships</li>
           </ul>
           <p>
-            <strong>What stays:</strong> aggregate counters that contain no identity, moderation
-            and abuse records we must keep to prevent repeat abuse, and copies of public content
-            that other people already saw or quoted. Messages in shared rooms also disappear on
-            their own through the retention limits described in the{" "}
+            <strong>What stays:</strong> aggregate counters that contain no identity, moderation and
+            abuse records we must keep to prevent repeat abuse, and copies of public content that
+            other people already saw or quoted. Messages in shared rooms also disappear on their own
+            through the retention limits described in the{" "}
             <a className="underline" href="/privacy">
               Privacy Policy
             </a>
             .
           </p>
           <p>
-            Requests are recorded as pending and processed manually. There is no promised
-            processing deadline and nothing is deleted at the moment you press the button.
+            Requests are recorded as pending and processed manually. There is no promised processing
+            deadline and nothing is deleted at the moment you press the button.
           </p>
         </section>
 

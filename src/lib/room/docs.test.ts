@@ -67,12 +67,7 @@ describe("submission dossier", () => {
   });
 
   it("documents annotations and their rationale", () => {
-    for (const hint of [
-      "readOnlyHint",
-      "destructiveHint",
-      "openWorldHint",
-      "idempotentHint",
-    ]) {
+    for (const hint of ["readOnlyHint", "destructiveHint", "openWorldHint", "idempotentHint"]) {
       expect(SUBMISSION).toContain(hint);
     }
   });

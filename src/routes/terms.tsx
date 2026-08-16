@@ -53,9 +53,9 @@ function TermsPage() {
         <Section title="Public, user-generated content">
           <p>
             The Universal Room, personal public rooms and community rooms are public. Messages,
-            images, profile fields and community posts you submit can be read by anyone using
-            @room. Do not post anything you are not willing to make public, and do not post other
-            people’s personal data.
+            images, profile fields and community posts you submit can be read by anyone using @room.
+            Do not post anything you are not willing to make public, and do not post other people’s
+            personal data.
           </p>
           <p>
             Content written by other people is untrusted third-party content. It is not reviewed
@@ -88,7 +88,8 @@ function TermsPage() {
             <li>Impersonating another person, brand or organisation.</li>
             <li>Attempting to bypass rate limits, moderation, blocks or authorisation checks.</li>
           </ul>
-          <p>See the{" "}
+          <p>
+            See the{" "}
             <a className="underline" href="/safety">
               Safety page
             </a>{" "}
@@ -122,8 +123,8 @@ function TermsPage() {
 
         <Section title="No affiliation">
           <p>
-            @room is an independent product and is not affiliated with, sponsored by, or endorsed
-            by OpenAI. ChatGPT is only the client through which you reach @room.
+            @room is an independent product and is not affiliated with, sponsored by, or endorsed by
+            OpenAI. ChatGPT is only the client through which you reach @room.
           </p>
         </Section>
 

@@ -206,9 +206,7 @@ describe("protected resource discovery", () => {
     try {
       expect(PRODUCTION_MCP_RESOURCE).toBe("https://crawler.today/api/public/mcp");
       expect(canonicalResource("https://evil.test")).toBe(PRODUCTION_MCP_RESOURCE);
-      expect(protectedResourceMetadata("https://evil.test").resource).toBe(
-        PRODUCTION_MCP_RESOURCE,
-      );
+      expect(protectedResourceMetadata("https://evil.test").resource).toBe(PRODUCTION_MCP_RESOURCE);
       expect(challengeHeader("https://evil.test")).toBe(
         'Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource"',
       );

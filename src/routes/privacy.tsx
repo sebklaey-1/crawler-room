@@ -45,8 +45,8 @@ function PrivacyPage() {
 
         <Section title="Who runs @room">
           <p>
-            @room is published by SEBKLAEY Agency (Sebastian Kläy). @room is an independent
-            product. It is not affiliated with, sponsored by, or endorsed by OpenAI.
+            @room is published by SEBKLAEY Agency (Sebastian Kläy). @room is an independent product.
+            It is not affiliated with, sponsored by, or endorsed by OpenAI.
           </p>
           <p>
             Contact for privacy questions, access, correction and deletion:{" "}
@@ -64,11 +64,11 @@ function PrivacyPage() {
         <Section title="Categories of data we process">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong>Pseudonymous account identifier.</strong> When you sign in through the
-              OAuth flow, we verify your access token and derive a keyed hash
-              (HMAC-SHA256 with a server secret) from your account id. The raw account id and the
-              raw access token are never stored. There is no automatic linking of a legacy
-              ChatGPT <code>openai/subject</code> identity to an account.
+              <strong>Pseudonymous account identifier.</strong> When you sign in through the OAuth
+              flow, we verify your access token and derive a keyed hash (HMAC-SHA256 with a server
+              secret) from your account id. The raw account id and the raw access token are never
+              stored. There is no automatic linking of a legacy ChatGPT <code>openai/subject</code>{" "}
+              identity to an account.
             </li>
             <li>
               <strong>Profile data you choose to publish.</strong> Handle, display name, bio,
@@ -93,14 +93,14 @@ function PrivacyPage() {
               identity is shown to anyone.
             </li>
             <li>
-              <strong>Abuse-protection events.</strong> Rate-limit records containing a
-              pseudonymous hash and the action name — never message content.
+              <strong>Abuse-protection events.</strong> Rate-limit records containing a pseudonymous
+              hash and the action name — never message content.
             </li>
             <li>
-              <strong>Support and privacy requests.</strong> Category, subject, message, an
-              optional contact you provide voluntarily, an optional public handle you reference,
-              and — only if present — a short-lived keyed hash derived from trusted request
-              metadata for abuse protection. No raw IP address is stored.
+              <strong>Support and privacy requests.</strong> Category, subject, message, an optional
+              contact you provide voluntarily, an optional public handle you reference, and — only
+              if present — a short-lived keyed hash derived from trusted request metadata for abuse
+              protection. No raw IP address is stored.
             </li>
           </ul>
         </Section>
@@ -123,9 +123,9 @@ function PrivacyPage() {
               training.
             </li>
             <li>
-              <strong>Hosting and database.</strong> The application runs on the Lovable
-              deployment platform (Cloudflare Workers runtime) and stores data in the project’s
-              managed Supabase Postgres database and its object storage bucket for images.
+              <strong>Hosting and database.</strong> The application runs on the Lovable deployment
+              platform (Cloudflare Workers runtime) and stores data in the project’s managed
+              Supabase Postgres database and its object storage bucket for images.
             </li>
             <li>
               Other people using @room see everything you publish publicly (messages, images,
@@ -149,10 +149,10 @@ function PrivacyPage() {
               written.
             </li>
             <li>
-              <strong>Images:</strong> a room keeps only its newest 3 approved images and every image is
-              deleted at the latest 24 hours after upload, together with its file in storage. Rejected,
-              failed or never-completed uploads are purged, and the underlying files are removed
-              from storage.
+              <strong>Images:</strong> a room keeps only its newest 3 approved images and every
+              image is deleted at the latest 24 hours after upload, together with its file in
+              storage. Rejected, failed or never-completed uploads are purged, and the underlying
+              files are removed from storage.
             </li>
             <li>
               <strong>Rate-limit events:</strong> deleted after 2 hours.
@@ -165,9 +165,9 @@ function PrivacyPage() {
               leaving.
             </li>
             <li>
-              <strong>Support requests:</strong> message, subject and optional contact are
-              removed 90 days after submission and the abuse-protection hash after at most 24
-              hours, when the maintenance job runs.
+              <strong>Support requests:</strong> message, subject and optional contact are removed
+              90 days after submission and the abuse-protection hash after at most 24 hours, when
+              the maintenance job runs.
             </li>
             <li>
               <strong>Privacy / deletion requests:</strong> kept while pending; deleted 90 days
@@ -183,8 +183,8 @@ function PrivacyPage() {
           <p>
             Account identity is stored only as HMAC-SHA256 with a server-side secret. Public
             message, image and room identifiers handed to ChatGPT are opaque signed references, not
-            database keys. Access tokens are verified against the authorization server and are
-            never logged, stored or returned in a tool result.
+            database keys. Access tokens are verified against the authorization server and are never
+            logged, stored or returned in a tool result.
           </p>
         </Section>
 
@@ -216,8 +216,8 @@ function PrivacyPage() {
             </li>
           </ul>
           <p>
-            Public content you already posted may remain visible to others until it falls out of
-            the room retention window or is removed as part of a deletion request.
+            Public content you already posted may remain visible to others until it falls out of the
+            room retention window or is removed as part of a deletion request.
           </p>
         </Section>
 

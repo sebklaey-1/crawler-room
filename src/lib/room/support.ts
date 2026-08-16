@@ -17,13 +17,7 @@ import { hmacSha256Hex, randomId } from "./crypto";
 import { roomError } from "./errors";
 import type { Db } from "./store";
 
-export const SUPPORT_CATEGORIES = [
-  "technical",
-  "account",
-  "privacy",
-  "abuse",
-  "other",
-] as const;
+export const SUPPORT_CATEGORIES = ["technical", "account", "privacy", "abuse", "other"] as const;
 
 export type SupportCategory = (typeof SUPPORT_CATEGORIES)[number];
 
