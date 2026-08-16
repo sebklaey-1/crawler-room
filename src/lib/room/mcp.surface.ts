@@ -61,7 +61,13 @@ import {
   handleUpdateProfile,
   PROFILE_DISPLAY_INSTRUCTION,
 } from "./tools.profile";
-import { enterUniversal, sendUniversalMessage } from "./universal";
+import {
+  enterUniversal,
+  sendUniversalMessage,
+  universalHandles,
+  universalSelfLabel,
+  universalSender,
+} from "./universal";
 import {
   REPORT_DETAILS_HINT,
   REPORT_DETAILS_MAX,
