@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes/[.]well-known.oauth-protected-resource'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as ApiPublicDataDeletionRouteImport } from './routes/api.public.data-deletion'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
 import { Route as ApiPublicSupportRouteImport } from './routes/api.public.support'
@@ -38,6 +39,11 @@ const OauthConsentRoute = OauthConsentRouteImport.update({
 const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   id: '/.lovable/oauth/consent',
   path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDataDeletionRoute = ApiPublicDataDeletionRouteImport.update({
+  id: '/api/public/data-deletion',
+  path: '/api/public/data-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/support'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/support'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/support'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   DotwellKnownOauthProtectedResourceRoute: typeof DotwellKnownOauthProtectedResourceRoute
   OauthConsentRoute: typeof OauthConsentRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  ApiPublicDataDeletionRoute: typeof ApiPublicDataDeletionRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicSupportRoute: typeof ApiPublicSupportRoute
@@ -176,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/.lovable/oauth/consent'
       fullPath: '/.lovable/oauth/consent'
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/data-deletion': {
+      id: '/api/public/data-deletion'
+      path: '/api/public/data-deletion'
+      fullPath: '/api/public/data-deletion'
+      preLoaderRoute: typeof ApiPublicDataDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/health': {
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
     DotwellKnownOauthProtectedResourceRoute,
   OauthConsentRoute: OauthConsentRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  ApiPublicDataDeletionRoute: ApiPublicDataDeletionRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicSupportRoute: ApiPublicSupportRoute,
