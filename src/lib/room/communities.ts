@@ -71,11 +71,12 @@ export function canManage(input: {
 
 /** Every pseudonymous subject can own organizations through a lazy account row. */
 export async function ensureAccount(db: Db, subjectHash: string): Promise<string> {
-  const { data: identity } = await db
+  const { data: identity, error: readError } = await db
     .from("anonymous_identities")
     .select("subject_hash, account_id, custom_alias")
     .eq("subject_hash", subjectHash)
     .maybeSingle();
+  if (readError) throw roomError("INTERNAL_ERROR");
 
   const existing = (identity as any)?.account_id as string | null | undefined;
   if (existing) return existing;
@@ -85,25 +86,29 @@ export async function ensureAccount(db: Db, subjectHash: string): Promise<string
   const { error } = await db.from("accounts").insert({ id, display_alias: alias });
   if (error) throw roomError("INTERNAL_ERROR");
 
-  if (identity) {
-    await db
-      .from("anonymous_identities")
-      .update({ account_id: id })
-      .eq("subject_hash", subjectHash);
-  } else {
-    await db.from("anonymous_identities").insert({ subject_hash: subjectHash, account_id: id });
+  const linked = identity
+    ? await db.from("anonymous_identities").update({ account_id: id }).eq("subject_hash", subjectHash)
+    : await db.from("anonymous_identities").insert({ subject_hash: subjectHash, account_id: id });
+
+  if ((linked as any)?.error) {
+    // Unique race: another request created the identity or account link first.
+    const raced = await accountIdFor(db, subjectHash);
+    if (!raced) throw roomError("INTERNAL_ERROR");
+    return raced;
   }
   return id;
 }
 
 export async function accountIdFor(db: Db, subjectHash: string): Promise<string | null> {
-  const { data } = await db
+  const { data, error } = await db
     .from("anonymous_identities")
     .select("account_id")
     .eq("subject_hash", subjectHash)
     .maybeSingle();
+  if (error) throw roomError("INTERNAL_ERROR");
   return ((data as any)?.account_id as string | null) ?? null;
 }
+
 
 async function aliasFor(db: Db, subjectHash: string): Promise<string> {
   return (await getCustomAlias(db, subjectHash)) ?? generateAlias(`${subjectHash}:member`);
