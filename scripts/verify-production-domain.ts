@@ -75,9 +75,9 @@ if (!metaResponse) {
 } else if (!metaResponse.ok) {
   fail("protected resource metadata", `status ${metaResponse.status}`);
 } else {
-  let meta: any = null;
+  let meta: Record<string, unknown> | null = null;
   try {
-    meta = await metaResponse.json();
+    meta = (await metaResponse.json()) as Record<string, unknown>;
   } catch {
     fail("protected resource metadata", "response is not JSON");
   }
@@ -123,9 +123,9 @@ if (!health) {
 } else if (health.status === 404) {
   stale("health endpoint", "not present in the deployed build");
 } else {
-  let body: any = null;
+  let body: Record<string, unknown> | null = null;
   try {
-    body = await health.json();
+    body = (await health.json()) as Record<string, unknown>;
   } catch {
     /* ignore */
   }
@@ -163,11 +163,15 @@ if (process.argv.includes("--rpc")) {
           .join("")
       : text;
     try {
-      return { status: response.status, json: JSON.parse(payload) as any };
+      return { status: response.status, json: JSON.parse(payload) as JsonRpcResponse };
     } catch {
       return { status: response.status, json: null };
     }
   }
+
+  type JsonRpcResponse = {
+    result?: { serverInfo?: unknown; tools?: { name?: unknown }[] };
+  };
 
   const init = await rpc("initialize", {
     protocolVersion: "2025-06-18",
@@ -180,7 +184,7 @@ if (process.argv.includes("--rpc")) {
 
   const list = await rpc("tools/list", {});
   const names: string[] = (list.json?.result?.tools ?? [])
-    .map((tool: any) => tool?.name)
+    .map((tool) => tool?.name)
     .filter((name: unknown): name is string => typeof name === "string")
     .sort();
   if (list.status === 404) {

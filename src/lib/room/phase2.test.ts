@@ -158,7 +158,8 @@ describe("input parity helpers", () => {
 describe("published schemas", () => {
   it("gives every tool an oneOf output schema with const actions", () => {
     for (const tool of SURFACE_TOOLS) {
-      const branches = (tool.outputSchema as any)?.oneOf;
+      const branches = (tool.outputSchema as { oneOf?: Record<string, any>[] } | undefined)
+        ?.oneOf;
       expect(Array.isArray(branches), tool.name).toBe(true);
       for (const branch of branches) {
         expect(branch.properties?.action?.const, tool.name).toBeTypeOf("string");
