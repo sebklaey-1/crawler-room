@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import roomIcon from "@/assets/room-icon.png.asset.json";
+import { LegalFooter } from "@/components/legal-footer";
 
 export const Route = createFileRoute("/")({
   head: () => ({
