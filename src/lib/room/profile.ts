@@ -8,6 +8,7 @@
 import { generateAlias, sanitizeAlias } from "./alias";
 import { imageConfig, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
+import { SafeFetchError, fetchImageSafely } from "./ssrf";
 import { sanitizeImage } from "./images";
 import { removeStorageObjects, signedUrl, uploadObject } from "./imagestore";
 import {
@@ -318,19 +319,21 @@ export async function setProfileImageFromUrl(
   kind: ProfileImageKind,
   sourceUrl: string,
 ) {
-  const url = normalizeUrl(sourceUrl);
   const limits = imageConfig();
 
   let bytes: Uint8Array;
   try {
-    const response = await fetch(url, { redirect: "follow" });
-    if (!response.ok) throw new Error("fetch failed");
-    const buffer = await response.arrayBuffer();
-    if (buffer.byteLength > limits.maxImageBytes) throw roomError("IMAGE_TOO_LARGE");
-    bytes = new Uint8Array(buffer);
+    const fetched = await fetchImageSafely(String(sourceUrl ?? ""), limits.maxImageBytes);
+    bytes = fetched.bytes;
   } catch (error) {
-    if ((error as any)?.code === "IMAGE_TOO_LARGE") throw error;
-    throw roomError("INVALID_INPUT", "Das Bild konnte von dieser Adresse nicht geladen werden.");
+    // Never surface the target URL, host, IP or transport error.
+    if (error instanceof SafeFetchError && error.reason === "too_large") {
+      throw roomError("IMAGE_TOO_LARGE");
+    }
+    throw roomError(
+      "INVALID_INPUT",
+      "Das Bild konnte von dieser Adresse nicht geladen werden. Erlaubt sind nur oeffentlich erreichbare https-Adressen mit JPG, PNG oder WebP.",
+    );
   }
 
   const sanitized = sanitizeImage(bytes);
