@@ -19,6 +19,26 @@ const COMMUNITY_TEXT_RETENTION = 100;
 
 export type OrgRole = "owner" | "admin" | "member";
 
+/**
+ * Database roles allowed by the `organization_members.role` check constraint.
+ * Ownership itself lives on `organizations.owner_account_id`; an optional
+ * owner membership row is stored as `organization_admin`.
+ */
+export type DbOrgRole = "member" | "moderator" | "organization_admin";
+
+/** Public role → storable database role. Never writes `owner` or `admin`. */
+export function toDbRole(role: OrgRole): DbOrgRole {
+  return role === "member" ? "member" : "organization_admin";
+}
+
+/** Stored database role → public role. Legacy `moderator` reads as `admin`. */
+export function fromDbRole(role: string | null | undefined): OrgRole | null {
+  if (!role) return null;
+  if (role === "organization_admin" || role === "moderator" || role === "admin") return "admin";
+  return "member";
+}
+
+
 export function slugify(raw: string): string {
   const slug = String(raw ?? "")
     .toLowerCase()
