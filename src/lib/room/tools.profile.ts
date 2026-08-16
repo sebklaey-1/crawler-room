@@ -3,7 +3,6 @@
  * Ownership is always the pseudonymous subject from `_meta` — never an input.
  */
 import { embedded, payloadOf, type EmbeddedShapes } from "./dbtypes";
-import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { imageConfig, IMAGE_RETENTION, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import { resolveIdentity, type McpMeta } from "./identity";
