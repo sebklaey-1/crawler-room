@@ -148,7 +148,13 @@ function outputFor(branches: Record<string, readonly string[]>, properties: Json
         if (!definition) throw new Error(`unknown output field «${key}» for action «${action}»`);
         branch[key] = definition;
       }
-      return { type: "object", title: action, properties: branch, required: ["action"] };
+      return {
+        type: "object",
+        title: action,
+        properties: branch,
+        required: ["action"],
+        additionalProperties: false,
+      };
     }),
   };
 }
