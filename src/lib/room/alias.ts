@@ -65,6 +65,19 @@ export function sanitizeAlias(raw: string | undefined | null): string | null {
   return Array.from(cleaned).slice(0, MAX_ALIAS_LENGTH).join("").trim() || null;
 }
 
+/**
+ * Case-insensitive uniqueness key for a chosen public user name. Mirrors the
+ * database function `public.normalize_alias` exactly: NFKC, trimmed, collapsed
+ * whitespace, 1–32 characters, lowercased. The database stays the authority —
+ * this is only used for UX pre-checks and suggestions.
+ */
+export function aliasKey(raw: string | undefined | null): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.normalize("NFKC").replace(/\s+/g, " ").trim();
+  if (!value || Array.from(value).length > MAX_ALIAS_LENGTH) return null;
+  return value.toLowerCase();
+}
+
 /** Deterministic, stable anonymous alias derived from a seed (subject hash + topic). */
 export function generateAlias(seed: string): string {
   let hash = 2166136261;
