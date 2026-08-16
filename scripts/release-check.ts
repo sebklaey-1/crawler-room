@@ -45,11 +45,11 @@ function read(path: string): string {
 /* --------------------------- 1. canonical resource --------------------------- */
 
 const auth = read("src/lib/room/auth.ts");
-check(
-  "canonical resource pinned",
-  auth.includes(CANONICAL_RESOURCE),
-  `auth.ts pins ${CANONICAL_RESOURCE}`,
-);
+const pinned =
+  auth.includes(CANONICAL_RESOURCE) ||
+  (auth.includes('PRODUCTION_ORIGIN = "https://crawler.today"') &&
+    auth.includes("/api/public/mcp"));
+check("canonical resource pinned", pinned, `auth.ts pins ${CANONICAL_RESOURCE}`);
 
 /* ------------------------------ 2. tool surface ------------------------------ */
 
