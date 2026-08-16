@@ -353,6 +353,71 @@ export type Database = {
           },
         ]
       }
+      content_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          receipt: string
+          reporter_subject_hash: string
+          resolution: string | null
+          resolved_at: string | null
+          reviewer_hash: string | null
+          room_id: string | null
+          status: string
+          target_kind: string
+          target_owner_subject_hash: string | null
+          target_ref: string
+          target_snapshot_hash: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          receipt: string
+          reporter_subject_hash: string
+          resolution?: string | null
+          resolved_at?: string | null
+          reviewer_hash?: string | null
+          room_id?: string | null
+          status?: string
+          target_kind: string
+          target_owner_subject_hash?: string | null
+          target_ref: string
+          target_snapshot_hash?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          receipt?: string
+          reporter_subject_hash?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          reviewer_hash?: string | null
+          room_id?: string | null
+          status?: string
+          target_kind?: string
+          target_owner_subject_hash?: string | null
+          target_ref?: string
+          target_snapshot_hash?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_reports_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entitlement_overrides: {
         Row: {
           account_id: string
@@ -826,6 +891,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      moderator_subjects: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          label: string
+          subject_hash: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          subject_hash: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          subject_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       notification_settings: {
         Row: {
