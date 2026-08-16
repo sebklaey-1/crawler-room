@@ -68,7 +68,7 @@ export function fakeDb(tables: Record<string, TableResult> = {}) {
 
 /** Identity helper that gives the fake the shape call sites expect. */
 function asDb(value: unknown) {
-  return value as import("../lib/room/db").Db & {
+  return value as import("../lib/room/store").Db & {
     calls: Array<{ table: string }>;
     methods: string[];
   };
