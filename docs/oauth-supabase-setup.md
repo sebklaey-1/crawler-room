@@ -4,14 +4,14 @@ The @room MCP endpoint is an OAuth 2.0 **protected resource** (RFC 9728). The
 authorization server is this project's own Cloud auth service; @room never
 issues, stores or forwards credentials.
 
-| Value | Setting |
-| --- | --- |
-| App domain | `https://zinga-room.lovable.app` |
-| Canonical MCP resource | `https://zinga-room.lovable.app/api/public/mcp` |
-| Protected resource metadata | `https://zinga-room.lovable.app/.well-known/oauth-protected-resource` |
-| Authorization server (issuer) | `${SUPABASE_URL}/auth/v1` |
-| Consent page | `https://zinga-room.lovable.app/oauth/consent` |
-| Scopes | `openid`, `profile` (no `email`) |
+| Value                         | Setting                                                               |
+| ----------------------------- | --------------------------------------------------------------------- |
+| App domain                    | `https://zinga-room.lovable.app`                                      |
+| Canonical MCP resource        | `https://zinga-room.lovable.app/api/public/mcp`                       |
+| Protected resource metadata   | `https://zinga-room.lovable.app/.well-known/oauth-protected-resource` |
+| Authorization server (issuer) | `${SUPABASE_URL}/auth/v1`                                             |
+| Consent page                  | `https://zinga-room.lovable.app/oauth/consent`                        |
+| Scopes                        | `openid`, `profile` (no `email`)                                      |
 
 Clients discover the authorization server through the protected-resource
 metadata and then read the issuer's own discovery documents
@@ -20,12 +20,12 @@ The app does **not** proxy or mirror those documents.
 
 ## Required environment variables
 
-| Name | Scope | Purpose |
-| --- | --- | --- |
-| `ROOM_MCP_RESOURCE` | server | Canonical https resource identifier, exactly `https://zinga-room.lovable.app/api/public/mcp`. Mandatory in production; the value never derives from a request header. |
-| `SUPABASE_URL` | server | Used to build the issuer `${SUPABASE_URL}/auth/v1`. |
-| `SUPABASE_PUBLISHABLE_KEY` (or `SUPABASE_ANON_KEY`) | server | Used by the non-persisting verification client. |
-| `SUBJECT_HASH_SECRET` | server | HMAC key for pseudonymous subjects. |
+| Name                                                | Scope  | Purpose                                                                                                                                                               |
+| --------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ROOM_MCP_RESOURCE`                                 | server | Canonical https resource identifier, exactly `https://zinga-room.lovable.app/api/public/mcp`. Mandatory in production; the value never derives from a request header. |
+| `SUPABASE_URL`                                      | server | Used to build the issuer `${SUPABASE_URL}/auth/v1`.                                                                                                                   |
+| `SUPABASE_PUBLISHABLE_KEY` (or `SUPABASE_ANON_KEY`) | server | Used by the non-persisting verification client.                                                                                                                       |
+| `SUBJECT_HASH_SECRET`                               | server | HMAC key for pseudonymous subjects.                                                                                                                                   |
 
 ## Manual backend steps (required)
 
@@ -36,7 +36,7 @@ The app does **not** proxy or mirror those documents.
      (`/.lovable/oauth/consent` stays available as a redirect alias)
    - Dynamic client registration: enabled
    - Site URL: `https://zinga-room.lovable.app`
-3. **Custom Access Token Hook** — Authentication → Hooks → *Custom Access Token*:
+3. **Custom Access Token Hook** — Authentication → Hooks → _Custom Access Token_:
    select the Postgres function `public.custom_access_token_hook` and enable it.
    **This step cannot be automated and must be done in the backend settings.**
    Without it, tokens carry no `aud` / `room_resource` / `room_scopes` claims and

@@ -194,9 +194,7 @@ describe("protected resource discovery", () => {
     process.env["SUPABASE_URL"] ??= "https://example.supabase.co";
     const metadata = protectedResourceMetadata("https://room.example");
     expect(metadata.resource).toBe("https://room.example/api/public/mcp");
-    expect(metadata.authorization_servers).toEqual([
-      `${process.env["SUPABASE_URL"]}/auth/v1`,
-    ]);
+    expect(metadata.authorization_servers).toEqual([`${process.env["SUPABASE_URL"]}/auth/v1`]);
     expect(metadata.scopes_supported).toEqual(["openid", "profile"]);
     expect(metadata.bearer_methods_supported).toEqual(["header"]);
   });
@@ -221,7 +219,6 @@ describe("protected resource discovery", () => {
     );
   });
 });
-
 
 /* ----------------------------- claim validation ---------------------------- */
 

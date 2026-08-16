@@ -137,7 +137,8 @@ async function verifiedClaims(token: string): Promise<Record<string, unknown> | 
 
 function claimList(value: unknown): string[] {
   if (typeof value === "string") return value.split(/\s+/).filter(Boolean);
-  if (Array.isArray(value)) return value.filter((entry): entry is string => typeof entry === "string");
+  if (Array.isArray(value))
+    return value.filter((entry): entry is string => typeof entry === "string");
   return [];
 }
 
