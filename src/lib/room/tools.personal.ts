@@ -174,6 +174,19 @@ async function requirePublicRoom(db: Db, username: unknown): Promise<PersonalRoo
   return room;
 }
 
+/**
+ * A block works in both directions for personal rooms: neither side can open
+ * the other room, send into it or follow it. Reading the Universal Room and
+ * public community rooms stays unaffected — that is documented on /safety.
+ */
+async function refuseWhenBlocked(db: any, me: string, owner: string): Promise<void> {
+  if (me === owner) return;
+  const { isBlocked } = await import("./profile");
+  if (await isBlocked(db, me, owner)) {
+    throw roomError("FORBIDDEN", "Zwischen euch besteht eine Blockierung.");
+  }
+}
+
 export async function handleOpenRoom(input: unknown, meta: McpMeta) {
   const { username } = handleSchema.parse(input);
   const identity = await resolveIdentity(meta);
@@ -181,6 +194,7 @@ export async function handleOpenRoom(input: unknown, meta: McpMeta) {
   await touchPresence(db, identity.subjectHash);
 
   const room = await requirePublicRoom(db, username);
+  await refuseWhenBlocked(db, identity.subjectHash, room.ownerSubjectHash);
   const isOwner = room.ownerSubjectHash === identity.subjectHash;
   const membership = await joinPersonalRoom(db, room, identity.subjectHash);
   if (!isOwner) {
@@ -240,6 +254,7 @@ export async function handleSendRoomMessage(input: unknown, meta: McpMeta) {
   await touchPresence(db, identity.subjectHash);
 
   const room = await requirePublicRoom(db, username);
+  await refuseWhenBlocked(db, identity.subjectHash, room.ownerSubjectHash);
   const membership = await joinPersonalRoom(db, room, identity.subjectHash);
   const settings = config();
   const body = validateMessage(text, {
@@ -308,6 +323,7 @@ export async function handleFollowRoom(input: unknown, meta: McpMeta) {
   await touchPresence(db, identity.subjectHash);
 
   const room = await requirePublicRoom(db, username);
+  await refuseWhenBlocked(db, identity.subjectHash, room.ownerSubjectHash);
   const result = await followRoom(db, room, identity.subjectHash);
   const here = await countOnline(db, room.roomId);
 

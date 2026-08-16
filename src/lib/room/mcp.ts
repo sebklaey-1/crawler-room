@@ -108,7 +108,6 @@ function safeAction(params: any, tool: SurfaceTool): string | undefined {
   return allowed.includes(value) ? value : undefined;
 }
 
-
 /** Builds the `_meta` a handler sees: client data minus `room/*`, plus auth. */
 async function buildMeta(params: any, context: RequestContext): Promise<McpMeta> {
   const meta = sanitizeClientMeta((params?._meta ?? {}) as McpMeta);
@@ -150,7 +149,14 @@ async function callTool(params: any, context: RequestContext) {
     try {
       structured = enforceOutputContract(tool.outputSchema, raw);
     } catch {
-      logEvent({ tool: tool.name, action, ok: false, code: "INTERNAL_ERROR", ms: Date.now() - started, requestId });
+      logEvent({
+        tool: tool.name,
+        action,
+        ok: false,
+        code: "INTERNAL_ERROR",
+        ms: Date.now() - started,
+        requestId,
+      });
       const failure = new RoomError("INTERNAL_ERROR");
       return {
         content: [{ type: "text", text: failure.message }],
@@ -164,12 +170,18 @@ async function callTool(params: any, context: RequestContext) {
       content: _content ?? [{ type: "text", text: tool.summary(structured as Json) }],
       structuredContent: structured,
     };
-
   } catch (unknownError) {
     const error = toRoomError(unknownError);
     if (error.code === "AUTH_REQUIRED") context.authRequired = true;
     if (error.code === "INVALID_TOKEN") context.challenge = "invalid_token";
-    logEvent({ tool: tool.name, action, ok: false, code: error.code, ms: Date.now() - started, requestId });
+    logEvent({
+      tool: tool.name,
+      action,
+      ok: false,
+      code: error.code,
+      ms: Date.now() - started,
+      requestId,
+    });
     const needsAuth = error.code === "AUTH_REQUIRED" || error.code === "INVALID_TOKEN";
     return {
       content: [{ type: "text", text: error.message }],

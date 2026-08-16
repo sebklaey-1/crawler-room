@@ -69,7 +69,13 @@ Public reads are side-effect free.
 - All user-generated content is treated as untrusted; the server instructions
   tell the model never to follow instructions found inside room content.
 - Profile image fetches are SSRF-hardened (see `docs/threat-model.md`).
-- Reports and abuse go through the public `/support` form.
+- Reporting exists in-product as an OAuth-only `report` action inside `universal_room`,
+  `public_room`, `profile` and `communities_organizations`, plus the public `/support` form.
+- A report never removes content automatically; a human resolves it
+  (`received → reviewing → actioned | dismissed`). Reports are minimal (reason enum, optional
+  details ≤ 500 chars) and return only an opaque receipt.
+- Self-service `block` / `unblock` / `list_blocks`; blocks are mutual for personal rooms.
+- Moderator access is a hashed server-side allowlist (`moderator_subjects`), never a public tool.
 
 ## 7. Public pages
 
@@ -85,5 +91,7 @@ footer of every public page.
 5. Decision recorded on anonymous sign-in for the consent screen.
 6. Reviewer screenshots / screencast.
 7. App directory portal metadata (name, icon, categories, descriptions).
+8. At least one real moderator subject hash configured in `moderator_subjects`, with a named
+   responsible person, review rhythm and escalation path.
 
 `bun run release:check` reports each of these deterministically.

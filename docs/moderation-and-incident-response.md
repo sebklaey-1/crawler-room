@@ -18,8 +18,42 @@ malware or spam. `/safety` states the same rules publicly.
 
 ## Reporting
 
-`/support` accepts abuse reports without an account. Every submission returns an
-opaque case reference. Submissions are rate limited and kept for 90 days.
+Two intake paths lead into the same human queue:
+
+1. **In-product (OAuth required).** `universal_room / report`, `public_room / report`,
+   `profile / report` and `communities_organizations / report`. The reporter identity is the
+   existing pseudonymous `subjectHash`; the raw auth subject is never stored. Input is a closed
+   reason enum plus optional details (trimmed, max 500 characters). Targets are resolved
+   server-side, so invented ids and cross-room targets are refused, self-reports are blocked and
+   a second open report of the same target by the same person is answered idempotently. Reports
+   are rate limited per reporter and per target. The public response contains only `reported`,
+   `already_reported`, `status` and an opaque receipt.
+2. **Web form.** `/support` accepts abuse reports without an account and returns an opaque case
+   reference. Submissions are rate limited and kept for 90 days.
+
+A report never removes, hides or restricts content automatically. Status flow:
+`received → reviewing → actioned | dismissed`, with internal audit timestamps. Reports live in
+`public.content_reports` with a short tamper-evident snapshot hash instead of a full copy of the
+content; the table is service-role only and RLS-closed.
+
+## Blocking
+
+`profile / block`, `profile / unblock` and `profile / list_blocks` are self-service. A block is
+mutual for personal rooms: neither side can open, send into or follow the other person's room,
+and the profile view is refused. It does not delete published content and does not affect the
+Universal Room or community rooms. `list_blocks` returns @handles and display names only.
+
+## Moderator access
+
+Privileged operations (`listPendingReports`, `resolveReport`) are server-side functions and are
+**not** exposed as MCP tools. Authorisation uses the `public.moderator_subjects` allowlist, which
+stores hashed Supabase auth subjects only — no e-mail addresses and no UUIDs in source code.
+Review happens through the secured internal process; there is no semi-protected web console.
+Logs and API responses never contain reported text, URLs, reporter/target hashes or tokens.
+
+**Release blocker:** at least one real moderator subject hash must be present in
+`moderator_subjects`, with a named responsible person, a documented review rhythm (working-day
+triage) and an escalation path. `bun run release:check` reports this deterministically.
 
 ## Triage
 

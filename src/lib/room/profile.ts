@@ -687,6 +687,66 @@ export async function isBlocked(db: Db, subjectHash: string, other: string): Pro
   return ((data ?? []) as any[]).length > 0;
 }
 
+/**
+ * Removes a block. Idempotent: unblocking someone who is not blocked simply
+ * reports `blocked: false` instead of failing.
+ */
+export async function unblockPerson(
+  db: Db,
+  subjectHash: string,
+  blocked: string,
+): Promise<boolean> {
+  const { data, error } = await db
+    .from("profile_blocks")
+    .delete()
+    .eq("subject_hash", subjectHash)
+    .eq("blocked_subject_hash", blocked)
+    .select("id");
+  if (error) throw roomError("INTERNAL_ERROR");
+  return ((data ?? []) as any[]).length > 0;
+}
+
+/**
+ * The people the caller blocked, as @handle and display name only.
+ * Subject hashes, account ids and reasons never leave the server.
+ */
+export async function listBlocks(
+  db: Db,
+  subjectHash: string,
+): Promise<Array<{ handle: string; display_name: string }>> {
+  const { data, error } = await db
+    .from("profile_blocks")
+    .select("blocked_subject_hash, created_at")
+    .eq("subject_hash", subjectHash)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw roomError("INTERNAL_ERROR");
+
+  const rows = (data ?? []) as Array<{ blocked_subject_hash: string }>;
+  if (!rows.length) return [];
+
+  const { data: roomRows } = await db
+    .from("user_rooms")
+    .select("owner_subject_hash, handle, room_name")
+    .in(
+      "owner_subject_hash",
+      rows.map((row) => row.blocked_subject_hash),
+    );
+
+  const byHash = new Map<string, { handle: string; room_name: string }>();
+  for (const row of (roomRows ?? []) as any[]) {
+    byHash.set(row.owner_subject_hash, { handle: row.handle, room_name: row.room_name });
+  }
+
+  const out: Array<{ handle: string; display_name: string }> = [];
+  for (const row of rows) {
+    const room = byHash.get(row.blocked_subject_hash);
+    if (!room) continue;
+    out.push({ handle: room.handle, display_name: room.room_name });
+  }
+  return out;
+}
+
 /* --------------------------------- helpers -------------------------------- */
 
 export async function aliasOf(db: Db, subjectHash: string): Promise<string> {

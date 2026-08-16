@@ -68,6 +68,8 @@ the domain:
 5. Decision recorded on anonymous sign-in for the consent screen.
 6. Reviewer screenshots / screencast.
 7. App directory portal metadata.
+8. Moderation staffing: a named responsible person, at least one configured moderator subject
+   hash in `moderator_subjects`, a documented review rhythm and an escalation path.
 
 No statement in this repository claims that an OpenAI approval exists or is
 guaranteed.

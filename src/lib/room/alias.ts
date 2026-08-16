@@ -54,6 +54,7 @@ export function sanitizeAlias(raw: string | undefined | null): string | null {
     // strip tags first so "<b>Lea</b>" becomes "Lea"
     .replace(/<[^>]*>/g, " ")
     // control chars + invisible/bidi characters
+    // eslint-disable-next-line no-control-regex -- intentional control/bidi character sanitiser
     .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, "")
     // only letters, numbers, spaces, hyphens, apostrophes, dots
     .replace(/[^\p{L}\p{N} \-'.]/gu, "")
