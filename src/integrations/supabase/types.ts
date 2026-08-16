@@ -611,6 +611,27 @@ export type Database = {
           },
         ]
       }
+      internal_secret_hashes: {
+        Row: {
+          created_at: string
+          name: string
+          sha256: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          name: string
+          sha256: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          name?: string
+          sha256?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           created_at: string
@@ -661,6 +682,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      maintenance_runs: {
+        Row: {
+          counters: Json
+          error_category: string | null
+          finished_at: string | null
+          id: number
+          started_at: string
+          status: string
+        }
+        Insert: {
+          counters?: Json
+          error_category?: string | null
+          finished_at?: string | null
+          id?: never
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          counters?: Json
+          error_category?: string | null
+          finished_at?: string | null
+          id?: never
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
       }
       memberships: {
         Row: {
@@ -1602,6 +1650,33 @@ export type Database = {
           },
         ]
       }
+      storage_deletion_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          last_error: string | null
+          next_attempt_at: string
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           account_id: string
@@ -1940,8 +2015,20 @@ export type Database = {
         Returns: string
       }
       cleanup_expired: { Args: never; Returns: Json }
+      cleanup_scheduler_status: { Args: never; Returns: Json }
       cleanup_support_requests: { Args: never; Returns: Json }
+      complete_storage_deletion: {
+        Args: { p_paths: string[] }
+        Returns: number
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      due_storage_deletions: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          storage_path: string
+        }[]
+      }
       enforce_all_retention: {
         Args: never
         Returns: {
@@ -1955,6 +2042,10 @@ export type Database = {
         }[]
       }
       enforce_text_retention: { Args: { p_room_id: string }; Returns: number }
+      fail_storage_deletion: {
+        Args: { p_category: string; p_paths: string[] }
+        Returns: number
+      }
       get_or_create_personal_room: {
         Args: {
           p_display_name?: string
@@ -1980,6 +2071,7 @@ export type Database = {
           storage_path: string
         }[]
       }
+      queue_storage_deletion: { Args: { p_paths: string[] }; Returns: number }
       set_display_name: {
         Args: {
           p_display_name: string
