@@ -74,7 +74,7 @@ it is retained for migration history only and the column no longer exists.
 - Annotations remain conservative (`readOnlyHint` only for genuine reads,
   `destructiveHint: false`, `openWorldHint: true`).
 - Legal, safety and support pages render only real configuration values; a missing
-  `VITE_PUBLIC_SUPPORT_EMAIL` shows a neutral notice instead of an invented address.
+  the confirmed public contact `info@crawler.today` (canonical in `src/lib/room/legal.ts`).
 
 ## 4. Security controls
 
@@ -128,7 +128,6 @@ No production writes, reports, blocks or data-rights requests were created.
 
 1. `ROOM_MCP_RESOURCE` not set in the production environment (code defaults to the
    canonical value; the explicit setting is the release gate).
-2. Public support contact `VITE_PUBLIC_SUPPORT_EMAIL` not configured.
 3. Moderator identity/role: at least one real subject hash in `moderator_subjects`, a named
    responsible person, review rhythm and escalation path (`ROOM_MODERATION_OWNER`).
 4. Custom access token hook enabled in the production auth settings.

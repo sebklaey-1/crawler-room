@@ -15,7 +15,7 @@ tests never make external network calls.
 - [ ] No legacy `zinga-room` string in active code or docs
 - [ ] No "no login" or "everything can be reported" claim on the landing page
 - [ ] `ROOM_MCP_RESOURCE`, `SUBJECT_HASH_SECRET`, `MESSAGE_ID_SECRET`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` present
-- [ ] `VITE_PUBLIC_SUPPORT_EMAIL` present
+- [ ] public support contact `info@crawler.today` canonical in `src/lib/room/legal.ts`
 
 ## Quality gates
 
@@ -61,7 +61,6 @@ the domain:
 
 ## Remaining manual blockers
 
-1. Public support contact (`VITE_PUBLIC_SUPPORT_EMAIL`) is not configured.
 2. OpenAI domain verification for `crawler.today`.
 3. ChatGPT OAuth callback URL in the Supabase redirect allow list.
 4. Custom access token hook enabled in production.

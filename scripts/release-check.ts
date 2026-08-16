@@ -12,6 +12,8 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
+import { supportEmailEnvMatches } from "../src/lib/room/legal";
+
 const ROOT = process.cwd();
 const CANONICAL_RESOURCE = "https://crawler.today/api/public/mcp";
 const TOOL_NAMES = [

@@ -80,5 +80,5 @@ the case record survives so a pattern remains visible.
 ## Contact
 
 Public form at `/support`. A public email address is configured through
-`VITE_PUBLIC_SUPPORT_EMAIL`; while it is unset the pages show a neutral notice
+`info@crawler.today`, defined canonically in `src/lib/room/legal.ts`
 and `bun run release:check` reports a blocker.
