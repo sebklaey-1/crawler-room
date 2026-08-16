@@ -162,6 +162,21 @@ suite("global handle and alias claims", () => {
     }
   });
 
+  it("collides a genuine NFKC compatibility variant of the same user name", async () => {
+    const c = await db();
+    const owner = testSubject("nfkc");
+    const other = testSubject("nfkc-other");
+    const stem = `ZzNfkc ${Math.random().toString(36).slice(2, 8)}`;
+    const ascii = `${stem}1`;
+    const compat = `${stem}\u2460`; // circled digit one, NFKC-folds to "1"
+
+    expect((await claim(c, "alias", ascii, owner)).error).toBeNull();
+    const { error } = await claim(c, "alias", compat, other);
+    expect(error?.message ?? "").toMatch(/ALIAS_TAKEN/);
+    // the same owner may re-claim its own name through the compatibility form
+    expect((await claim(c, "alias", compat, owner)).error).toBeNull();
+  });
+
   it("rejects a direct insert that collides in case or trim", async () => {
     const c = await db();
     const owner = testSubject("direct");

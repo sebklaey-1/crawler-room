@@ -31,7 +31,10 @@ describe("name normalisation (pure)", () => {
     const key = aliasKey("Sebastian");
     expect(aliasKey("sebastian")).toBe(key);
     expect(aliasKey(" Sebastian ")).toBe(key);
-    expect(aliasKey("Sebastian")).toBe(key); // fullwidth NFKC form
+    // genuine NFKC compatibility form (fullwidth letters, U+FF33 …)
+    expect(aliasKey("\uFF33\uFF45\uFF42\uFF41\uFF53\uFF54\uFF49\uFF41\uFF4E")).toBe(key);
+    // circled digit one folds to ASCII "1"
+    expect(aliasKey("Room\u2460")).toBe(aliasKey("Room1"));
     expect(aliasKey("Sebas  tian")).toBe(aliasKey("Sebas tian"));
   });
 });

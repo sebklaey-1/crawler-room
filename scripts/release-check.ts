@@ -9,7 +9,7 @@
  *
  *   bun run release:check
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -236,31 +236,41 @@ check(
 );
 
 // No standard test may reach the service-role client or the normal service key.
-const standardTests = [
-  "auth.test.ts",
-  "branding.test.ts",
-  "consent.test.ts",
-  "docs.test.ts",
-  "guards.test.ts",
-  "legal.test.ts",
-  "phase2.test.ts",
-  "phase3.test.ts",
-  "retention.test.ts",
-  "support.test.ts",
-  "surface.test.ts",
-  "testdb.test.ts",
-  "uniqueness.test.ts",
-];
+// The file list is derived recursively from the pattern vitest.config.ts uses
+// (src/**/*.test.ts); *.db.spec.ts contract suites are excluded by that pattern.
+function collectStandardTests(dir: string): string[] {
+  const full = join(ROOT, dir);
+  if (!existsSync(full)) return [];
+  const found: string[] = [];
+  for (const entry of readdirSync(full, { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) found.push(...collectStandardTests(rel));
+    else if (entry.name.endsWith(".test.ts")) found.push(rel);
+  }
+  return found;
+}
+
+const standardTests = collectStandardTests("src").sort();
+check(
+  "standard test files discovered",
+  standardTests.length > 0,
+  standardTests.length > 0
+    ? `${standardTests.length} files match src/**/*.test.ts`
+    : "no standard test file found — fail closed",
+);
 const leaking = standardTests.filter((file) => {
-  const text = read(`src/lib/room/${file}`);
+  // Writing a dummy value inside the fail-closed guard test is allowed;
+  // *reading* the real service key, importing the service-role client or
+  // constructing a Supabase client directly is not.
+  const text = read(file);
   return (
     text.includes("integrations/supabase/client.server") ||
-    text.includes("SUPABASE_SERVICE_ROLE_KEY = ") ||
-    /createClient\(/.test(text)
+    /process\.env\["SUPABASE_SERVICE_ROLE_KEY"\](?!\s*=[^=])/.test(text) ||
+    /\bcreateClient\s*\(/.test(text)
   );
 });
 check(
-  "no standard test uses service-role database access",
+  `no standard test uses service-role database access (${standardTests.length} files checked)`,
   leaking.length === 0,
   leaking.join(", ") || "clean",
 );
