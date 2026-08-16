@@ -143,23 +143,24 @@ export async function orgRoleOf(
   accountId: string | null,
 ): Promise<OrgRole | null> {
   if (!accountId) return null;
-  const { data: org } = await db
+  const { data: org, error: orgError } = await db
     .from("organizations")
     .select("owner_account_id")
     .eq("id", organizationId)
     .maybeSingle();
+  if (orgError) throw roomError("INTERNAL_ERROR");
   if ((org as any)?.owner_account_id === accountId) return "owner";
 
-  const { data } = await db
+  const { data, error } = await db
     .from("organization_members")
     .select("role")
     .eq("organization_id", organizationId)
     .eq("account_id", accountId)
     .maybeSingle();
-  const role = (data as any)?.role as string | undefined;
-  if (role === "owner" || role === "admin" || role === "member") return role;
-  return role ? "member" : null;
+  if (error) throw roomError("INTERNAL_ERROR");
+  return fromDbRole((data as any)?.role as string | undefined);
 }
+
 
 function serializeOrg(row: any, role: OrgRole | null) {
   return {
