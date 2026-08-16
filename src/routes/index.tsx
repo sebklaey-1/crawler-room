@@ -93,7 +93,7 @@ const PRIVACY = [
   "Rooms keep only recent content — older messages and images are deleted automatically.",
   "Images stay private, are stripped of EXIF/GPS data and are published only after a safety review.",
   "Analytics show counts only — never who visited you.",
-  "Any profile can be blocked, and every permission is checked on the server.",
+  "Content and profiles can be reported for human review, any profile can be blocked, and every permission is checked on the server.",
 ];
 
 function Landing() {
