@@ -36,21 +36,9 @@ import {
   revokeInvitation,
 } from "./privaterooms";
 import { getDb, type Db } from "./store";
-import {
-  enterUniversal,
-  presenceLabel,
-  sendUniversalMessage,
-  universalFeed,
-} from "./universal";
+import { enterUniversal, presenceLabel, sendUniversalMessage, universalFeed } from "./universal";
 
-const REPORT_REASONS = [
-  "spam",
-  "misleading",
-  "offensive",
-  "scam",
-  "irrelevant",
-  "other",
-] as const;
+const REPORT_REASONS = ["spam", "misleading", "offensive", "scam", "irrelevant", "other"] as const;
 
 export const plusInputSchemas = {
   get_my_plan: z.object({}).strict(),
@@ -247,7 +235,9 @@ export async function handleJoinInvitation(input: unknown, meta: McpMeta) {
     title: result.room.title,
     alias: result.alias,
     joined_now: result.joined_now,
-    message: result.joined_now ? `Du bist «${result.room.title}» beigetreten.` : "Du bist bereits Mitglied.",
+    message: result.joined_now
+      ? `Du bist «${result.room.title}» beigetreten.`
+      : "Du bist bereits Mitglied.",
   };
 }
 
@@ -262,7 +252,10 @@ export async function handleEnterUniversal(input: unknown, meta: McpMeta) {
     requireEntitlement(ctx, "custom_alias");
     alias = sanitizeAlias(data.alias);
     if (alias) {
-      await db.from("anonymous_identities").update({ custom_alias: alias }).eq("subject_hash", ctx.subjectHash);
+      await db
+        .from("anonymous_identities")
+        .update({ custom_alias: alias })
+        .eq("subject_hash", ctx.subjectHash);
     }
   }
 
@@ -339,7 +332,13 @@ export async function handleSubmitCampaignForReview(input: unknown, meta: McpMet
 export async function handleManageCampaign(input: unknown, meta: McpMeta) {
   const data = parse(plusInputSchemas.manage_campaign, input);
   const { db, ctx } = await context(meta);
-  return manageCampaign(db, ctx, await resolveCampaignId(data.campaign_id), data.action, data.payload ?? {});
+  return manageCampaign(
+    db,
+    ctx,
+    await resolveCampaignId(data.campaign_id),
+    data.action,
+    data.payload ?? {},
+  );
 }
 
 export async function handleGetCampaignAnalytics(input: unknown, meta: McpMeta) {
@@ -357,7 +356,12 @@ export async function handleHideSponsoredPlacement(input: unknown, meta: McpMeta
 export async function handleReportSponsoredPlacement(input: unknown, meta: McpMeta) {
   const data = parse(plusInputSchemas.report_sponsored_placement, input);
   const { db, ctx } = await context(meta);
-  return reportCampaign(db, ctx.subjectHash, await resolveCampaignId(data.campaign_id), data.reason);
+  return reportCampaign(
+    db,
+    ctx.subjectHash,
+    await resolveCampaignId(data.campaign_id),
+    data.reason,
+  );
 }
 
 export async function handleAdminReviewCampaign(input: unknown, meta: McpMeta) {
@@ -372,4 +376,3 @@ export async function handleAdminReviewCampaign(input: unknown, meta: McpMeta) {
   );
   return { ...result, message: `Kampagne: ${result.status}.` };
 }
-

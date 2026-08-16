@@ -26,15 +26,58 @@ export const LOCATION_MAX = 60;
 /* --------------------------------- handles -------------------------------- */
 
 const RESERVED_HANDLES = new Set([
-  "admin", "administrator", "room", "rooms", "at_room", "support", "help", "about",
-  "api", "mcp", "system", "moderator", "mod", "staff", "official", "security",
-  "privacy", "terms", "health", "settings", "profile", "login", "signup", "null",
-  "undefined", "me", "you", "everyone", "here", "all", "team", "sebklaey",
+  "admin",
+  "administrator",
+  "room",
+  "rooms",
+  "at_room",
+  "support",
+  "help",
+  "about",
+  "api",
+  "mcp",
+  "system",
+  "moderator",
+  "mod",
+  "staff",
+  "official",
+  "security",
+  "privacy",
+  "terms",
+  "health",
+  "settings",
+  "profile",
+  "login",
+  "signup",
+  "null",
+  "undefined",
+  "me",
+  "you",
+  "everyone",
+  "here",
+  "all",
+  "team",
+  "sebklaey",
 ]);
 
 const BLOCKED_FRAGMENTS = [
-  "fuck", "shit", "bitch", "nigg", "cunt", "rape", "nazi", "hitler", "faggot",
-  "whore", "arsch", "fotze", "hure", "wichser", "schlampe", "kinderporn", "cp_",
+  "fuck",
+  "shit",
+  "bitch",
+  "nigg",
+  "cunt",
+  "rape",
+  "nazi",
+  "hitler",
+  "faggot",
+  "whore",
+  "arsch",
+  "fotze",
+  "hure",
+  "wichser",
+  "schlampe",
+  "kinderporn",
+  "cp_",
 ];
 
 export function validateHandle(raw: unknown): string {
@@ -104,10 +147,12 @@ export async function changeHandle(db: Db, subjectHash: string, desired: unknown
   if (error?.code === "23505") throw roomError("ALIAS_TAKEN");
   if (error) throw roomError("INTERNAL_ERROR");
 
-  await db.from("handle_redirects").upsert(
-    { old_handle: room.handle, room_id: room.roomId, owner_subject_hash: subjectHash },
-    { onConflict: "old_handle" },
-  );
+  await db
+    .from("handle_redirects")
+    .upsert(
+      { old_handle: room.handle, room_id: room.roomId, owner_subject_hash: subjectHash },
+      { onConflict: "old_handle" },
+    );
   await db.from("handle_redirects").delete().eq("old_handle", handle);
 
   return { handle, changed: true, old_handle: room.handle };
@@ -152,7 +197,11 @@ function mapProfile(row: any, ownerAlias: string): ProfileRow {
 }
 
 async function loadByColumn(db: Db, column: string, value: string): Promise<ProfileRow | null> {
-  const { data, error } = await db.from("user_rooms").select(PROFILE_COLUMNS).eq(column, value).maybeSingle();
+  const { data, error } = await db
+    .from("user_rooms")
+    .select(PROFILE_COLUMNS)
+    .eq(column, value)
+    .maybeSingle();
   if (error) throw roomError("INTERNAL_ERROR");
   if (!data) return null;
   const row = data as any;
@@ -233,13 +282,18 @@ export async function updateProfile(db: Db, subjectHash: string, patch: ProfileP
   if (patch.profile_visibility === "public" || patch.profile_visibility === "private") {
     update["profile_visibility"] = patch.profile_visibility;
   }
-  if (typeof patch.show_online_status === "boolean") update["show_online_status"] = patch.show_online_status;
-  if (typeof patch.show_follower_count === "boolean") update["show_follower_count"] = patch.show_follower_count;
+  if (typeof patch.show_online_status === "boolean")
+    update["show_online_status"] = patch.show_online_status;
+  if (typeof patch.show_follower_count === "boolean")
+    update["show_follower_count"] = patch.show_follower_count;
   if (typeof patch.show_likes === "boolean") update["show_likes"] = patch.show_likes;
 
   if (!Object.keys(update).length) throw roomError("INVALID_INPUT");
 
-  const { error } = await db.from("user_rooms").update(update).eq("owner_subject_hash", subjectHash);
+  const { error } = await db
+    .from("user_rooms")
+    .update(update)
+    .eq("owner_subject_hash", subjectHash);
   if (error) throw roomError("INTERNAL_ERROR");
 
   if (typeof update["room_name"] === "string") {
@@ -284,7 +338,8 @@ export async function setProfileImageFromUrl(
   if (sanitized.bytes.byteLength > limits.maxImageBytes) throw roomError("IMAGE_TOO_LARGE");
 
   const profile = await getOwnProfile(db, subjectHash);
-  const extension = sanitized.mime === "image/png" ? "png" : sanitized.mime === "image/webp" ? "webp" : "jpg";
+  const extension =
+    sanitized.mime === "image/png" ? "png" : sanitized.mime === "image/webp" ? "webp" : "jpg";
   const path = `profiles/${profile.roomId}/${kind}-${Date.now()}.${extension}`;
   await uploadObject(db, path, sanitized.bytes, sanitized.mime);
 
@@ -304,7 +359,10 @@ export async function removeProfileImage(db: Db, subjectHash: string, kind: Prof
   const profile = await getOwnProfile(db, subjectHash);
   const previous = kind === "avatar" ? profile.avatarPath : profile.bannerPath;
   const column = kind === "avatar" ? "avatar_path" : "banner_path";
-  await db.from("user_rooms").update({ [column]: null }).eq("owner_subject_hash", subjectHash);
+  await db
+    .from("user_rooms")
+    .update({ [column]: null })
+    .eq("owner_subject_hash", subjectHash);
   if (previous) await removeStorageObjects(db, [previous]);
   return { kind, removed: Boolean(previous) };
 }
@@ -360,7 +418,7 @@ export async function likeCountsFor(
     .eq("target_type", targetType)
     .in("target_id", targetIds);
   for (const id of targetIds) out[id] = { likes: 0, liked_by_me: false };
-  for (const row of ((data ?? []) as any[])) {
+  for (const row of (data ?? []) as any[]) {
     const entry = out[row.target_id];
     if (!entry) continue;
     entry.likes += 1;
@@ -532,7 +590,7 @@ export async function topContent(db: Db, profile: ProfileRow) {
     .limit(5000);
 
   const tally: Record<string, Record<string, number>> = { message: {}, image: {} };
-  for (const row of ((data ?? []) as any[])) {
+  for (const row of (data ?? []) as any[]) {
     const bucket = tally[row.target_type];
     if (!bucket) continue;
     bucket[row.target_id] = (bucket[row.target_id] ?? 0) + 1;
@@ -604,7 +662,8 @@ async function ownerOnline(db: Db, profile: ProfileRow): Promise<boolean> {
 /* --------------------------------- blocking -------------------------------- */
 
 export async function blockPerson(db: Db, subjectHash: string, blocked: string, reason?: string) {
-  if (subjectHash === blocked) throw roomError("FORBIDDEN", "Du kannst dich nicht selbst blockieren.");
+  if (subjectHash === blocked)
+    throw roomError("FORBIDDEN", "Du kannst dich nicht selbst blockieren.");
   const { error } = await db
     .from("profile_blocks")
     .insert({ subject_hash: subjectHash, blocked_subject_hash: blocked, reason: reason ?? null });

@@ -72,8 +72,7 @@ export const PLUS_TOOLS: PlusToolDefinition[] = [
     outputSchema: OPEN_OUTPUT,
     annotations: READ_ONLY,
     handler: (input, meta) => handleGetMyPlan(input, meta) as Promise<Json>,
-    summary: (result) =>
-      `Alle Möglichkeiten sind freigeschaltet. ${result.notice}`,
+    summary: (result) => `Alle Möglichkeiten sind freigeschaltet. ${result.notice}`,
   },
   {
     name: "create_private_room",
@@ -298,7 +297,8 @@ export const PLUS_TOOLS: PlusToolDefinition[] = [
   {
     name: "manage_campaign",
     title: "Kampagne verwalten",
-    description: "Aktionen: update, pause, resume, cancel. Inhaltliche Änderungen erfordern eine neue Prüfung.",
+    description:
+      "Aktionen: update, pause, resume, cancel. Inhaltliche Änderungen erfordern eine neue Prüfung.",
     inputSchema: {
       type: "object",
       properties: {

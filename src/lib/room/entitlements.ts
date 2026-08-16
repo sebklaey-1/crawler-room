@@ -10,12 +10,7 @@ import { getPlanByCode, listPlans, type PlanRow } from "./plans";
 import type { Db } from "./store";
 
 export type SubscriptionStatus =
-  | "free"
-  | "trialing"
-  | "active"
-  | "past_due"
-  | "canceled"
-  | "expired";
+  "free" | "trialing" | "active" | "past_due" | "canceled" | "expired";
 
 export interface AccountContext {
   accountId: string;
@@ -35,7 +30,10 @@ export interface AccountContext {
 }
 
 /** Ensures an account + anonymous identity record exists for this subject. */
-export async function ensureAccount(db: Db, subjectHash: string): Promise<{ accountId: string; customAlias: string | null }> {
+export async function ensureAccount(
+  db: Db,
+  subjectHash: string,
+): Promise<{ accountId: string; customAlias: string | null }> {
   const { data: existing, error } = await db
     .from("anonymous_identities")
     .select("account_id, custom_alias")
@@ -48,7 +46,10 @@ export async function ensureAccount(db: Db, subjectHash: string): Promise<{ acco
       .from("anonymous_identities")
       .update({ last_seen_at: new Date().toISOString() })
       .eq("subject_hash", subjectHash);
-    return { accountId: (existing as any).account_id, customAlias: (existing as any).custom_alias ?? null };
+    return {
+      accountId: (existing as any).account_id,
+      customAlias: (existing as any).custom_alias ?? null,
+    };
   }
 
   const { data: account, error: accountError } = await db
@@ -83,10 +84,7 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
         .maybeSingle(),
       db.from("accounts").select("stripe_customer_id").eq("id", accountId).maybeSingle(),
       db.from("platform_roles").select("role").eq("account_id", accountId),
-      db
-        .from("entitlement_overrides")
-        .select("key, value, expires_at")
-        .eq("account_id", accountId),
+      db.from("entitlement_overrides").select("key, value, expires_at").eq("account_id", accountId),
     ]);
 
   const freePlan = await getPlanByCode(db, "free");
@@ -112,7 +110,8 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
   for (const row of (overrides ?? []) as any[]) {
     if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) continue;
     if (typeof row.value === "boolean") entitlements[row.key] = row.value;
-    else if (typeof row.value === "number") limits[row.key] = Math.max(limits[row.key] ?? 0, row.value);
+    else if (typeof row.value === "number")
+      limits[row.key] = Math.max(limits[row.key] ?? 0, row.value);
   }
 
   return {
@@ -130,7 +129,6 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
     isPlatformAdmin: ((roles ?? []) as any[]).some((r) => r.role === "platform_admin"),
     stripeCustomerId: (account as any)?.stripe_customer_id ?? null,
   };
-
 }
 
 /** Everything is free — features are only blocked by an explicit admin override. */
@@ -160,7 +158,6 @@ export async function requireUnderLimit(
     throw roomError("LIMIT_REACHED", undefined, { limit: key, max });
   }
 }
-
 
 /** Usage counters shown in room_get_my_plan and the upgrade screen. */
 export async function currentUsage(db: Db, ctx: AccountContext) {
@@ -228,7 +225,8 @@ export async function requireOrganizationAccess(
       .maybeSingle();
     role = (member as any)?.role ?? "";
   }
-  if (!role || (role !== "organization_admin" && role !== "moderator")) throw roomError("FORBIDDEN");
+  if (!role || (role !== "organization_admin" && role !== "moderator"))
+    throw roomError("FORBIDDEN");
 
   return {
     id: (org as any).id,

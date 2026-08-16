@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { fakeDb } from "@/test/fake-db";
-import { canManage, removeOrgMember, slugify, updateCommunity, updateOrganization } from "./communities";
+import {
+  canManage,
+  removeOrgMember,
+  slugify,
+  updateCommunity,
+  updateOrganization,
+} from "./communities";
 import { followRoom, unfollowRoom, type PersonalRoom } from "./personal";
 import { addLike } from "./profile";
+import { publicRoomView } from "./tools.personal";
+import { publicProfileView } from "./tools.profile";
 import { validateMessage } from "./validation";
 import { profileCard, analyticsCard } from "./mcp.render";
 
@@ -19,7 +27,9 @@ const room: PersonalRoom = {
 
 describe("follow guards", () => {
   it("blocks following your own room", async () => {
-    await expect(followRoom(fakeDb(), room, "owner-hash")).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(followRoom(fakeDb(), room, "owner-hash")).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 
   it("never counts a duplicate follow twice", async () => {
@@ -69,12 +79,16 @@ describe("communities and organizations", () => {
       anonymous_identities: { data: { account_id: "acc-1" } },
       user_rooms: { data: { owner_subject_hash: "owner-hash" } },
     });
-    await expect(removeOrgMember(db, "me", "org", "@owner")).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(removeOrgMember(db, "me", "org", "@owner")).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 
   it("refuses organization updates from non-managers", async () => {
     const db = fakeDb({
-      organizations: { data: { id: "org-1", owner_account_id: "acc-owner", name: "Org", slug: "org" } },
+      organizations: {
+        data: { id: "org-1", owner_account_id: "acc-owner", name: "Org", slug: "org" },
+      },
       anonymous_identities: { data: { account_id: "acc-other" } },
       organization_members: { data: { role: "member" } },
     });
@@ -110,7 +124,9 @@ describe("content safety and rendering", () => {
   it("keeps message validation limits", () => {
     expect(() => validateMessage("", { maxLength: 500, maxLinks: 2 })).toThrow();
     expect(() => validateMessage("x".repeat(501), { maxLength: 500, maxLinks: 2 })).toThrow();
-    expect(() => validateMessage("a https://a.io https://b.io https://c.io", { maxLength: 500, maxLinks: 2 })).toThrow();
+    expect(() =>
+      validateMessage("a https://a.io https://b.io https://c.io", { maxLength: 500, maxLinks: 2 }),
+    ).toThrow();
     expect(validateMessage("  hallo  ", { maxLength: 500, maxLinks: 2 })).toBe("hallo");
   });
 
@@ -144,5 +160,34 @@ describe("content safety and rendering", () => {
     const card = analyticsCard({ handle: "sam", range_days: 7, profile_views: 5, daily: [] });
     expect(card).toContain("Statistik für @sam");
     expect(card).toContain("```text");
+  });
+});
+
+describe("public reads never write", () => {
+  const WRITE_METHODS = ["insert", "update", "upsert", "delete"];
+
+  it("keeps the public room view read-only", async () => {
+    const db = fakeDb({
+      user_rooms: {
+        data: {
+          room_id: "11111111-1111-4111-8111-111111111111",
+          owner_subject_hash: "owner-hash",
+          handle: "owner",
+          room_name: "Owner's Room",
+          description: null,
+          created_at: new Date().toISOString(),
+        },
+      },
+    });
+    await publicRoomView(db, "owner").catch(() => undefined);
+    expect(db.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
+    expect(db.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
+  });
+
+  it("keeps the public profile view read-only", async () => {
+    const db = fakeDb();
+    await publicProfileView(db, "someone").catch(() => undefined);
+    expect(db.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
+    expect(db.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
   });
 });

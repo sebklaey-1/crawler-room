@@ -177,7 +177,10 @@ export const PERSONAL_TOOLS: PersonalToolDefinition[] = [
     handler: (input, meta) => handleListFollowing(input, meta) as Promise<Json>,
     summary: (result) =>
       `${result.message}${((result.rooms ?? []) as any[])
-        .map((r) => `\n• ${r.room_name} (@${r.handle}) — ${r.followers} followers · ${r.people_here_now} here now`)
+        .map(
+          (r) =>
+            `\n• ${r.room_name} (@${r.handle}) — ${r.followers} followers · ${r.people_here_now} here now`,
+        )
         .join("")}`,
   },
   {

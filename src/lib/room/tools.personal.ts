@@ -33,7 +33,14 @@ import {
   type PersonalRoom,
 } from "./personal";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
-import { countOnline, getCustomAlias, PRESENCE_WINDOW_SECONDS, touchPresence, type Db, getDb } from "./store";
+import {
+  countOnline,
+  getCustomAlias,
+  PRESENCE_WINDOW_SECONDS,
+  touchPresence,
+  type Db,
+  getDb,
+} from "./store";
 import { validateMessage } from "./validation";
 
 const handleSchema = z.object({ username: z.string().min(1) });
@@ -68,7 +75,10 @@ async function roomMessages(db: Db, room: PersonalRoom, selfMembershipId: string
 
 async function roomImages(db: Db, room: PersonalRoom) {
   const rows = await listApprovedImages(db, room.roomId, IMAGE_RETENTION);
-  const aliases = await aliasesFor(db, rows.map((row) => row.sender_membership_id));
+  const aliases = await aliasesFor(
+    db,
+    rows.map((row) => row.sender_membership_id),
+  );
   const ttl = imageConfig().signedUrlTtlSeconds;
   return Promise.all(
     rows.map(async (row) => ({
@@ -215,7 +225,9 @@ export async function handleLeaveRoom(input: unknown, meta: McpMeta) {
 }
 
 export async function handleSendRoomMessage(input: unknown, meta: McpMeta) {
-  const { username, text } = z.object({ username: z.string().min(1), text: z.string() }).parse(input);
+  const { username, text } = z
+    .object({ username: z.string().min(1), text: z.string() })
+    .parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
   await touchPresence(db, identity.subjectHash);
@@ -240,7 +252,9 @@ export async function handleSendRoomMessage(input: unknown, meta: McpMeta) {
     membership_id: membership.membershipId,
     body,
     created_at: now.toISOString(),
-    expires_at: new Date(now.getTime() + settings.messageRetentionHours * 3600 * 1000).toISOString(),
+    expires_at: new Date(
+      now.getTime() + settings.messageRetentionHours * 3600 * 1000,
+    ).toISOString(),
   });
   if (error) throw roomError("INTERNAL_ERROR");
 
@@ -396,3 +410,36 @@ export async function personalAliasFallback(db: Db, subjectHash: string) {
 }
 
 export { sanitizeAlias };
+
+/* ---------------------------- anonymous read path -------------------------- */
+
+/**
+ * Read-only view of a public personal room for signed-out callers.
+ * Performs no joins, no presence writes and no analytics tracking.
+ */
+export async function publicRoomView(db: Db, username: unknown) {
+  const room = await requirePublicRoom(db, username);
+  const stats = await counters(db, room);
+  return {
+    room: {
+      handle: room.handle,
+      room_name: room.roomName,
+      description: room.description ?? "",
+      owner_alias: room.ownerAlias,
+      owner_online: await isOwnerOnline(db, room),
+      is_owner: false,
+      ...stats,
+    },
+    is_following: false,
+    can_follow: false,
+    authenticated: false,
+    joined_now: false,
+    people_here: await presentMembers(db, room.roomId),
+    messages: await roomMessages(db, room, ""),
+    images: await roomImages(db, room),
+    display_instruction: DISPLAY_INSTRUCTION,
+    notice: PERSONAL_NOTICE,
+    sign_in_hint:
+      "Nur Lesen: Zum Schreiben, Folgen oder Liken muss sich die Person bei @room anmelden (Verbinden in ChatGPT).",
+  };
+}

@@ -42,7 +42,8 @@ export function canManage(input: {
   ownerAccountId: string | null;
   orgRole: OrgRole | null;
 }): boolean {
-  if (input.myAccountId && input.ownerAccountId && input.myAccountId === input.ownerAccountId) return true;
+  if (input.myAccountId && input.ownerAccountId && input.myAccountId === input.ownerAccountId)
+    return true;
   return input.orgRole === "owner" || input.orgRole === "admin";
 }
 
@@ -65,7 +66,10 @@ export async function ensureAccount(db: Db, subjectHash: string): Promise<string
   if (error) throw roomError("INTERNAL_ERROR");
 
   if (identity) {
-    await db.from("anonymous_identities").update({ account_id: id }).eq("subject_hash", subjectHash);
+    await db
+      .from("anonymous_identities")
+      .update({ account_id: id })
+      .eq("subject_hash", subjectHash);
   } else {
     await db.from("anonymous_identities").insert({ subject_hash: subjectHash, account_id: id });
   }
@@ -191,7 +195,9 @@ export async function listOrganizations(db: Db, subjectHash: string, limit = 50)
 }
 
 async function findOrg(db: Db, reference: string) {
-  const value = String(reference ?? "").trim().replace(/^@/, "");
+  const value = String(reference ?? "")
+    .trim()
+    .replace(/^@/, "");
   if (!value) throw roomError("INVALID_INPUT");
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   const query = db.from("organizations").select("*");
@@ -216,7 +222,7 @@ export async function getOrganization(db: Db, subjectHash: string, reference: st
     .limit(50);
 
   const list = [];
-  for (const room of ((communities ?? []) as any[])) {
+  for (const room of (communities ?? []) as any[]) {
     list.push({
       id: await encodeRoomId(room.id),
       slug: room.slug,
@@ -290,7 +296,9 @@ export async function addOrgMember(
   const org = await findOrg(db, reference);
   const accountId = await accountIdFor(db, subjectHash);
   const myRole = await orgRoleOf(db, org.id, accountId);
-  if (!canManage({ myAccountId: accountId, ownerAccountId: org.owner_account_id, orgRole: myRole })) {
+  if (
+    !canManage({ myAccountId: accountId, ownerAccountId: org.owner_account_id, orgRole: myRole })
+  ) {
     throw roomError("FORBIDDEN", "Nur Besitzer oder Admins dürfen Mitglieder hinzufügen.");
   }
 
@@ -306,7 +314,10 @@ export async function addOrgMember(
     .maybeSingle();
 
   if (existing) {
-    await db.from("organization_members").update({ role: safeRole }).eq("id", (existing as any).id);
+    await db
+      .from("organization_members")
+      .update({ role: safeRole })
+      .eq("id", (existing as any).id);
   } else {
     const { error } = await db
       .from("organization_members")
@@ -331,7 +342,9 @@ export async function removeOrgMember(
   const org = await findOrg(db, reference);
   const accountId = await accountIdFor(db, subjectHash);
   const myRole = await orgRoleOf(db, org.id, accountId);
-  if (!canManage({ myAccountId: accountId, ownerAccountId: org.owner_account_id, orgRole: myRole })) {
+  if (
+    !canManage({ myAccountId: accountId, ownerAccountId: org.owner_account_id, orgRole: myRole })
+  ) {
     throw roomError("FORBIDDEN", "Nur Besitzer oder Admins dürfen Mitglieder entfernen.");
   }
 
@@ -348,7 +361,11 @@ export async function removeOrgMember(
     .eq("organization_id", org.id)
     .eq("account_id", targetAccount);
 
-  return { removed: true, alias: await aliasFor(db, targetSubject), organization: serializeOrg(org, myRole) };
+  return {
+    removed: true,
+    alias: await aliasFor(db, targetSubject),
+    organization: serializeOrg(org, myRole),
+  };
 }
 
 /* ------------------------------- communities ------------------------------- */
@@ -365,7 +382,9 @@ export interface CommunityRow {
 }
 
 async function findCommunityRow(db: Db, reference: unknown): Promise<CommunityRow> {
-  const raw = String(reference ?? "").trim().replace(/^@/, "");
+  const raw = String(reference ?? "")
+    .trim()
+    .replace(/^@/, "");
   if (!raw) throw roomError("INVALID_INPUT");
 
   const { decodeRoomId } = await import("./ids");
@@ -441,8 +460,13 @@ export async function createCommunity(
   if (input.organization) {
     const org = await findOrg(db, input.organization);
     const role = await orgRoleOf(db, org.id, accountId);
-    if (!canManage({ myAccountId: accountId, ownerAccountId: org.owner_account_id, orgRole: role })) {
-      throw roomError("FORBIDDEN", "Nur Besitzer oder Admins dürfen Communities dieser Organisation anlegen.");
+    if (
+      !canManage({ myAccountId: accountId, ownerAccountId: org.owner_account_id, orgRole: role })
+    ) {
+      throw roomError(
+        "FORBIDDEN",
+        "Nur Besitzer oder Admins dürfen Communities dieser Organisation anlegen.",
+      );
     }
     organizationId = org.id;
   }
@@ -471,7 +495,11 @@ export async function createCommunity(
   return serializeCommunity(db, data as unknown as CommunityRow, subjectHash);
 }
 
-export async function listCommunities(db: Db, subjectHash: string, options: { query?: string; limit?: number } = {}) {
+export async function listCommunities(
+  db: Db,
+  subjectHash: string,
+  options: { query?: string; limit?: number } = {},
+) {
   let request = db
     .from("rooms")
     .select("id, slug, title, description, organization_id, owner_account_id, capacity, created_at")
@@ -487,7 +515,7 @@ export async function listCommunities(db: Db, subjectHash: string, options: { qu
   if (error) throw roomError("INTERNAL_ERROR");
 
   const out = [];
-  for (const row of ((data ?? []) as any[])) {
+  for (const row of (data ?? []) as any[]) {
     out.push(await serializeCommunity(db, row as CommunityRow, subjectHash));
   }
   return out;
@@ -507,7 +535,10 @@ export async function updateCommunity(
   const row = await findCommunityRow(db, reference);
   const summary = await serializeCommunity(db, row, subjectHash);
   if (!summary.can_manage) {
-    throw roomError("FORBIDDEN", "Nur Besitzer oder autorisierte Organisationsmitglieder dürfen diese Community ändern.");
+    throw roomError(
+      "FORBIDDEN",
+      "Nur Besitzer oder autorisierte Organisationsmitglieder dürfen diese Community ändern.",
+    );
   }
 
   const update: Record<string, unknown> = {};
@@ -540,8 +571,15 @@ async function joinCommunityRow(
     .maybeSingle();
 
   if (existing) {
-    await db.from("memberships").update({ last_seen_at: new Date().toISOString() }).eq("id", (existing as any).id);
-    return { membershipId: (existing as any).id as string, alias: (existing as any).alias as string, joinedNow: false };
+    await db
+      .from("memberships")
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq("id", (existing as any).id);
+    return {
+      membershipId: (existing as any).id as string,
+      alias: (existing as any).alias as string,
+      joinedNow: false,
+    };
   }
 
   const alias = await aliasFor(db, subjectHash);
@@ -551,7 +589,11 @@ async function joinCommunityRow(
     .select("id, alias")
     .single();
   if (error || !data) throw roomError("ROOM_UNAVAILABLE");
-  return { membershipId: (data as any).id as string, alias: (data as any).alias as string, joinedNow: true };
+  return {
+    membershipId: (data as any).id as string,
+    alias: (data as any).alias as string,
+    joinedNow: true,
+  };
 }
 
 export async function joinCommunity(db: Db, subjectHash: string, reference: unknown) {
@@ -632,7 +674,9 @@ export async function sendCommunityMessage(
     membership_id: membership.membershipId,
     body,
     created_at: now.toISOString(),
-    expires_at: new Date(now.getTime() + settings.messageRetentionHours * 3600 * 1000).toISOString(),
+    expires_at: new Date(
+      now.getTime() + settings.messageRetentionHours * 3600 * 1000,
+    ).toISOString(),
   });
   if (error) throw roomError("INTERNAL_ERROR");
 

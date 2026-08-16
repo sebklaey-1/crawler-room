@@ -48,7 +48,12 @@ async function profileMessages(db: Db, profile: ProfileRow, viewerHash: string) 
   if (error) throw roomError("INTERNAL_ERROR");
 
   const rows = ((data ?? []) as any[]).reverse();
-  const likes = await likeCountsFor(db, "message", rows.map((row) => String(row.id)), viewerHash);
+  const likes = await likeCountsFor(
+    db,
+    "message",
+    rows.map((row) => String(row.id)),
+    viewerHash,
+  );
   return Promise.all(
     rows.map(async (row) => ({
       id: await encodeMessageId(row.id),
@@ -64,9 +69,17 @@ async function profileMessages(db: Db, profile: ProfileRow, viewerHash: string) 
 
 async function profileImages(db: Db, profile: ProfileRow, viewerHash: string) {
   const rows = await listApprovedImages(db, profile.roomId, IMAGE_RETENTION);
-  const aliases = await aliasesFor(db, rows.map((row) => row.sender_membership_id));
+  const aliases = await aliasesFor(
+    db,
+    rows.map((row) => row.sender_membership_id),
+  );
   const ttl = imageConfig().signedUrlTtlSeconds;
-  const likes = await likeCountsFor(db, "image", rows.map((row) => String(row.id)), viewerHash);
+  const likes = await likeCountsFor(
+    db,
+    "image",
+    rows.map((row) => String(row.id)),
+    viewerHash,
+  );
   return Promise.all(
     rows.map(async (row) => ({
       id: await encodeImageId(row.id),
@@ -226,7 +239,10 @@ export async function handleSetProfileImage(input: unknown, meta: McpMeta) {
     return { ...result, message: kind === "banner" ? "Banner entfernt." : "Profilbild entfernt." };
   }
   if (typeof payload.image_url !== "string" || !payload.image_url.trim()) {
-    throw roomError("INVALID_INPUT", "Bitte gib eine Bild-Adresse (https) an oder setze remove: true.");
+    throw roomError(
+      "INVALID_INPUT",
+      "Bitte gib eine Bild-Adresse (https) an oder setze remove: true.",
+    );
   }
 
   const result = await setProfileImageFromUrl(db, identity.subjectHash, kind, payload.image_url);
@@ -323,7 +339,12 @@ export async function handleUnlikeContent(input: unknown, meta: McpMeta) {
   const targetType = likeType(payload.target_type);
   const target = await resolveLikeTarget(db, targetType, payload.target_id ?? payload.username);
   const result = await removeLike(db, identity.subjectHash, targetType, target.targetId);
-  return { target_type: targetType, likes: result.likes, liked_by_me: false, message: "Like entfernt." };
+  return {
+    target_type: targetType,
+    likes: result.likes,
+    liked_by_me: false,
+    message: "Like entfernt.",
+  };
 }
 
 /* --------------------------------- analytics ------------------------------- */
@@ -372,6 +393,55 @@ export async function handleBlockProfile(input: unknown, meta: McpMeta) {
   const found = await findProfileByHandle(db, String((input as any)?.username ?? ""));
   if (!found) throw roomError("NOT_FOUND", "Dieses Profil gibt es nicht.");
 
-  await blockPerson(db, identity.subjectHash, found.profile.ownerSubjectHash, (input as any)?.reason);
+  await blockPerson(
+    db,
+    identity.subjectHash,
+    found.profile.ownerSubjectHash,
+    (input as any)?.reason,
+  );
   return { handle: found.profile.handle, message: `@${found.profile.handle} ist blockiert.` };
+}
+
+/* ---------------------------- anonymous read path -------------------------- */
+
+/**
+ * Read-only public profile view for signed-out callers.
+ * No presence update, no profile-view tracking, no viewer-specific state.
+ */
+export async function publicProfileView(db: Db, username: unknown) {
+  const requested = typeof username === "string" ? username.trim() : "";
+  if (!requested) throw roomError("INVALID_INPUT", "Bitte nenne das @handle des Profils.");
+
+  const found = await findProfileByHandle(db, requested);
+  if (!found) throw roomError("NOT_FOUND", "Dieses Profil gibt es nicht.");
+  const profile = found.profile;
+
+  if (profile.visibility === "private") {
+    return {
+      profile: {
+        handle: profile.handle,
+        display_name: profile.roomName,
+        visibility: "private",
+        is_owner: false,
+      },
+      message: `@${profile.handle} hat das Profil auf privat gestellt.`,
+      display_instruction: "Sag freundlich, dass dieses Profil privat ist. Zeige keine Inhalte.",
+    };
+  }
+
+  return {
+    profile: await serializeProfile(db, profile, ""),
+    redirected_from: found.redirected_from,
+    authenticated: false,
+    tabs: {
+      messages: await profileMessages(db, profile, ""),
+      images: await profileImages(db, profile, ""),
+      followers: profile.showFollowerCount ? await listFollowers(db, profile.roomId, 50) : [],
+      following: [],
+    },
+    edit_hint: null,
+    display_instruction: PROFILE_DISPLAY_INSTRUCTION,
+    sign_in_hint:
+      "Nur Lesen: Folgen, Liken, Blockieren und Bearbeiten sind erst nach Anmeldung bei @room möglich.",
+  };
 }

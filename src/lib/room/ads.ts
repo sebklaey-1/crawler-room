@@ -25,16 +25,25 @@ const CAMPAIGN_COLUMNS =
 
 /** Content that may never be advertised on @room. */
 const PROHIBITED_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
-  { label: "sexual_services", pattern: /\b(escort|sexcam|porn|onlyfans|erotik|sexual services)\b/i },
+  {
+    label: "sexual_services",
+    pattern: /\b(escort|sexcam|porn|onlyfans|erotik|sexual services)\b/i,
+  },
   { label: "minor_safety", pattern: /\b(teen sex|minderj[aä]hrig|child|loli)\b/i },
   { label: "hate", pattern: /\b(white power|heil hitler|rassenkrieg|jihadi)\b/i },
   { label: "violence", pattern: /\b(gore|beheading|snuff|killing videos)\b/i },
   { label: "weapons", pattern: /\b(buy guns?|ammo for sale|waffen kaufen|silencer)\b/i },
   { label: "drugs", pattern: /\b(cocaine|mdma|meth|heroin|kokain|weed for sale)\b/i },
-  { label: "scam", pattern: /\b(guaranteed returns?|double your money|risikofrei reich|get rich quick)\b/i },
+  {
+    label: "scam",
+    pattern: /\b(guaranteed returns?|double your money|risikofrei reich|get rich quick)\b/i,
+  },
   { label: "malware", pattern: /\b(keygen|crack download|rat trojan|malware)\b/i },
   { label: "health_claims", pattern: /\b(cure cancer|miracle cure|wunderheilung|covid cure)\b/i },
-  { label: "investment_guarantee", pattern: /\b(guaranteed profit|garantierte rendite|100% roi)\b/i },
+  {
+    label: "investment_guarantee",
+    pattern: /\b(guaranteed profit|garantierte rendite|100% roi)\b/i,
+  },
   { label: "political", pattern: /\b(vote for|w[aä]hlt |election campaign|parteiwerbung)\b/i },
   { label: "sensitive_data", pattern: /\b(buy leads|sell personal data|kreditkartendaten)\b/i },
 ];
@@ -164,7 +173,11 @@ export async function createCampaign(
 }
 
 async function loadOwnedCampaign(db: Db, ctx: AccountContext, campaignId: string) {
-  const { data } = await db.from("sponsored_campaigns").select(CAMPAIGN_COLUMNS).eq("id", campaignId).maybeSingle();
+  const { data } = await db
+    .from("sponsored_campaigns")
+    .select(CAMPAIGN_COLUMNS)
+    .eq("id", campaignId)
+    .maybeSingle();
   if (!data) throw roomError("NOT_FOUND");
   await requireOrganizationAccess(db, ctx, (data as any).organization_id);
   return data as any;
@@ -230,12 +243,14 @@ export async function manageCampaign(
 
   switch (action) {
     case "update": {
-      if (!["draft", "rejected", "paused"].includes(campaign.status)) throw roomError("CAMPAIGN_INVALID");
+      if (!["draft", "rejected", "paused"].includes(campaign.status))
+        throw roomError("CAMPAIGN_INVALID");
       const patch: Record<string, unknown> = {};
       for (const key of ["title", "description", "cta_label", "cta_url"]) {
         if (typeof payload[key] === "string") patch[key] = String(payload[key]).slice(0, 1000);
       }
-      if (Array.isArray(payload["topics"])) patch["topics"] = (payload["topics"] as string[]).slice(0, 10);
+      if (Array.isArray(payload["topics"]))
+        patch["topics"] = (payload["topics"] as string[]).slice(0, 10);
       if (typeof payload["ends_at"] === "string") patch["ends_at"] = payload["ends_at"];
       if (!Object.keys(patch).length) throw roomError("INVALID_INPUT");
       // Any content change forces a fresh review.
@@ -270,7 +285,11 @@ export async function manageCampaign(
     targetId: campaign.id,
   });
 
-  return { campaign_id: await encodeCampaignId(campaign.id), action, message: "Kampagne aktualisiert." };
+  return {
+    campaign_id: await encodeCampaignId(campaign.id),
+    action,
+    message: "Kampagne aktualisiert.",
+  };
 }
 
 /* ------------------------------- placements ------------------------------- */
@@ -299,7 +318,10 @@ export async function selectPlacements(
   options: { topic?: string | null; limit?: number },
 ): Promise<PlacementCard[]> {
   const settings = await adSettings(db);
-  const limit = Math.min(options.limit ?? settings.max_placements_per_page, settings.max_placements_per_page);
+  const limit = Math.min(
+    options.limit ?? settings.max_placements_per_page,
+    settings.max_placements_per_page,
+  );
   if (limit <= 0) return [];
 
   const nowIso = new Date().toISOString();
@@ -319,14 +341,21 @@ export async function selectPlacements(
 
   const ids = candidates.map((c) => c.id);
   const [{ data: hidden }, { data: impressions }, { data: budgets }] = await Promise.all([
-    db.from("user_hidden_campaigns").select("campaign_id").eq("subject_hash", subjectHash).in("campaign_id", ids),
+    db
+      .from("user_hidden_campaigns")
+      .select("campaign_id")
+      .eq("subject_hash", subjectHash)
+      .in("campaign_id", ids),
     db
       .from("campaign_impression_log")
       .select("campaign_id, created_at")
       .eq("subject_hash", subjectHash)
       .in("campaign_id", ids)
       .gte("created_at", new Date(Date.now() - 3600 * 1000).toISOString()),
-    db.from("campaign_budgets").select("campaign_id, total_budget_cents, spent_cents").in("campaign_id", ids),
+    db
+      .from("campaign_budgets")
+      .select("campaign_id, total_budget_cents, spent_cents")
+      .in("campaign_id", ids),
   ]);
 
   const hiddenSet = new Set(((hidden ?? []) as any[]).map((row) => row.campaign_id));
@@ -370,7 +399,12 @@ export async function selectPlacements(
     });
   }
 
-  if (cards.length) await recordImpressions(db, subjectHash, eligible.map((c) => c.id));
+  if (cards.length)
+    await recordImpressions(
+      db,
+      subjectHash,
+      eligible.map((c) => c.id),
+    );
   return cards;
 }
 
@@ -441,12 +475,20 @@ export async function recordSponsoredEntry(db: Db, campaignId: string) {
 export async function hideCampaign(db: Db, subjectHash: string, campaignId: string) {
   await db
     .from("user_hidden_campaigns")
-    .upsert({ subject_hash: subjectHash, campaign_id: campaignId }, { onConflict: "subject_hash,campaign_id" });
+    .upsert(
+      { subject_hash: subjectHash, campaign_id: campaignId },
+      { onConflict: "subject_hash,campaign_id" },
+    );
   await bumpMetric(db, campaignId, "hides", 1);
   return { hidden: true, message: "Diese Anzeige wird dir nicht mehr angezeigt." };
 }
 
-export async function reportCampaign(db: Db, subjectHash: string, campaignId: string, reason: string) {
+export async function reportCampaign(
+  db: Db,
+  subjectHash: string,
+  campaignId: string,
+  reason: string,
+) {
   await db.from("message_reports").insert({
     campaign_id: campaignId,
     reporter_subject_hash: subjectHash,
@@ -476,7 +518,7 @@ export async function campaignAnalytics(db: Db, ctx: AccountContext, organizatio
     .eq("organization_id", organizationId);
 
   const results = [];
-  for (const campaign of ((campaigns ?? []) as any[])) {
+  for (const campaign of (campaigns ?? []) as any[]) {
     const { data: metrics } = await db
       .from("campaign_metrics")
       .select("impressions, entries, cta_clicks, event_signups, hides, reports, spend_cents")
@@ -492,7 +534,15 @@ export async function campaignAnalytics(db: Db, ctx: AccountContext, organizatio
         reports: acc.reports + (row.reports ?? 0),
         spend_cents: acc.spend_cents + (row.spend_cents ?? 0),
       }),
-      { impressions: 0, entries: 0, cta_clicks: 0, event_signups: 0, hides: 0, reports: 0, spend_cents: 0 },
+      {
+        impressions: 0,
+        entries: 0,
+        cta_clicks: 0,
+        event_signups: 0,
+        hides: 0,
+        reports: 0,
+        spend_cents: 0,
+      },
     );
 
     // Minimum aggregation threshold: never expose small-sample behaviour.
@@ -507,7 +557,8 @@ export async function campaignAnalytics(db: Db, ctx: AccountContext, organizatio
       cta_clicks: belowThreshold ? null : totals.cta_clicks,
       event_signups: belowThreshold ? null : totals.event_signups,
       hide_rate: belowThreshold || !totals.impressions ? null : totals.hides / totals.impressions,
-      report_rate: belowThreshold || !totals.impressions ? null : totals.reports / totals.impressions,
+      report_rate:
+        belowThreshold || !totals.impressions ? null : totals.reports / totals.impressions,
       spend_cents: totals.spend_cents,
       cost_per_entry_cents: totals.entries ? Math.round(totals.spend_cents / totals.entries) : null,
       note: belowThreshold
@@ -530,7 +581,11 @@ export async function adminReviewCampaign(
 ) {
   if (!ctx.isPlatformAdmin) throw roomError("FORBIDDEN");
 
-  const { data } = await db.from("sponsored_campaigns").select(CAMPAIGN_COLUMNS).eq("id", campaignId).maybeSingle();
+  const { data } = await db
+    .from("sponsored_campaigns")
+    .select(CAMPAIGN_COLUMNS)
+    .eq("id", campaignId)
+    .maybeSingle();
   if (!data) throw roomError("NOT_FOUND");
 
   const statusByAction = {

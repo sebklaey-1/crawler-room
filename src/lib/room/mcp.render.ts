@@ -6,7 +6,8 @@
 
 export function profileCard(result: any): string {
   const p = result.profile ?? {};
-  if (p.visibility === "private" && !p.is_owner) return String(result.message ?? "Dieses Profil ist privat.");
+  if (p.visibility === "private" && !p.is_owner)
+    return String(result.message ?? "Dieses Profil ist privat.");
 
   const parts: string[] = [];
 
@@ -28,7 +29,8 @@ export function profileCard(result: any): string {
   const stats: Array<[string, unknown]> = [];
   if (p.followers !== null && p.followers !== undefined) stats.push(["Followers", p.followers]);
   stats.push(["Following", p.following ?? 0]);
-  if (p.likes_received !== null && p.likes_received !== undefined) stats.push(["Likes", p.likes_received]);
+  if (p.likes_received !== null && p.likes_received !== undefined)
+    stats.push(["Likes", p.likes_received]);
   stats.push(["Jetzt hier", `🟢 ${p.people_here_now ?? 0}`]);
   parts.push(
     `| ${stats.map(([label]) => label).join(" | ")} |\n|${stats.map(() => "---:").join("|")}|\n| ${stats

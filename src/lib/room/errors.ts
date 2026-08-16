@@ -33,8 +33,12 @@ export type RoomErrorCode =
   | "POLICY_VIOLATION"
   | "DUPLICATE_REQUEST"
   | "BILLING_REQUIRED"
+  | "AUTH_REQUIRED"
+  | "INVALID_TOKEN"
+  | "INSUFFICIENT_SCOPE"
+  | "PAYLOAD_TOO_LARGE"
+  | "UNSUPPORTED_PROTOCOL_VERSION"
   | "INTERNAL_ERROR";
-
 
 const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   RATE_LIMITED: "Du warst gerade sehr aktiv. Bitte versuche es in einer Minute noch einmal.",
@@ -51,7 +55,8 @@ const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   MESSAGE_NOT_FOUND: "Diese Nachricht ist nicht (mehr) verfügbar.",
   IMAGE_NOT_FOUND: "Bild nicht mehr verfügbar.",
   IMAGE_TOO_LARGE: "Das Bild ist zu gross. Erlaubt sind höchstens 10 MB.",
-  IMAGE_TYPE_UNSUPPORTED: "Dieses Bildformat wird nicht unterstützt. Erlaubt sind JPG, PNG und WebP.",
+  IMAGE_TYPE_UNSUPPORTED:
+    "Dieses Bildformat wird nicht unterstützt. Erlaubt sind JPG, PNG und WebP.",
   IMAGE_DUPLICATE: "Dieses Bild wurde in diesem Raum bereits geteilt.",
   IMAGE_NOT_UPLOADED: "Für dieses Bild wurden noch keine Bilddaten hochgeladen.",
   IMAGE_PENDING_REVIEW: "Bild wird geprüft …",
@@ -67,8 +72,14 @@ const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   DUPLICATE_REQUEST: "Diese Anfrage wurde bereits verarbeitet.",
   BILLING_REQUIRED: "Diese Aktion ist derzeit nicht möglich.",
   REVIEW_INVALID: "Die Prüfung konnte nicht bestätigt werden. Bitte starte die Prüfung neu.",
+  AUTH_REQUIRED:
+    "Dafür musst du dich bei @room anmelden. Bitte verbinde @room in ChatGPT (Anmeldung) und versuche es dann erneut.",
+  INVALID_TOKEN:
+    "Deine Anmeldung ist abgelaufen oder ungültig. Bitte melde dich erneut bei @room an.",
+  INSUFFICIENT_SCOPE: "Deine Anmeldung erlaubt diese Aktion nicht.",
+  PAYLOAD_TOO_LARGE: "Diese Anfrage ist zu gross.",
+  UNSUPPORTED_PROTOCOL_VERSION: "Diese MCP-Protokollversion wird nicht unterstützt.",
   INTERNAL_ERROR: "Da ist etwas schiefgelaufen. Bitte versuche es später noch einmal.",
-
 };
 
 export class RoomError extends Error {

@@ -34,9 +34,13 @@ const METHODS = [
   "single",
 ] as const;
 
-function builder(result: TableResult) {
+function builder(result: TableResult, methodLog: string[] = []) {
   const target: any = {};
-  for (const method of METHODS) target[method] = () => target;
+  for (const method of METHODS)
+    target[method] = () => {
+      methodLog.push(method);
+      return target;
+    };
   target.then = (resolve: any, reject: any) =>
     Promise.resolve({ data: null, error: null, count: 0, ...result }).then(resolve, reject);
   return target;
@@ -44,13 +48,17 @@ function builder(result: TableResult) {
 
 export function fakeDb(tables: Record<string, TableResult> = {}) {
   const calls: Array<{ table: string }> = [];
+  /** Every builder method used, so tests can assert read-only behaviour. */
+  const methods: string[] = [];
   const db: any = {
     calls,
+    methods,
     from(table: string) {
       calls.push({ table });
-      return builder(tables[table] ?? {});
+      return builder(tables[table] ?? {}, methods);
     },
-    async rpc() {
+    async rpc(name: string) {
+      methods.push(`rpc:${name}`);
       return { data: null, error: null };
     },
   };

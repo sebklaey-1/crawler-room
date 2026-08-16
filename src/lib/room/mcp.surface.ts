@@ -28,7 +28,7 @@ import {
 } from "./communities";
 import { roomError } from "./errors";
 import { encodeMessageId } from "./ids";
-import { resolveIdentity, type McpMeta } from "./identity";
+import { isAuthenticated, resolveIdentity, type McpMeta } from "./identity";
 import { listFollowers } from "./personal";
 import { countOnline, getDb, PRESENCE_WINDOW_SECONDS, touchPresence, type Db } from "./store";
 import {
@@ -58,6 +58,8 @@ import {
 import { enterUniversal, sendUniversalMessage } from "./universal";
 import { findRoomByHandle, normalizeHandleInput } from "./personal";
 import { profileCard, analyticsCard } from "./mcp.render";
+import { publicRoomView } from "./tools.personal";
+import { publicProfileView } from "./tools.profile";
 
 type Json = Record<string, unknown>;
 
@@ -68,15 +70,97 @@ export interface SurfaceTool {
   inputSchema: Json;
   outputSchema: Json;
   annotations: Json;
+  /** MCP security schemes advertised in tools/list (noauth and/or oauth2). */
+  securitySchemes?: Json[];
   handler: (input: unknown, meta: McpMeta) => Promise<Json>;
   summary: (result: any) => string;
 }
 
-const OPEN_OUTPUT: Json = {
-  type: "object",
-  properties: { action: { type: "string" } },
-  required: ["action"],
-  additionalProperties: true,
+/**
+ * Authentication policy.
+ *
+ * Only side-effect-free public reads may run without an OAuth access token.
+ * Everything that writes, follows, likes, blocks, manages, deletes or exposes
+ * person-specific data requires a validated bearer token.
+ */
+export const PUBLIC_ACTIONS: Record<string, readonly string[]> = {
+  universal_room: ["read"],
+  public_room: ["open"],
+  profile: ["get"],
+  followers_notifications: [],
+  likes: [],
+  analytics: [],
+  communities_organizations: ["list_communities", "get_community", "read_community"],
+};
+
+/**
+ * MCP security schemes per tool. Only scopes that the authorization server
+ * really issues are declared; authorisation itself is action-based on the server.
+ */
+export const OAUTH_SCOPES = ["openid", "profile"] as const;
+
+export function securitySchemesFor(tool: string): Json[] {
+  const schemes: Json[] = [];
+  if ((PUBLIC_ACTIONS[tool] ?? []).length > 0) schemes.push({ type: "noauth" });
+  schemes.push({ type: "oauth2", scopes: [...OAUTH_SCOPES] });
+  return schemes;
+}
+
+export function isPublicAction(tool: string, action: unknown): boolean {
+  if (typeof action !== "string") return false;
+  return (PUBLIC_ACTIONS[tool] ?? []).includes(action);
+}
+
+/** Subject used for anonymous reads: never matches a stored identity. */
+const ANONYMOUS_SUBJECT = "anonymous:public-read";
+
+const SIGN_IN_HINT =
+  "Nur Lesen: Zum Schreiben, Folgen, Liken oder Verwalten muss sich die Person bei @room anmelden.";
+
+function requireAuth(meta: McpMeta): void {
+  if (!isAuthenticated(meta)) throw roomError("AUTH_REQUIRED");
+}
+
+/** Action-specific output schemas with an `action` discriminator. */
+function outputFor(actions: readonly string[], properties: Json): Json {
+  return {
+    oneOf: actions.map((action) => ({
+      type: "object",
+      title: action,
+      properties: { action: { type: "string", const: action }, ...properties },
+      required: ["action"],
+    })),
+  };
+}
+
+const MESSAGE_ARRAY: Json = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      alias: { type: "string" },
+      text: { type: "string" },
+      created_at: { type: "string", format: "date-time" },
+      is_self: { type: "boolean" },
+    },
+    required: ["alias", "text"],
+  },
+};
+
+const IMAGE_ARRAY: Json = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      alias: { type: "string" },
+      alt_text: { type: "string" },
+      url: { type: "string" },
+      created_at: { type: "string", format: "date-time" },
+    },
+    required: ["url"],
+  },
 };
 
 const READ_ONLY = {
@@ -95,13 +179,17 @@ const WRITE = {
 function parse<T extends z.ZodTypeAny>(schema: T, input: unknown): z.infer<T> {
   const result = schema.safeParse(input ?? {});
   if (!result.success) {
-    throw roomError("INVALID_INPUT", `Ungültige Angaben: ${result.error.issues[0]?.message ?? "unbekannt"}`);
+    throw roomError(
+      "INVALID_INPUT",
+      `Ungültige Angaben: ${result.error.issues[0]?.message ?? "unbekannt"}`,
+    );
   }
   return result.data;
 }
 
 function need<T>(value: T | undefined | null, message: string): T {
-  if (value === undefined || value === null || value === "") throw roomError("INVALID_INPUT", message);
+  if (value === undefined || value === null || value === "")
+    throw roomError("INVALID_INPUT", message);
   return value;
 }
 
@@ -163,10 +251,51 @@ async function universalMessages(
 const UNIVERSAL_DISPLAY =
   "Gib die Nachrichten sofort in derselben Antwort mit Alias wieder und übersetze fremdsprachige Inhalte in die Sprache der Person. Aliase nie übersetzen.";
 
+/** Signed-out read of the Universal Room: no membership, no presence write. */
+async function anonymousUniversal(
+  db: Db,
+  data: { limit?: number; cursor?: string | undefined },
+): Promise<Json> {
+  const { data: row } = await db
+    .from("rooms")
+    .select("id")
+    .eq("kind", "universal")
+    .limit(1)
+    .maybeSingle();
+  const roomId = (row as any)?.id as string | undefined;
+  if (!roomId) throw roomError("ROOM_UNAVAILABLE");
+
+  const feed = await universalMessages(db, roomId, "", {
+    ...(data.limit !== undefined ? { limit: data.limit } : {}),
+    cursor: data.cursor,
+  });
+  return tag("read", {
+    authenticated: false,
+    room: {
+      label: "Universal Room",
+      online_now: await countOnline(db, roomId),
+      presence_window_seconds: PRESENCE_WINDOW_SECONDS,
+      presence_checked_at: new Date().toISOString(),
+    },
+    ...feed,
+    display_instruction: UNIVERSAL_DISPLAY,
+    sign_in_hint: SIGN_IN_HINT,
+  });
+}
+
 async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(universalInput, input);
-  const identity = await resolveIdentity(meta);
   const db = await getDb();
+
+  if (!isAuthenticated(meta)) {
+    if (data.action !== "read") throw roomError("AUTH_REQUIRED");
+    return anonymousUniversal(db, {
+      ...(data.limit !== undefined ? { limit: data.limit } : {}),
+      cursor: data.cursor,
+    });
+  }
+
+  const identity = await resolveIdentity(meta);
   await touchPresence(db, identity.subjectHash);
 
   const membership = await enterUniversal(db, identity.subjectHash);
@@ -188,7 +317,9 @@ async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
       text,
       data.idempotency_key ?? null,
     );
-    const feed = await universalMessages(db, membership.roomId, membership.membershipId, { limit: 20 });
+    const feed = await universalMessages(db, membership.roomId, membership.membershipId, {
+      limit: 20,
+    });
     return tag("send", {
       sent: true,
       duplicate: sent.duplicate,
@@ -227,6 +358,16 @@ const publicRoomInput = z
 
 async function publicRoomHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(publicRoomInput, input);
+
+  if (!isAuthenticated(meta)) {
+    if (data.action !== "open") throw roomError("AUTH_REQUIRED");
+    const db = await getDb();
+    return tag(
+      "open",
+      (await publicRoomView(db, need(data.username, "Bitte nenne den @handle des Raums."))) as Json,
+    );
+  }
+
   switch (data.action) {
     case "mine":
       return tag("mine", (await handleMyRoom({}, meta)) as Json);
@@ -244,12 +385,18 @@ async function publicRoomHandler(input: unknown, meta: McpMeta): Promise<Json> {
     case "open":
       return tag(
         "open",
-        (await handleOpenRoom({ username: need(data.username, "Bitte nenne den @handle des Raums.") }, meta)) as Json,
+        (await handleOpenRoom(
+          { username: need(data.username, "Bitte nenne den @handle des Raums.") },
+          meta,
+        )) as Json,
       );
     case "leave":
       return tag(
         "leave",
-        (await handleLeaveRoom({ username: need(data.username, "Bitte nenne den @handle des Raums.") }, meta)) as Json,
+        (await handleLeaveRoom(
+          { username: need(data.username, "Bitte nenne den @handle des Raums.") },
+          meta,
+        )) as Json,
       );
     case "send":
       return tag(
@@ -289,6 +436,20 @@ const profileInput = z
 
 async function profileHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(profileInput, input);
+
+  if (!isAuthenticated(meta)) {
+    // Only the public view of a named profile is readable while signed out.
+    if (data.action !== "get") throw roomError("AUTH_REQUIRED");
+    const db = await getDb();
+    return tag(
+      "get",
+      (await publicProfileView(
+        db,
+        need(data.username, "Bitte nenne das @handle des Profils."),
+      )) as Json,
+    );
+  }
+
   switch (data.action) {
     case "get":
       return tag(
@@ -300,7 +461,10 @@ async function profileHandler(input: unknown, meta: McpMeta): Promise<Json> {
     case "change_handle":
       return tag(
         "change_handle",
-        (await handleChangeHandle({ handle: need(data.handle, "Bitte nenne das gewünschte @handle.") }, meta)) as Json,
+        (await handleChangeHandle(
+          { handle: need(data.handle, "Bitte nenne das gewünschte @handle.") },
+          meta,
+        )) as Json,
       );
     case "set_image":
       return tag(
@@ -317,7 +481,10 @@ async function profileHandler(input: unknown, meta: McpMeta): Promise<Json> {
     case "open_link":
       return tag(
         "open_link",
-        (await handleTrackProfileLink({ username: need(data.username, "Bitte nenne das Profil.") }, meta)) as Json,
+        (await handleTrackProfileLink(
+          { username: need(data.username, "Bitte nenne das Profil.") },
+          meta,
+        )) as Json,
       );
     case "block":
       return tag(
@@ -355,11 +522,14 @@ const followersInput = z
 
 async function followersHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(followersInput, input);
+  requireAuth(meta);
 
   if (data.action === "follow" || data.action === "unfollow") {
     const args = { username: need(data.username, "Bitte nenne den @handle.") };
     const result =
-      data.action === "follow" ? await handleFollowRoom(args, meta) : await handleUnfollowRoom(args, meta);
+      data.action === "follow"
+        ? await handleFollowRoom(args, meta)
+        : await handleUnfollowRoom(args, meta);
     return tag(data.action, result as Json);
   }
 
@@ -418,10 +588,13 @@ async function followersHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const result = (await handleNotificationSettings(patch, meta)) as any;
   return tag("update_settings", {
     settings: {
-      new_room_message: Boolean(result.settings?.new_conversation ?? result.settings?.public_message),
+      new_room_message: Boolean(
+        result.settings?.new_conversation ?? result.settings?.public_message,
+      ),
       new_follower: Boolean(result.settings?.new_follower),
     },
-    message: "Du bekommst Meldungen bei neuen Nachrichten in Räumen, denen du folgst, und bei neuen Followern.",
+    message:
+      "Du bekommst Meldungen bei neuen Nachrichten in Räumen, denen du folgst, und bei neuen Followern.",
   });
 }
 
@@ -438,13 +611,17 @@ const likesInput = z
 
 async function likesHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(likesInput, input);
+  requireAuth(meta);
   const target =
     data.target_type === "profile"
       ? need(data.username ?? data.target_id, "Bitte nenne das Profil (@handle).")
       : need(data.target_id, "Bitte gib die id des Inhalts an.");
 
   const args = { target_type: data.target_type, target_id: target };
-  const result = data.action === "like" ? await handleLikeContent(args, meta) : await handleUnlikeContent(args, meta);
+  const result =
+    data.action === "like"
+      ? await handleLikeContent(args, meta)
+      : await handleUnlikeContent(args, meta);
   return tag(data.action, result as Json);
 }
 
@@ -459,7 +636,11 @@ const analyticsInput = z
 
 async function analyticsHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(analyticsInput, input);
-  return tag("profile", (await handleProfileAnalytics({ range_days: data.range_days ?? 30 }, meta)) as Json);
+  requireAuth(meta);
+  return tag(
+    "profile",
+    (await handleProfileAnalytics({ range_days: data.range_days ?? 30 }, meta)) as Json,
+  );
 }
 
 /* ==================== 7. communities_organizations ======================== */
@@ -500,8 +681,44 @@ const communitiesInput = z
 
 async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> {
   const data = parse(communitiesInput, input);
-  const identity = await resolveIdentity(meta);
   const db = await getDb();
+
+  // Signed-out callers may only read public community data — never write,
+  // join, leave or manage anything.
+  if (!isAuthenticated(meta)) {
+    if (!isPublicAction("communities_organizations", data.action)) throw roomError("AUTH_REQUIRED");
+    const anon = ANONYMOUS_SUBJECT;
+    if (data.action === "list_communities") {
+      return tag("list_communities", {
+        authenticated: false,
+        sign_in_hint: SIGN_IN_HINT,
+        communities: await listCommunities(db, anon, {
+          ...(data.query !== undefined ? { query: data.query } : {}),
+          ...(data.limit !== undefined ? { limit: data.limit } : {}),
+        }),
+      });
+    }
+    if (data.action === "get_community") {
+      return tag("get_community", {
+        authenticated: false,
+        sign_in_hint: SIGN_IN_HINT,
+        community: await getCommunity(db, anon, need(data.community, "Bitte nenne die Community.")),
+      });
+    }
+    return tag("read_community", {
+      authenticated: false,
+      sign_in_hint: SIGN_IN_HINT,
+      ...(await readCommunity(
+        db,
+        anon,
+        need(data.community, "Bitte nenne die Community."),
+        data.limit ?? 20,
+      )),
+      display_instruction: UNIVERSAL_DISPLAY,
+    });
+  }
+
+  const identity = await resolveIdentity(meta);
   await touchPresence(db, identity.subjectHash);
   const me = identity.subjectHash;
 
@@ -529,18 +746,34 @@ async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> 
       });
     case "update_community":
       return tag("update_community", {
-        community: await updateCommunity(db, me, need(data.community, "Bitte nenne die Community."), {
-          ...(data.title !== undefined ? { title: data.title } : {}),
-          ...(data.description !== undefined ? { description: data.description } : {}),
-        }),
+        community: await updateCommunity(
+          db,
+          me,
+          need(data.community, "Bitte nenne die Community."),
+          {
+            ...(data.title !== undefined ? { title: data.title } : {}),
+            ...(data.description !== undefined ? { description: data.description } : {}),
+          },
+        ),
       });
     case "join_community":
-      return tag("join_community", await joinCommunity(db, me, need(data.community, "Bitte nenne die Community.")));
+      return tag(
+        "join_community",
+        await joinCommunity(db, me, need(data.community, "Bitte nenne die Community.")),
+      );
     case "leave_community":
-      return tag("leave_community", await leaveCommunity(db, me, need(data.community, "Bitte nenne die Community.")));
+      return tag(
+        "leave_community",
+        await leaveCommunity(db, me, need(data.community, "Bitte nenne die Community.")),
+      );
     case "read_community":
       return tag("read_community", {
-        ...(await readCommunity(db, me, need(data.community, "Bitte nenne die Community."), data.limit ?? 20)),
+        ...(await readCommunity(
+          db,
+          me,
+          need(data.community, "Bitte nenne die Community."),
+          data.limit ?? 20,
+        )),
         display_instruction: UNIVERSAL_DISPLAY,
       });
     case "send_community":
@@ -554,7 +787,9 @@ async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> 
         display_instruction: UNIVERSAL_DISPLAY,
       });
     case "list_organizations":
-      return tag("list_organizations", { organizations: await listOrganizations(db, me, data.limit ?? 50) });
+      return tag("list_organizations", {
+        organizations: await listOrganizations(db, me, data.limit ?? 50),
+      });
     case "get_organization":
       return tag(
         "get_organization",
@@ -571,14 +806,22 @@ async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> 
       });
     case "update_organization":
       return tag("update_organization", {
-        organization: await updateOrganization(db, me, need(data.organization, "Bitte nenne die Organisation."), {
-          ...(data.name !== undefined ? { name: data.name } : {}),
-          ...(data.description !== undefined ? { description: data.description } : {}),
-          ...(data.website !== undefined ? { website: data.website } : {}),
-        }),
+        organization: await updateOrganization(
+          db,
+          me,
+          need(data.organization, "Bitte nenne die Organisation."),
+          {
+            ...(data.name !== undefined ? { name: data.name } : {}),
+            ...(data.description !== undefined ? { description: data.description } : {}),
+            ...(data.website !== undefined ? { website: data.website } : {}),
+          },
+        ),
       });
     case "list_members":
-      return tag("list_members", await listOrgMembers(db, me, need(data.organization, "Bitte nenne die Organisation.")));
+      return tag(
+        "list_members",
+        await listOrgMembers(db, me, need(data.organization, "Bitte nenne die Organisation.")),
+      );
     case "add_member":
       return tag(
         "add_member",
@@ -634,7 +877,28 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["enter", "read", "send"], {
+      authenticated: { type: "boolean" },
+      alias: { type: "string" },
+      joined_now: { type: "boolean" },
+      sent: { type: "boolean" },
+      duplicate: { type: "boolean" },
+      sent_message: { type: "object" },
+      room: {
+        type: "object",
+        properties: {
+          label: { type: "string" },
+          online_now: { type: "integer" },
+          presence_window_seconds: { type: "integer" },
+          presence_checked_at: { type: "string", format: "date-time" },
+        },
+      },
+      messages: MESSAGE_ARRAY,
+      next_cursor: { type: ["string", "null"] },
+      has_more: { type: "boolean" },
+      display_instruction: { type: "string" },
+      sign_in_hint: { type: "string" },
+    }),
     annotations: WRITE,
     handler: universalHandler,
     summary: (result) =>
@@ -657,7 +921,30 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["mine", "open", "update", "leave", "send"], {
+      authenticated: { type: "boolean" },
+      room: { type: "object" },
+      is_following: { type: "boolean" },
+      can_follow: { type: "boolean" },
+      follow_button: { type: ["string", "null"] },
+      joined_now: { type: "boolean" },
+      people_here: { type: "array", items: { type: "object" } },
+      messages: MESSAGE_ARRAY,
+      recent_messages: MESSAGE_ARRAY,
+      images: IMAGE_ARRAY,
+      sent: { type: "boolean" },
+      left: { type: "boolean" },
+      followers: { type: "integer" },
+      followers_notified: { type: "integer" },
+      people_here_now: { type: "integer" },
+      presence_window_seconds: { type: "integer" },
+      presence_checked_at: { type: "string", format: "date-time" },
+      headline: { type: "string" },
+      message: { type: "string" },
+      notice: { type: "string" },
+      display_instruction: { type: "string" },
+      sign_in_hint: { type: "string" },
+    }),
     annotations: WRITE,
     handler: publicRoomHandler,
     summary: (result) => {
@@ -677,7 +964,10 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        action: { type: "string", enum: ["get", "update", "change_handle", "set_image", "open_link", "block"] },
+        action: {
+          type: "string",
+          enum: ["get", "update", "change_handle", "set_image", "open_link", "block"],
+        },
         username: { type: "string", description: "@handle eines fremden Profils." },
         display_name: { type: "string" },
         bio: { type: "string", maxLength: 280 },
@@ -696,10 +986,24 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["get", "update", "change_handle", "set_image", "open_link", "block"], {
+      authenticated: { type: "boolean" },
+      profile: { type: "object" },
+      tabs: { type: "object" },
+      redirected_from: { type: ["string", "null"] },
+      handle: { type: "string" },
+      suggestions: { type: "array", items: { type: "string" } },
+      blocked: { type: "boolean" },
+      url: { type: ["string", "null"] },
+      edit_hint: { type: ["string", "null"] },
+      message: { type: "string" },
+      display_instruction: { type: "string" },
+      sign_in_hint: { type: "string" },
+    }),
     annotations: WRITE,
     handler: profileHandler,
-    summary: (result) => (result.profile ? profileCard(result) : String(result.message ?? "Fertig.")),
+    summary: (result) =>
+      result.profile ? profileCard(result) : String(result.message ?? "Fertig."),
   },
   {
     name: "followers_notifications",
@@ -711,7 +1015,14 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       properties: {
         action: {
           type: "string",
-          enum: ["follow", "unfollow", "list_followers", "list_following", "list_notifications", "update_settings"],
+          enum: [
+            "follow",
+            "unfollow",
+            "list_followers",
+            "list_following",
+            "list_notifications",
+            "update_settings",
+          ],
         },
         username: { type: "string" },
         only_unread: { type: "boolean" },
@@ -722,12 +1033,40 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(
+      [
+        "follow",
+        "unfollow",
+        "list_followers",
+        "list_following",
+        "list_notifications",
+        "update_settings",
+      ],
+      {
+        following: { type: "boolean" },
+        button: { type: ["string", "null"] },
+        handle: { type: "string" },
+        room_name: { type: "string" },
+        followers: { type: ["array", "integer"] },
+        total: { type: "integer" },
+        rooms: { type: "array", items: { type: "object" } },
+        notifications: { type: "array", items: { type: "object" } },
+        unread: { type: "integer" },
+        settings: {
+          type: "object",
+          properties: { new_room_message: { type: "boolean" }, new_follower: { type: "boolean" } },
+        },
+        people_here_now: { type: "integer" },
+        message: { type: "string" },
+      },
+    ),
     annotations: WRITE,
     handler: followersHandler,
     summary: (result) => {
       if (result.notifications) {
-        const list = (result.notifications as any[]).map((entry) => `- ${entry.message}`).join("\n");
+        const list = (result.notifications as any[])
+          .map((entry) => `- ${entry.message}`)
+          .join("\n");
         return list || "Keine neuen Meldungen.";
       }
       if (result.followers) {
@@ -735,7 +1074,9 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         return `${result.total ?? 0} Follower\n${list}`;
       }
       if (result.rooms) {
-        const list = (result.rooms as any[]).map((room) => `- @${room.handle} (${room.followers} followers)`).join("\n");
+        const list = (result.rooms as any[])
+          .map((room) => `- @${room.handle} (${room.followers} followers)`)
+          .join("\n");
         return list || "Du folgst noch keinem Raum.";
       }
       return String(result.message ?? "Fertig.");
@@ -757,7 +1098,13 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action", "target_type"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["like", "unlike"], {
+      liked: { type: "boolean" },
+      already: { type: "boolean" },
+      likes: { type: "integer" },
+      target_type: { type: "string", enum: ["profile", "message", "image"] },
+      message: { type: "string" },
+    }),
     annotations: WRITE,
     handler: likesHandler,
     summary: (result) => `${result.message} (${result.likes} Likes)`,
@@ -776,7 +1123,15 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(["profile"], {
+      handle: { type: "string" },
+      range_days: { type: "integer", enum: [7, 30, 90] },
+      totals: { type: "object" },
+      series: { type: "array", items: { type: "object" } },
+      top_content: { type: "object" },
+      message: { type: "string" },
+      display_instruction: { type: "string" },
+    }),
     annotations: READ_ONLY,
     handler: analyticsHandler,
     summary: (result) => analyticsCard(result),
@@ -825,13 +1180,50 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       required: ["action"],
       additionalProperties: false,
     },
-    outputSchema: OPEN_OUTPUT,
+    outputSchema: outputFor(
+      [
+        "list_communities",
+        "get_community",
+        "create_community",
+        "update_community",
+        "join_community",
+        "leave_community",
+        "read_community",
+        "send_community",
+        "list_organizations",
+        "get_organization",
+        "create_organization",
+        "update_organization",
+        "list_members",
+        "add_member",
+        "remove_member",
+      ],
+      {
+        authenticated: { type: "boolean" },
+        communities: { type: "array", items: { type: "object" } },
+        community: { type: "object" },
+        organizations: { type: "array", items: { type: "object" } },
+        organization: { type: "object" },
+        members: { type: "array", items: { type: "object" } },
+        messages: MESSAGE_ARRAY,
+        alias: { type: "string" },
+        joined_now: { type: "boolean" },
+        left: { type: "boolean" },
+        sent: { type: "boolean" },
+        message: { type: "string" },
+        display_instruction: { type: "string" },
+        sign_in_hint: { type: "string" },
+      },
+    ),
     annotations: WRITE,
     handler: communitiesHandler,
     summary: (result) => {
       if (result.communities) {
         const list = (result.communities as any[])
-          .map((entry) => `- **${entry.title}** (${entry.slug ?? entry.id}) · ${entry.members} Mitglieder`)
+          .map(
+            (entry) =>
+              `- **${entry.title}** (${entry.slug ?? entry.id}) · ${entry.members} Mitglieder`,
+          )
           .join("\n");
         return list || "Noch keine Communities.";
       }
@@ -842,7 +1234,9 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         return list || "Noch keine Organisationen.";
       }
       if (result.members) {
-        return (result.members as any[]).map((entry) => `- ${entry.alias} · ${entry.role}`).join("\n");
+        return (result.members as any[])
+          .map((entry) => `- ${entry.alias} · ${entry.role}`)
+          .join("\n");
       }
       if (result.messages) {
         return `## ${result.community?.title ?? "Community"}\n\n${messageLines(result.messages as any[])}`;
@@ -861,3 +1255,6 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
 ];
 
 export const PROFILE_INSTRUCTION = PROFILE_DISPLAY_INSTRUCTION;
+
+// Every tool declares its security schemes from the single authentication policy.
+for (const tool of SURFACE_TOOLS) tool.securitySchemes = securitySchemesFor(tool.name);

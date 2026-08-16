@@ -43,9 +43,7 @@ export async function listTopics(db: Db): Promise<TopicRow[]> {
 }
 
 export async function loadAliasMap(db: Db): Promise<Record<string, string>> {
-  const { data, error } = await db
-    .from("topic_aliases")
-    .select("normalized_alias, topics(slug)");
+  const { data, error } = await db.from("topic_aliases").select("normalized_alias, topics(slug)");
   if (error) return {};
   const map: Record<string, string> = {};
   for (const row of (data ?? []) as unknown as Array<{
@@ -242,7 +240,6 @@ export async function insertMessage(
   };
 }
 
-
 export async function leaveTopic(db: Db, subjectHash: string, topicSlug: string) {
   const membership = await getActiveMembership(db, subjectHash, topicSlug);
   if (!membership) return null;
@@ -257,7 +254,9 @@ export async function leaveTopic(db: Db, subjectHash: string, topicSlug: string)
 export async function listMyRooms(db: Db, subjectHash: string) {
   const { data, error } = await db
     .from("memberships")
-    .select("id, alias, joined_at, last_read_message_id, room_id, rooms(room_number, capacity), topics(slug, display_name)")
+    .select(
+      "id, alias, joined_at, last_read_message_id, room_id, rooms(room_number, capacity), topics(slug, display_name)",
+    )
     .eq("subject_hash", subjectHash)
     .is("left_at", null)
     .order("joined_at", { ascending: true });
@@ -323,19 +322,13 @@ export async function getCustomAlias(db: Db, subjectHash: string): Promise<strin
 
 /** Sets the display name everywhere: identity record + all active memberships. */
 /** True when another person already uses this display name (case-insensitive). */
-export async function isAliasTaken(
-  db: Db,
-  subjectHash: string,
-  alias: string,
-): Promise<boolean> {
+export async function isAliasTaken(db: Db, subjectHash: string, alias: string): Promise<boolean> {
   const { data } = await db
     .from("anonymous_identities")
     .select("subject_hash")
     .ilike("custom_alias", alias.replace(/[%_]/g, "\\$&"))
     .limit(5);
-  return ((data ?? []) as any[]).some(
-    (row) => row.subject_hash !== subjectHash,
-  );
+  return ((data ?? []) as any[]).some((row) => row.subject_hash !== subjectHash);
 }
 
 export async function setSubjectAlias(

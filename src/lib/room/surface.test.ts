@@ -80,8 +80,18 @@ describe("MCP surface", () => {
   });
 
   it("never mentions ads, campaigns, plans or events in the public surface", () => {
-    const text = JSON.stringify(SURFACE_TOOLS.map((tool) => [tool.name, tool.title, tool.description]));
-    for (const forbidden of ["campaign", "sponsor", "kampagne", "abonnement", "preis", "poll", "einladung"]) {
+    const text = JSON.stringify(
+      SURFACE_TOOLS.map((tool) => [tool.name, tool.title, tool.description]),
+    );
+    for (const forbidden of [
+      "campaign",
+      "sponsor",
+      "kampagne",
+      "abonnement",
+      "preis",
+      "poll",
+      "einladung",
+    ]) {
       expect(text.toLowerCase()).not.toContain(forbidden.toLowerCase());
     }
   });
@@ -91,19 +101,19 @@ describe("MCP surface", () => {
     expect(result.isError).toBe(true);
   });
 
-  it("rejects calls without an openai/subject identity", async () => {
+  it("requires a validated OAuth identity for every non-public action", async () => {
     for (const [name, args] of [
       ["universal_room", { action: "enter" }],
       ["public_room", { action: "mine" }],
-      ["profile", { action: "get" }],
+      ["profile", { action: "update", bio: "hi" }],
       ["followers_notifications", { action: "list_following" }],
       ["likes", { action: "like", target_type: "profile", username: "someone" }],
       ["analytics", { action: "profile" }],
-      ["communities_organizations", { action: "list_communities" }],
+      ["communities_organizations", { action: "create_community", title: "Test" }],
     ] as const) {
       const result = await callTool(name, args);
       expect(result.isError, name).toBe(true);
-      expect(result.structuredContent.error.code, name).toBe("IDENTITY_UNAVAILABLE");
+      expect(result.structuredContent.error.code, name).toBe("AUTH_REQUIRED");
     }
   });
 
