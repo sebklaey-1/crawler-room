@@ -136,19 +136,21 @@ function PrivacyPage() {
 
         <Section title="Retention">
           <p className="mb-3">
-            Rolling limits below are applied immediately when new content is written. The
-            time-based limits are executed by a maintenance job that has to be triggered by the
-            operator, so they describe the target retention window rather than a guaranteed
-            deletion moment.
+            No message and no image stays in @room longer than 24 hours, in every room type. The
+            database caps every expiry at creation time plus 24 hours, reads never return older
+            content, every write path deletes what has expired in that room, and a maintenance job
+            sweeps the rest including the stored files. The rolling limits below apply on top of
+            that, immediately when new content is written.
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <strong>Text messages:</strong> a room keeps only its newest 7 messages, applied on
-              every new message. Time-based rooms additionally expire messages after their
-              retention window (24 hours by default) when the maintenance job runs.
+              every new message, and every message is deleted at the latest 24 hours after it was
+              written.
             </li>
             <li>
-              <strong>Images:</strong> a room keeps only its newest 3 approved images. Rejected,
+              <strong>Images:</strong> a room keeps only its newest 3 approved images and every image is
+              deleted at the latest 24 hours after upload, together with its file in storage. Rejected,
               failed or never-completed uploads are purged, and the underlying files are removed
               from storage.
             </li>
