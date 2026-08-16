@@ -329,12 +329,10 @@ check(
 
 check(
   "path-specific RFC 9728 metadata route present",
-  existsSync(
-    join(ROOT, "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts"),
-  ) && auth.includes("/.well-known/oauth-protected-resource"),
+  existsSync(join(ROOT, "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts")) &&
+    auth.includes("/.well-known/oauth-protected-resource"),
   "challenges point at https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp",
 );
-
 
 /* --------------------------------- report ------------------------------------ */
 

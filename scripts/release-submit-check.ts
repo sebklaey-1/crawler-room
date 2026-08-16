@@ -121,14 +121,16 @@ async function cleanupSchedulerReady(): Promise<{ ok: boolean; detail: string }>
 const cleanup = await cleanupSchedulerReady();
 item("retention cleanup scheduled every 15 minutes in the database", cleanup.ok, cleanup.detail);
 
-
 /* --------------------------- 4. live domain verification --------------------- */
 
 async function liveResourceReachable(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const response = await fetch(`${PRODUCTION_ORIGIN}/.well-known/oauth-protected-resource/api/public/mcp`, {
-      redirect: "follow",
-    });
+    const response = await fetch(
+      `${PRODUCTION_ORIGIN}/.well-known/oauth-protected-resource/api/public/mcp`,
+      {
+        redirect: "follow",
+      },
+    );
     if (!response.ok) return { ok: false, detail: `metadata endpoint returned ${response.status}` };
     const body = (await response.json()) as { resource?: string };
     return {

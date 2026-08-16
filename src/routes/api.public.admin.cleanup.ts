@@ -16,9 +16,8 @@ export const Route = createFileRoute("/api/public/admin/cleanup")({
             headers: { "content-type": "application/json", "cache-control": "no-store" },
           });
 
-        const { authorizeCleanup, startMaintenanceRun, finishMaintenanceRun } = await import(
-          "@/lib/room/maintenance"
-        );
+        const { authorizeCleanup, startMaintenanceRun, finishMaintenanceRun } =
+          await import("@/lib/room/maintenance");
         const { getDb } = await import("@/lib/room/store");
 
         let db: Awaited<ReturnType<typeof getDb>> | null = null;

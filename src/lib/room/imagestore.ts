@@ -71,7 +71,6 @@ export async function deleteImageRow(db: Db, row: Pick<ImageRow, "id" | "storage
   await removeStorageObjects(db, [row.storage_path]);
 }
 
-
 export async function findDuplicate(
   db: Db,
   roomId: string,
@@ -180,10 +179,7 @@ function errorCategory(error: { message?: string; statusCode?: string } | null):
  * category and schedules a bounded backoff. The failure is reported to the
  * caller instead of being swallowed. Missing objects count as cleaned up.
  */
-export async function removeStorageObjects(
-  db: Db,
-  paths: string[],
-): Promise<StorageRemovalResult> {
+export async function removeStorageObjects(db: Db, paths: string[]): Promise<StorageRemovalResult> {
   const cleaned = Array.from(new Set(paths.filter(Boolean)));
   if (!cleaned.length) return { removed: [], failed: [] };
 
@@ -238,7 +234,6 @@ export async function processDeletionQueue(
     failed: result.failed.length,
   };
 }
-
 
 export async function signedUrl(db: Db, path: string, ttlSeconds: number): Promise<string | null> {
   const { data, error } = await db.storage.from(IMAGE_BUCKET).createSignedUrl(path, ttlSeconds);
@@ -315,7 +310,6 @@ export async function sweepImages(
     queueFailed: queue.failed,
   };
 }
-
 
 /** Sender aliases for a set of image rows (no other membership data leaves the server). */
 export async function aliasesFor(db: Db, membershipIds: string[]): Promise<Record<string, string>> {

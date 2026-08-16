@@ -113,7 +113,6 @@ export function resourceMetadataUrl(requestOrigin?: string): string {
 /** Compatibility alias served on the root well-known path (same document). */
 export const ROOT_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource";
 
-
 let verifyClient: SupabaseClient | null = null;
 
 /** Server-side, non-persisting Supabase client used only for verification. */

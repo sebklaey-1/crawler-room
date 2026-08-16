@@ -27,9 +27,7 @@ describe("RFC 9728 path-specific metadata", () => {
   it("keeps the resource identifier untouched", () => {
     process.env["SUPABASE_URL"] ??= "https://example.supabase.co";
     expect(protectedResourceMetadata().resource).toBe(PRODUCTION_MCP_RESOURCE);
-    expect(new URL(CANONICAL_METADATA_URL).origin).toBe(
-      new URL(PRODUCTION_MCP_RESOURCE).origin,
-    );
+    expect(new URL(CANONICAL_METADATA_URL).origin).toBe(new URL(PRODUCTION_MCP_RESOURCE).origin);
   });
 
   it("documents the product page, not the generic root", () => {

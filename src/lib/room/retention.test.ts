@@ -82,7 +82,6 @@ describe("cleanup job", () => {
     expect(maintenance).toContain("ADMIN_TOKEN");
   });
 
-
   it("purges database rows and storage objects", () => {
     expect(route).toContain("cleanup_expired");
     expect(route).toContain("sweepImages");

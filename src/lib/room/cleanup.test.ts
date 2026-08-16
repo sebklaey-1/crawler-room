@@ -59,7 +59,8 @@ function stubDb(options: StubOptions = {}) {
           table === "internal_secret_hashes"
             ? { data: options.tokenHash ? { sha256: options.tokenHash } : null, error: null }
             : { data: null, error: null },
-        then: (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve),
+        then: (resolve: (value: unknown) => unknown) =>
+          Promise.resolve({ error: null }).then(resolve),
       };
       return chain;
     },
