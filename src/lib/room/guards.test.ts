@@ -4,6 +4,8 @@ import { fakeDb } from "@/test/fake-db";
 import { canManage, removeOrgMember, slugify, updateCommunity, updateOrganization } from "./communities";
 import { followRoom, unfollowRoom, type PersonalRoom } from "./personal";
 import { addLike } from "./profile";
+import { publicRoomView } from "./tools.personal";
+import { publicProfileView } from "./tools.profile";
 import { validateMessage } from "./validation";
 import { profileCard, analyticsCard } from "./mcp.render";
 
@@ -144,5 +146,34 @@ describe("content safety and rendering", () => {
     const card = analyticsCard({ handle: "sam", range_days: 7, profile_views: 5, daily: [] });
     expect(card).toContain("Statistik für @sam");
     expect(card).toContain("```text");
+  });
+});
+
+describe("public reads never write", () => {
+  const WRITE_METHODS = ["insert", "update", "upsert", "delete"];
+
+  it("keeps the public room view read-only", async () => {
+    const db = fakeDb({
+      user_rooms: {
+        data: {
+          room_id: "11111111-1111-4111-8111-111111111111",
+          owner_subject_hash: "owner-hash",
+          handle: "owner",
+          room_name: "Owner's Room",
+          description: null,
+          created_at: new Date().toISOString(),
+        },
+      },
+    });
+    await publicRoomView(db, "owner").catch(() => undefined);
+    expect(db.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
+    expect(db.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
+  });
+
+  it("keeps the public profile view read-only", async () => {
+    const db = fakeDb();
+    await publicProfileView(db, "someone").catch(() => undefined);
+    expect(db.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
+    expect(db.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
   });
 });
