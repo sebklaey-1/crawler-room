@@ -70,7 +70,7 @@ const STEPS = [
   },
   {
     title: "Your own room",
-    body: "Say “@room my room”. Your permanent public room already exists — no sign-up, no login.",
+    body: "Say “@room my room”. Your permanent public room already exists — you only sign in once for writing.",
   },
   {
     title: "Your profile",

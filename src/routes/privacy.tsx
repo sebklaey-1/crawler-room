@@ -163,9 +163,9 @@ function PrivacyPage() {
               leaving.
             </li>
             <li>
-              <strong>Support requests:</strong> message, subject and optional contact are deleted
-              90 days after submission. The abuse-protection hash is removed after at most 24
-              hours.
+              <strong>Support requests:</strong> message, subject and optional contact are
+              removed 90 days after submission and the abuse-protection hash after at most 24
+              hours, when the maintenance job runs.
             </li>
             <li>
               <strong>Privacy / deletion requests:</strong> kept while pending; deleted 90 days
