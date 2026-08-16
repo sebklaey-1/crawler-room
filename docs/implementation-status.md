@@ -9,15 +9,15 @@
 
 147 commits since the baseline. Named milestones:
 
-| Commit    | Milestone                                    |
-| --------- | -------------------------------------------- |
-| `1bc4a9a` | Canonical domain `crawler.today` + app icon  |
-| `2bd0271` | Phase 1B technical fix (getClaims, hash-only)|
-| `4945e7c` | Phase 1D mandatory public pages              |
-| `9f63d3f` | Phase 1D.1 documentation audit               |
-| `c154819` | Canonical resource switch                    |
-| `b7c7bc9` | Phase 2 review hardening                     |
-| `5307185` | Phase 3 safety: reports, blocks, UGC guard   |
+| Commit    | Milestone                                     |
+| --------- | --------------------------------------------- |
+| `1bc4a9a` | Canonical domain `crawler.today` + app icon   |
+| `2bd0271` | Phase 1B technical fix (getClaims, hash-only) |
+| `4945e7c` | Phase 1D mandatory public pages               |
+| `9f63d3f` | Phase 1D.1 documentation audit                |
+| `c154819` | Canonical resource switch                     |
+| `b7c7bc9` | Phase 2 review hardening                      |
+| `5307185` | Phase 3 safety: reports, blocks, UGC guard    |
 
 Working tree at audit start: clean, no leftovers from an interrupted run. No duplicate
 migrations, no duplicate routes, no second consent component
@@ -30,13 +30,13 @@ Files changed since baseline: 75 (source, routes, docs, scripts, migrations).
 
 ### Migrations since baseline
 
-| File                 | Content                                                        |
-| -------------------- | -------------------------------------------------------------- |
-| `20260816173415_…`   | drop `auth_user_id`, introduce `auth_user_hash` (hash-only)     |
-| `20260816174957_…`   | `custom_access_token_hook` → `https://crawler.today/api/public/mcp` |
-| `20260816180514_…`   | `support_requests`, `privacy_requests` + grants/RLS             |
-| `20260816182006_…`   | retention hard cap (24 h) across all room types                 |
-| `20260816185204_…`   | `content_reports`, `moderator_subjects`, `profile_blocks`       |
+| File               | Content                                                             |
+| ------------------ | ------------------------------------------------------------------- |
+| `20260816173415_…` | drop `auth_user_id`, introduce `auth_user_hash` (hash-only)         |
+| `20260816174957_…` | `custom_access_token_hook` → `https://crawler.today/api/public/mcp` |
+| `20260816180514_…` | `support_requests`, `privacy_requests` + grants/RLS                 |
+| `20260816182006_…` | retention hard cap (24 h) across all room types                     |
+| `20260816185204_…` | `content_reports`, `moderator_subjects`, `profile_blocks`           |
 
 `20260816171442_…` (pre-hook, adds `auth_user_id`) is superseded by `20260816173415_…`;
 it is retained for migration history only and the column no longer exists.
@@ -78,16 +78,16 @@ it is retained for migration history only and the column no longer exists.
 
 ## 4. Security controls
 
-| Control                | State                                                                             |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| Token verification     | `supabase.auth.getClaims(token)`, ES256, audience/resource bound, timeout, fail-closed |
-| Test stubs             | `x-room-test-user` / `Test-AuthContext` only when `NODE_ENV=test`, otherwise `INTERNAL_ERROR` |
-| Access token hook      | sets the crawler.today resource; not `SECURITY DEFINER`; execute revoked from `public` |
+| Control                | State                                                                                                                            |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Token verification     | `supabase.auth.getClaims(token)`, ES256, audience/resource bound, timeout, fail-closed                                           |
+| Test stubs             | `x-room-test-user` / `Test-AuthContext` only when `NODE_ENV=test`, otherwise `INTERNAL_ERROR`                                    |
+| Access token hook      | sets the crawler.today resource; not `SECURITY DEFINER`; execute revoked from `public`                                           |
 | SSRF                   | central `src/lib/room/ssrf.ts`: HTTPS only, private/loopback/link-local blocked, ≤3 redirects, timeout, size cap, MIME allowlist |
-| Reports                | service-role only, rate limited per reporter and per target, idempotent, never an automatic sanction |
-| Blocks                 | mutual for personal rooms, self-service, no content deletion                        |
-| Data rights            | hash-only, idempotent per open request, owner-scoped, nothing deleted automatically |
-| Logs / health / errors | tool, action, status, opaque request id only; health returns no environment details |
+| Reports                | service-role only, rate limited per reporter and per target, idempotent, never an automatic sanction                             |
+| Blocks                 | mutual for personal rooms, self-service, no content deletion                                                                     |
+| Data rights            | hash-only, idempotent per open request, owner-scoped, nothing deleted automatically                                              |
+| Logs / health / errors | tool, action, status, opaque request id only; health returns no environment details                                              |
 
 Targeted grep review of `console.log`, `authorization`, `access_token`, `auth_user_id`,
 `openai/subject`, `owner_account_id`, `subject_hash`, `storage_path` in model-visible
@@ -97,14 +97,14 @@ output or logs.
 
 ## 5. Test matrix (this run)
 
-| Gate                             | Result                                                     |
-| -------------------------------- | ---------------------------------------------------------- |
-| Prettier                         | 10 files reformatted, now clean                             |
-| `bun run typecheck`              | pass, 0 errors                                              |
+| Gate                                  | Result                                                                                                                                                                                                                                            |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prettier                              | 10 files reformatted, now clean                                                                                                                                                                                                                   |
+| `bun run typecheck`                   | pass, 0 errors                                                                                                                                                                                                                                    |
 | ESLint (files changed since baseline) | 0 `no-control-regex` (4 intentional sanitisers annotated); remaining repo-wide findings are 233 pre-existing `@typescript-eslint/no-explicit-any` on DB row mappings and 6 `react-refresh/only-export-components` — style, not technical failures |
-| `bunx vitest run`                | **162 passed / 162**, 10 files                              |
-| `bun run build`                  | pass (client + nitro)                                       |
-| `bun run release:check`          | **26 / 29**, blocked by 3 operational items (below)         |
+| `bunx vitest run`                     | **162 passed / 162**, 10 files                                                                                                                                                                                                                    |
+| `bun run build`                       | pass (client + nitro)                                                                                                                                                                                                                             |
+| `bun run release:check`               | **26 / 29**, blocked by 3 operational items (below)                                                                                                                                                                                               |
 
 ### MCP smoke (local)
 
