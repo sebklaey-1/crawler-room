@@ -1260,6 +1260,7 @@ export type Database = {
           retention_texts: number | null
           room_number: number
           rules: string | null
+          slug: string | null
           status: string
           title: string | null
           topic_id: string | null
@@ -1282,6 +1283,7 @@ export type Database = {
           retention_texts?: number | null
           room_number: number
           rules?: string | null
+          slug?: string | null
           status?: string
           title?: string | null
           topic_id?: string | null
@@ -1304,6 +1306,7 @@ export type Database = {
           retention_texts?: number | null
           room_number?: number
           rules?: string | null
+          slug?: string | null
           status?: string
           title?: string | null
           topic_id?: string | null
