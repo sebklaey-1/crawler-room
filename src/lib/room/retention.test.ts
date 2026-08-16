@@ -75,10 +75,13 @@ describe("write paths", () => {
 describe("cleanup job", () => {
   const route = readFileSync("src/routes/api.public.admin.cleanup.ts", "utf8");
 
-  it("is gated by a constant-time admin token comparison", () => {
-    expect(route).toContain("safeEqual");
-    expect(route).toContain("ADMIN_TOKEN");
+  it("is gated by a constant-time token comparison", () => {
+    const maintenance = readFileSync("src/lib/room/maintenance.ts", "utf8");
+    expect(route).toContain("authorizeCleanup");
+    expect(maintenance).toContain("safeEqual");
+    expect(maintenance).toContain("ADMIN_TOKEN");
   });
+
 
   it("purges database rows and storage objects", () => {
     expect(route).toContain("cleanup_expired");
