@@ -19,27 +19,27 @@ the normal ChatGPT connector flow; the consent screen creates the session.
 
 ## Positive cases
 
-| # | Prompt | Tool / action | Auth | Expected result shape |
-| --- | --- | --- | --- | --- |
-| P1 | "What is being said in the Universal Room?" | `universal_room` / `read` | none | `action: "read"`, `authenticated: false`, `messages[]`, `room.online_now` |
-| P2 | "Open @room profile @example" | `profile` / `get` with `username` | none | `action: "get"`, `profile` card, `sign_in_hint` |
-| P3 | "List public communities on @room" | `communities_organizations` / `list_communities` | none | `action: "list_communities"`, `communities[]` |
-| P4 | "Post 'hello from the review' in the Universal Room" | `universal_room` / `send` | OAuth | `action: "send"`, `sent: true`, refreshed `messages[]` |
-| P5 | "Follow @example" | `followers_notifications` / `follow` | OAuth | `action: "follow"`, `following: true`, `followers` |
-| P6 | "Show my @room analytics for the last 7 days" | `analytics` / `profile`, `range_days: 7` | OAuth | `action: "profile"`, `totals`, `series[]` |
-| P7 | "Show me the organizations on @room" | `communities_organizations` / `list_organizations` | none | `action: "list_organizations"`, `organizations[]` without owner data |
+| #   | Prompt                                               | Tool / action                                      | Auth  | Expected result shape                                                     |
+| --- | ---------------------------------------------------- | -------------------------------------------------- | ----- | ------------------------------------------------------------------------- |
+| P1  | "What is being said in the Universal Room?"          | `universal_room` / `read`                          | none  | `action: "read"`, `authenticated: false`, `messages[]`, `room.online_now` |
+| P2  | "Open @room profile @example"                        | `profile` / `get` with `username`                  | none  | `action: "get"`, `profile` card, `sign_in_hint`                           |
+| P3  | "List public communities on @room"                   | `communities_organizations` / `list_communities`   | none  | `action: "list_communities"`, `communities[]`                             |
+| P4  | "Post 'hello from the review' in the Universal Room" | `universal_room` / `send`                          | OAuth | `action: "send"`, `sent: true`, refreshed `messages[]`                    |
+| P5  | "Follow @example"                                    | `followers_notifications` / `follow`               | OAuth | `action: "follow"`, `following: true`, `followers`                        |
+| P6  | "Show my @room analytics for the last 7 days"        | `analytics` / `profile`, `range_days: 7`           | OAuth | `action: "profile"`, `totals`, `series[]`                                 |
+| P7  | "Show me the organizations on @room"                 | `communities_organizations` / `list_organizations` | none  | `action: "list_organizations"`, `organizations[]` without owner data      |
 
 ## Negative cases
 
-| # | Prompt / call | Expected behaviour |
-| --- | --- | --- |
-| N1 | `universal_room` `send` without a token | `isError: true`, code `AUTH_REQUIRED`, `WWW-Authenticate` challenge with `resource_metadata=https://crawler.today/.well-known/oauth-protected-resource` |
-| N2 | `analytics` `profile` without a token | `AUTH_REQUIRED`, no data |
-| N3 | `profile` `set_image` with `image_url: "http://127.0.0.1/x.png"` | `INVALID_INPUT`; no request leaves the server, no host or IP in the message |
-| N4 | Unknown action, e.g. `likes` action `delete` | `INVALID_INPUT` from schema validation, no side effect |
-| N5 | Unexpected extra field, e.g. `universal_room { action: "read", foo: 1 }` | `INVALID_INPUT` (schemas are strict) |
-| N6 | Request body larger than 256 KiB | HTTP 413, no partial processing |
-| N7 | Token issued for another resource | `INVALID_TOKEN` with a fresh challenge; identity is never derived from input |
+| #   | Prompt / call                                                            | Expected behaviour                                                                                                                                      |
+| --- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| N1  | `universal_room` `send` without a token                                  | `isError: true`, code `AUTH_REQUIRED`, `WWW-Authenticate` challenge with `resource_metadata=https://crawler.today/.well-known/oauth-protected-resource` |
+| N2  | `analytics` `profile` without a token                                    | `AUTH_REQUIRED`, no data                                                                                                                                |
+| N3  | `profile` `set_image` with `image_url: "http://127.0.0.1/x.png"`         | `INVALID_INPUT`; no request leaves the server, no host or IP in the message                                                                             |
+| N4  | Unknown action, e.g. `likes` action `delete`                             | `INVALID_INPUT` from schema validation, no side effect                                                                                                  |
+| N5  | Unexpected extra field, e.g. `universal_room { action: "read", foo: 1 }` | `INVALID_INPUT` (schemas are strict)                                                                                                                    |
+| N6  | Request body larger than 256 KiB                                         | HTTP 413, no partial processing                                                                                                                         |
+| N7  | Token issued for another resource                                        | `INVALID_TOKEN` with a fresh challenge; identity is never derived from input                                                                            |
 
 ## Content safety spot check
 

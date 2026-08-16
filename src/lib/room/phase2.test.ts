@@ -10,7 +10,12 @@ import { checkImageUrl, isPrivateIpv4, isPrivateIpv6 } from "./ssrf";
 
 const EXPECTED_ANNOTATIONS: Record<
   string,
-  { readOnlyHint: boolean; destructiveHint: boolean; openWorldHint: boolean; idempotentHint: boolean }
+  {
+    readOnlyHint: boolean;
+    destructiveHint: boolean;
+    openWorldHint: boolean;
+    idempotentHint: boolean;
+  }
 > = {
   universal_room: {
     readOnlyHint: false,
@@ -24,14 +29,24 @@ const EXPECTED_ANNOTATIONS: Record<
     openWorldHint: true,
     idempotentHint: false,
   },
-  profile: { readOnlyHint: false, destructiveHint: true, openWorldHint: true, idempotentHint: false },
+  profile: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true,
+    idempotentHint: false,
+  },
   followers_notifications: {
     readOnlyHint: false,
     destructiveHint: true,
     openWorldHint: false,
     idempotentHint: false,
   },
-  likes: { readOnlyHint: false, destructiveHint: true, openWorldHint: false, idempotentHint: false },
+  likes: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: false,
+    idempotentHint: false,
+  },
   analytics: {
     readOnlyHint: true,
     destructiveHint: false,

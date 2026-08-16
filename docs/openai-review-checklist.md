@@ -10,14 +10,14 @@ actually does today.
 
 ## 1. Tool surface — exactly seven tools
 
-| Tool | Actions | Public (no token) |
-| --- | --- | --- |
-| `universal_room` | `enter`, `read`, `send` | `read` |
-| `public_room` | `mine`, `open`, `update`, `leave`, `send` | `open` |
-| `profile` | `get`, `update`, `change_handle`, `set_image`, `open_link`, `block` | `get` |
-| `followers_notifications` | `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings` | — |
-| `likes` | `like`, `unlike` | — |
-| `analytics` | `profile` | — |
+| Tool                        | Actions                                                                                                                                                                                                                                                                                     | Public (no token)                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `universal_room`            | `enter`, `read`, `send`                                                                                                                                                                                                                                                                     | `read`                                                                                          |
+| `public_room`               | `mine`, `open`, `update`, `leave`, `send`                                                                                                                                                                                                                                                   | `open`                                                                                          |
+| `profile`                   | `get`, `update`, `change_handle`, `set_image`, `open_link`, `block`                                                                                                                                                                                                                         | `get`                                                                                           |
+| `followers_notifications`   | `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings`                                                                                                                                                                                           | —                                                                                               |
+| `likes`                     | `like`, `unlike`                                                                                                                                                                                                                                                                            | —                                                                                               |
+| `analytics`                 | `profile`                                                                                                                                                                                                                                                                                   | —                                                                                               |
 | `communities_organizations` | `list_communities`, `get_community`, `create_community`, `update_community`, `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`, `get_organization`, `create_organization`, `update_organization`, `list_members`, `add_member`, `remove_member` | `list_communities`, `get_community`, `read_community`, `list_organizations`, `get_organization` |
 
 Everything not listed as public requires a validated OAuth 2.1 bearer token.
@@ -25,15 +25,15 @@ Public reads are side-effect free.
 
 ## 2. Annotations (verified by tests)
 
-| Tool | readOnly | destructive | openWorld | idempotent |
-| --- | --- | --- | --- | --- |
-| `universal_room` | false | false | true | false |
-| `public_room` | false | true | true | false |
-| `profile` | false | true | true | false |
-| `followers_notifications` | false | true | false | false |
-| `likes` | false | true | false | false |
-| `analytics` | true | false | false | true |
-| `communities_organizations` | false | true | true | false |
+| Tool                        | readOnly | destructive | openWorld | idempotent |
+| --------------------------- | -------- | ----------- | --------- | ---------- |
+| `universal_room`            | false    | false       | true      | false      |
+| `public_room`               | false    | true        | true      | false      |
+| `profile`                   | false    | true        | true      | false      |
+| `followers_notifications`   | false    | true        | false     | false      |
+| `likes`                     | false    | true        | false     | false      |
+| `analytics`                 | true     | false       | false     | true       |
+| `communities_organizations` | false    | true        | true      | false      |
 
 ## 3. Authentication
 

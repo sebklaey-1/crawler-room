@@ -16,12 +16,7 @@
  */
 
 export type UrlRejection =
-  | "not_a_url"
-  | "scheme"
-  | "credentials"
-  | "port"
-  | "host"
-  | "private_address";
+  "not_a_url" | "scheme" | "credentials" | "port" | "host" | "private_address";
 
 export interface UrlCheck {
   ok: boolean;

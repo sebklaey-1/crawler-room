@@ -14,7 +14,8 @@
 type Json = Record<string, unknown>;
 
 /** Keys that must never appear in a public payload, at any nesting depth. */
-const FORBIDDEN_KEY = /(subject_hash|auth_user|owner_account|account_id|membership_id|_path$|^path$|^stack$|^trace|^db_error$|^hint$|^details$|^session|^raw_)/i;
+const FORBIDDEN_KEY =
+  /(subject_hash|auth_user|owner_account|account_id|membership_id|_path$|^path$|^stack$|^trace|^db_error$|^hint$|^details$|^session|^raw_)/i;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

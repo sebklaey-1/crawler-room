@@ -26,7 +26,7 @@ tests never make external network calls.
 
 ## Custom domain ownership and routing verified — HARD BLOCKER
 
-The canonical resource is only valid if `crawler.today` is served by *this*
+The canonical resource is only valid if `crawler.today` is served by _this_
 project. Confirm all of the following before enabling anything that binds to
 the domain:
 

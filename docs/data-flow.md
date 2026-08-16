@@ -22,15 +22,15 @@ ChatGPT client
 
 ## What is stored
 
-| Data | Where | Retention |
-| --- | --- | --- |
-| Pseudonymous identity (`auth_user_hash`) | `anonymous_identities` | until deletion request |
-| Alias / handle, profile fields, bio, location, link | `user_rooms` | until deletion request |
-| Room and community messages | `messages` | max 24 h; newest 7 per room |
-| Images | Storage + `image_messages` | max 24 h; newest 3 approved per room |
-| Follows, likes, notification settings | relational tables | until removed by the user |
-| Aggregated analytics counters | analytics tables | rolling window, owner-only |
-| Support / privacy requests | `support_requests`, `privacy_requests` | 90 days |
+| Data                                                | Where                                  | Retention                            |
+| --------------------------------------------------- | -------------------------------------- | ------------------------------------ |
+| Pseudonymous identity (`auth_user_hash`)            | `anonymous_identities`                 | until deletion request               |
+| Alias / handle, profile fields, bio, location, link | `user_rooms`                           | until deletion request               |
+| Room and community messages                         | `messages`                             | max 24 h; newest 7 per room          |
+| Images                                              | Storage + `image_messages`             | max 24 h; newest 3 approved per room |
+| Follows, likes, notification settings               | relational tables                      | until removed by the user            |
+| Aggregated analytics counters                       | analytics tables                       | rolling window, owner-only           |
+| Support / privacy requests                          | `support_requests`, `privacy_requests` | 90 days                              |
 
 ## What is never stored or returned
 

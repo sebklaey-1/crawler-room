@@ -23,12 +23,12 @@ opaque case reference. Submissions are rate limited and kept for 90 days.
 
 ## Triage
 
-| Severity | Examples | Target reaction |
-| --- | --- | --- |
-| Critical | CSAM, credible threat, doxxing | remove content immediately, preserve the case record, contact authorities where legally required |
-| High | targeted harassment, malware links | remove content, restrict the identity |
-| Normal | spam, off-topic flooding | remove content, tighten rate limits |
-| Low | disputes, feature complaints | answer through the case reference |
+| Severity | Examples                           | Target reaction                                                                                  |
+| -------- | ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Critical | CSAM, credible threat, doxxing     | remove content immediately, preserve the case record, contact authorities where legally required |
+| High     | targeted harassment, malware links | remove content, restrict the identity                                                            |
+| Normal   | spam, off-topic flooding           | remove content, tighten rate limits                                                              |
+| Low      | disputes, feature complaints       | answer through the case reference                                                                |
 
 Deletion is performed against the content row and, for images, the storage
 object. Retention means most reported content expires within 24 hours anyway;

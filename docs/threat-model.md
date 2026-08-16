@@ -39,7 +39,7 @@ a way to escalate: writes are scoped to the caller's own identity.
 - request timeout with abort
 - hard byte cap enforced while streaming; `Content-Length` checked early but
   never trusted
-- MIME checked in the header *and* by magic bytes; JPEG/PNG/WebP only, no SVG,
+- MIME checked in the header _and_ by magic bytes; JPEG/PNG/WebP only, no SVG,
   XML or HTML; metadata containers are stripped before storage
 - errors are opaque: no URL, host, IP or transport detail reaches a tool result
   or a log line

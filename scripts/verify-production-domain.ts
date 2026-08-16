@@ -93,7 +93,10 @@ if (!metaResponse) {
     } else if (servers.length === 1 && servers[0]?.replace(/\/+$/, "") === EXPECTED_ISSUER) {
       pass("authorization_servers", "matches the configured issuer");
     } else {
-      fail("authorization_servers", `expected exactly the configured issuer, got ${servers.length}`);
+      fail(
+        "authorization_servers",
+        `expected exactly the configured issuer, got ${servers.length}`,
+      );
     }
 
     if (/zinga[-.]?room/i.test(JSON.stringify(meta))) {
@@ -145,7 +148,10 @@ if (process.argv.includes("--rpc")) {
   async function rpc(method: string, params: unknown) {
     const response = await fetch(RESOURCE, {
       method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json, text/event-stream",
+      },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
     });
     const text = await response.text();
