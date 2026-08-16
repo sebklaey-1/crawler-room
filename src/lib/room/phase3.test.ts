@@ -72,8 +72,8 @@ describe("phase 3 — report surface", () => {
         "reported",
         "status",
       ]);
-      expect(branch.properties.status.enum).toEqual([...REPORT_STATUSES]);
-      expect(branch.additionalProperties).toBe(false);
+      expect(branch?.properties?.["status"]?.enum).toEqual([...REPORT_STATUSES]);
+      expect(branch?.additionalProperties).toBe(false);
     }
   });
 
