@@ -196,15 +196,16 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
       isError: true,
       ...(needsAuth
         ? {
-            _meta: {
+          _meta: {
               "mcp/www_authenticate": challengeHeader(
                 context.origin,
-                error.code === "INVALID_TOKEN" ? "invalid_token" : undefined,
+                "invalid_token",
                 error.code === "INVALID_TOKEN"
                   ? "The access token is invalid or expired."
                   : "Sign in to Crawler Room to use this action.",
               ),
             },
+
           }
         : {}),
     };
