@@ -36,11 +36,13 @@ The app does **not** proxy or mirror those documents.
      (`/.lovable/oauth/consent` stays available as a redirect alias)
    - Dynamic client registration: enabled
    - Site URL: `https://crawler.today`
-3. **Custom Access Token Hook** — Authentication → Hooks → _Custom Access Token_:
-   select the Postgres function `public.custom_access_token_hook` and enable it.
-   **This step cannot be automated and must be done in the backend settings.**
-   Without it, tokens carry no `aud` / `room_resource` / `room_scopes` claims and
-   every MCP call is rejected as `INVALID_TOKEN`.
+3. **Custom Access Token Hook (optional)** — Authentication → Hooks → _Custom
+   Access Token_: selecting `public.custom_access_token_hook` narrows `aud` to
+   the canonical resource and adds `room_resource` / `room_scopes`. Token
+   verification does **not** depend on it: OAuth tokens issued by the
+   authorization server always carry a non-empty `client_id`, which is the
+   binding that separates them from ordinary web sessions.
+
 4. **Redirect allow-list** — add the callback URL that the MCP client (ChatGPT)
    displays while connecting. Use exactly the value the client shows; do not
    invent one.
