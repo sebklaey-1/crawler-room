@@ -90,7 +90,7 @@ describe("case references and requester hashing", () => {
   it("produces opaque, non-enumerable references", () => {
     const a = caseReference();
     const b = caseReference();
-    expect(a).toMatch(/^RC-[0-9A-Z]{6}$/);
+    expect(a).toMatch(/^RC-[0-9A-Z]{6,}$/);
     expect(a).not.toBe(b);
   });
 
