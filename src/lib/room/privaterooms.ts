@@ -126,7 +126,11 @@ export async function createOwnedRoom(
   return room;
 }
 
-export async function loadOwnedRoom(db: Db, ctx: AccountContext, roomId: string): Promise<OwnedRoom> {
+export async function loadOwnedRoom(
+  db: Db,
+  ctx: AccountContext,
+  roomId: string,
+): Promise<OwnedRoom> {
   const { data } = await db.from("rooms").select(ROOM_COLUMNS).eq("id", roomId).maybeSingle();
   if (!data) throw roomError("NOT_FOUND");
   const room = data as unknown as OwnedRoom;
@@ -180,11 +184,14 @@ export async function manageRoom(
   switch (action) {
     case "update": {
       const patch: Record<string, unknown> = {};
-      if (typeof payload["title"] === "string") patch["title"] = String(payload["title"]).slice(0, 120);
+      if (typeof payload["title"] === "string")
+        patch["title"] = String(payload["title"]).slice(0, 120);
       if (typeof payload["description"] === "string")
         patch["description"] = String(payload["description"]).slice(0, 1000);
-      if (typeof payload["rules"] === "string") patch["rules"] = String(payload["rules"]).slice(0, 2000);
-      if (typeof payload["color"] === "string") patch["color"] = String(payload["color"]).slice(0, 32);
+      if (typeof payload["rules"] === "string")
+        patch["rules"] = String(payload["rules"]).slice(0, 2000);
+      if (typeof payload["color"] === "string")
+        patch["color"] = String(payload["color"]).slice(0, 32);
       if (typeof payload["capacity"] === "number") {
         patch["capacity"] = Math.min(
           Math.max(Math.trunc(payload["capacity"] as number), 2),
@@ -206,8 +213,10 @@ export async function manageRoom(
     }
     case "change_visibility": {
       const visibility = String(payload["visibility"] ?? "");
-      if (!["public", "private", "invite", "paid"].includes(visibility)) throw roomError("INVALID_INPUT");
-      if (visibility === "paid" && !ctx.entitlements["paid_rooms"]) throw roomError("PLAN_REQUIRED");
+      if (!["public", "private", "invite", "paid"].includes(visibility))
+        throw roomError("INVALID_INPUT");
+      if (visibility === "paid" && !ctx.entitlements["paid_rooms"])
+        throw roomError("PLAN_REQUIRED");
       await db.from("rooms").update({ visibility }).eq("id", room.id);
       return finish(`Sichtbarkeit auf «${visibility}» gesetzt.`);
     }
@@ -218,8 +227,14 @@ export async function manageRoom(
       await db
         .from("rooms")
         .update({
-          retention_texts: Math.min(Math.max(Math.trunc(texts), 1), limitOf(ctx, "retention_texts", 7)),
-          retention_images: Math.min(Math.max(Math.trunc(images), 0), limitOf(ctx, "retention_images", 3)),
+          retention_texts: Math.min(
+            Math.max(Math.trunc(texts), 1),
+            limitOf(ctx, "retention_texts", 7),
+          ),
+          retention_images: Math.min(
+            Math.max(Math.trunc(images), 0),
+            limitOf(ctx, "retention_images", 3),
+          ),
         })
         .eq("id", room.id);
       return finish("Aufbewahrung aktualisiert.");
@@ -243,7 +258,9 @@ export async function manageRoom(
         .update({ role: action === "assign_moderator" ? "moderator" : "participant" })
         .eq("id", (member as any).id);
       return finish(
-        action === "assign_moderator" ? `${alias} ist jetzt Moderator:in.` : `${alias} moderiert nicht mehr.`,
+        action === "assign_moderator"
+          ? `${alias} ist jetzt Moderator:in.`
+          : `${alias} moderiert nicht mehr.`,
       );
     }
     default:
@@ -309,7 +326,12 @@ export async function revokeInvitation(db: Db, ctx: AccountContext, token: strin
 }
 
 /** Redeems an invitation and joins the room. Idempotent for existing members. */
-export async function acceptInvitation(db: Db, subjectHash: string, accountId: string, token: string) {
+export async function acceptInvitation(
+  db: Db,
+  subjectHash: string,
+  accountId: string,
+  token: string,
+) {
   const tokenHash = await hashToken(token);
   const { data: invitation } = await db
     .from("invitations")
@@ -319,10 +341,15 @@ export async function acceptInvitation(db: Db, subjectHash: string, accountId: s
   if (!invitation) throw roomError("NOT_FOUND");
   const inv = invitation as any;
   if (inv.revoked_at) throw roomError("FORBIDDEN");
-  if (inv.expires_at && new Date(inv.expires_at).getTime() < Date.now()) throw roomError("FORBIDDEN");
+  if (inv.expires_at && new Date(inv.expires_at).getTime() < Date.now())
+    throw roomError("FORBIDDEN");
   if (inv.max_uses !== null && inv.used_count >= inv.max_uses) throw roomError("FORBIDDEN");
 
-  const { data: room } = await db.from("rooms").select(ROOM_COLUMNS).eq("id", inv.room_id).maybeSingle();
+  const { data: room } = await db
+    .from("rooms")
+    .select(ROOM_COLUMNS)
+    .eq("id", inv.room_id)
+    .maybeSingle();
   if (!room || (room as any).archived_at) throw roomError("NOT_FOUND");
 
   const { data: existing } = await db
@@ -334,7 +361,11 @@ export async function acceptInvitation(db: Db, subjectHash: string, accountId: s
     .maybeSingle();
 
   if (existing) {
-    return { room: room as unknown as OwnedRoom, alias: (existing as any).alias, joined_now: false };
+    return {
+      room: room as unknown as OwnedRoom,
+      alias: (existing as any).alias,
+      joined_now: false,
+    };
   }
 
   const alias = generateAlias(subjectHash + inv.room_id);

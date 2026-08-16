@@ -80,8 +80,18 @@ describe("MCP surface", () => {
   });
 
   it("never mentions ads, campaigns, plans or events in the public surface", () => {
-    const text = JSON.stringify(SURFACE_TOOLS.map((tool) => [tool.name, tool.title, tool.description]));
-    for (const forbidden of ["campaign", "sponsor", "kampagne", "abonnement", "preis", "poll", "einladung"]) {
+    const text = JSON.stringify(
+      SURFACE_TOOLS.map((tool) => [tool.name, tool.title, tool.description]),
+    );
+    for (const forbidden of [
+      "campaign",
+      "sponsor",
+      "kampagne",
+      "abonnement",
+      "preis",
+      "poll",
+      "einladung",
+    ]) {
       expect(text.toLowerCase()).not.toContain(forbidden.toLowerCase());
     }
   });

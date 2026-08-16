@@ -11,14 +11,20 @@ function post(body: unknown, init: RequestInit = {}) {
   return handleMcpRequest(
     new Request(URL_MCP, {
       method: "POST",
-      headers: { "content-type": "application/json", ...((init.headers ?? {}) as Record<string, string>) },
+      headers: {
+        "content-type": "application/json",
+        ...((init.headers ?? {}) as Record<string, string>),
+      },
       body: JSON.stringify(body),
     }),
   );
 }
 
 function toolCall(name: string, args: Record<string, unknown>, headers?: Record<string, string>) {
-  return post({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } }, { headers: headers ?? {} });
+  return post(
+    { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name, arguments: args } },
+    { headers: headers ?? {} },
+  );
 }
 
 describe("authentication policy", () => {
@@ -41,7 +47,11 @@ describe("authentication policy", () => {
   });
 
   it("answers protected tool calls with 401 and an OAuth challenge", async () => {
-    const response = await toolCall("likes", { action: "like", target_type: "profile", username: "someone" });
+    const response = await toolCall("likes", {
+      action: "like",
+      target_type: "profile",
+      username: "someone",
+    });
     expect(response.status).toBe(401);
     expect(response.headers.get("www-authenticate")).toContain(
       'resource_metadata="http://localhost/.well-known/oauth-protected-resource"',
@@ -59,15 +69,26 @@ describe("authentication policy", () => {
   });
 
   it("rejects a foreign browser origin", async () => {
-    const response = await post({ jsonrpc: "2.0", id: 1, method: "ping" }, { headers: { origin: "https://evil.test" } });
+    const response = await post(
+      { jsonrpc: "2.0", id: 1, method: "ping" },
+      { headers: { origin: "https://evil.test" } },
+    );
     expect(response.status).toBe(403);
   });
 
   it("rejects a wrong content type and oversized payloads", async () => {
-    const wrongType = await post({ jsonrpc: "2.0", id: 1, method: "ping" }, { headers: { "content-type": "text/plain" } });
+    const wrongType = await post(
+      { jsonrpc: "2.0", id: 1, method: "ping" },
+      { headers: { "content-type": "text/plain" } },
+    );
     expect(wrongType.status).toBe(415);
 
-    const huge = await post({ jsonrpc: "2.0", id: 1, method: "ping", params: { pad: "x".repeat(1024 * 1024 + 10) } });
+    const huge = await post({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "ping",
+      params: { pad: "x".repeat(1024 * 1024 + 10) },
+    });
     expect(huge.status).toBe(413);
   });
 
@@ -78,11 +99,9 @@ describe("authentication policy", () => {
     expect(likes._meta["room/public_actions"]).toEqual([]);
     expect(likes._meta["room/authenticated_actions"]).toEqual(["like", "unlike"]);
     const universal = body.result.tools.find((tool: any) => tool.name === "universal_room");
-    expect(universal.outputSchema.oneOf.map((branch: any) => branch.properties.action.const)).toEqual([
-      "enter",
-      "read",
-      "send",
-    ]);
+    expect(
+      universal.outputSchema.oneOf.map((branch: any) => branch.properties.action.const),
+    ).toEqual(["enter", "read", "send"]);
   });
 });
 
@@ -134,8 +153,12 @@ describe("test-only auth context", () => {
 
 describe("token and identity handling", () => {
   it("reads only well-formed bearer headers", () => {
-    expect(bearerToken(new Request(URL_MCP, { headers: { authorization: "Bearer abc" } }))).toBe("abc");
-    expect(bearerToken(new Request(URL_MCP, { headers: { authorization: "Basic abc" } }))).toBeNull();
+    expect(bearerToken(new Request(URL_MCP, { headers: { authorization: "Bearer abc" } }))).toBe(
+      "abc",
+    );
+    expect(
+      bearerToken(new Request(URL_MCP, { headers: { authorization: "Basic abc" } })),
+    ).toBeNull();
     expect(bearerToken(new Request(URL_MCP))).toBeNull();
   });
 

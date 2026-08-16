@@ -181,7 +181,12 @@ export async function handleEnterTopic(input: unknown, meta: McpMeta) {
 
   const existing = await getActiveMembership(db, identity.subjectHash, slug);
   if (!existing) {
-    await enforceRateLimit(db, identity.subjectHash, "join", WINDOWS.join(settings.joinLimitPerHour));
+    await enforceRateLimit(
+      db,
+      identity.subjectHash,
+      "join",
+      WINDOWS.join(settings.joinLimitPerHour),
+    );
   }
 
   const desiredAlias =
@@ -272,7 +277,6 @@ export async function handleSendMessage(input: unknown, meta: McpMeta) {
   };
 }
 
-
 export async function handleReadMessages(input: unknown, meta: McpMeta) {
   const { topic, limit } = inputSchemas.read_messages.parse(input);
   const identity = await resolveIdentity(meta);
@@ -348,7 +352,9 @@ export async function handleLeaveTopic(input: unknown, meta: McpMeta) {
   const membership = await leaveTopic(db, identity.subjectHash, slug);
   const topics = await listTopics(db);
   const displayName =
-    membership?.topic.display_name ?? topics.find((entry) => entry.slug === slug)?.display_name ?? slug;
+    membership?.topic.display_name ??
+    topics.find((entry) => entry.slug === slug)?.display_name ??
+    slug;
 
   return {
     left: true,
@@ -377,7 +383,12 @@ export async function handleReportMessage(input: unknown, meta: McpMeta) {
     if (!row || row.room_id !== membership.roomId || row.moderation_status !== "approved") {
       throw roomError("IMAGE_NOT_FOUND");
     }
-    await enforceRateLimit(db, identity.subjectHash, "report", WINDOWS.report(settings.reportLimitPerHour));
+    await enforceRateLimit(
+      db,
+      identity.subjectHash,
+      "report",
+      WINDOWS.report(settings.reportLimitPerHour),
+    );
     await insertReport(db, { imageMessageId: imageId }, membership.membershipId, reason);
     return { reported: true, message: "Danke. Das Bild wurde zur Prüfung gemeldet." };
   }
@@ -390,7 +401,12 @@ export async function handleReportMessage(input: unknown, meta: McpMeta) {
   const visible = messages.some((row) => row.id === internalId);
   if (!visible) throw roomError("MESSAGE_NOT_FOUND");
 
-  await enforceRateLimit(db, identity.subjectHash, "report", WINDOWS.report(settings.reportLimitPerHour));
+  await enforceRateLimit(
+    db,
+    identity.subjectHash,
+    "report",
+    WINDOWS.report(settings.reportLimitPerHour),
+  );
   await insertReport(db, { messageId: internalId }, membership.membershipId, reason);
 
   return {
@@ -425,12 +441,11 @@ function fileExtension(mime: string): string {
   return "jpg";
 }
 
-async function serializeImages(
-  db: Db,
-  rows: ImageRow[],
-  membership: MembershipContext,
-) {
-  const aliases = await aliasesFor(db, rows.map((row) => row.sender_membership_id));
+async function serializeImages(db: Db, rows: ImageRow[], membership: MembershipContext) {
+  const aliases = await aliasesFor(
+    db,
+    rows.map((row) => row.sender_membership_id),
+  );
   const ttl = imageConfig().signedUrlTtlSeconds;
   return Promise.all(
     rows.map(async (row) => ({
@@ -522,7 +537,8 @@ export async function handleFinalizeImageUpload(input: unknown, meta: McpMeta) {
   const internalId = await decodeImageId(image_id);
   if (internalId === null) throw roomError("IMAGE_NOT_FOUND");
   const row = await getImageRow(db, internalId);
-  if (!row || row.sender_membership_id !== membership.membershipId) throw roomError("IMAGE_NOT_FOUND");
+  if (!row || row.sender_membership_id !== membership.membershipId)
+    throw roomError("IMAGE_NOT_FOUND");
   if (!row.uploaded) throw roomError("IMAGE_NOT_UPLOADED");
   if (row.moderation_status === "approved") {
     return {
@@ -560,7 +576,10 @@ export async function handleFinalizeImageUpload(input: unknown, meta: McpMeta) {
     instructions: REVIEW_INSTRUCTIONS,
     notice: RETENTION_NOTICE,
     _content: [
-      { type: "text", text: `Bild wird geprüft … Prüfe dieses Bild gegen die Raumregeln.\n${REVIEW_INSTRUCTIONS}` },
+      {
+        type: "text",
+        text: `Bild wird geprüft … Prüfe dieses Bild gegen die Raumregeln.\n${REVIEW_INSTRUCTIONS}`,
+      },
       { type: "image", data: bytesToBase64(bytes), mimeType: row.mime_type },
     ],
   };
@@ -588,7 +607,8 @@ export async function handleSubmitImageReview(input: unknown, meta: McpMeta) {
   }
 
   const row = await getImageRow(db, internalId);
-  if (!row || row.sender_membership_id !== membership.membershipId) throw roomError("IMAGE_NOT_FOUND");
+  if (!row || row.sender_membership_id !== membership.membershipId)
+    throw roomError("IMAGE_NOT_FOUND");
   if (row.moderation_status !== "pending") throw roomError("REVIEW_INVALID");
 
   if (decision === "rejected") {
@@ -610,7 +630,10 @@ export async function handleSubmitImageReview(input: unknown, meta: McpMeta) {
   }
 
   if (row.checksum && (await findDuplicate(db, row.room_id, row.checksum, row.id))) {
-    await updateImageRow(db, row.id, { moderation_status: "failed", moderation_reason: "duplicate" });
+    await updateImageRow(db, row.id, {
+      moderation_status: "failed",
+      moderation_reason: "duplicate",
+    });
     await removeStorageObjects(db, [row.storage_path]);
     throw roomError("IMAGE_DUPLICATE");
   }
@@ -655,7 +678,9 @@ export async function handleGetImage(input: unknown, meta: McpMeta) {
   if (row.moderation_status !== "approved") {
     const own = row.sender_membership_id === membership.membershipId;
     if (!own) throw roomError("IMAGE_NOT_FOUND");
-    throw roomError(row.moderation_status === "pending" ? "IMAGE_PENDING_REVIEW" : "IMAGE_REJECTED");
+    throw roomError(
+      row.moderation_status === "pending" ? "IMAGE_PENDING_REVIEW" : "IMAGE_REJECTED",
+    );
   }
 
   const bytes = await downloadObject(db, row.storage_path);
@@ -689,10 +714,10 @@ function logModeration(imageId: number, decision: string, reason: string | null)
 function uploadBaseUrl(meta: McpMeta): string {
   const settings = config();
   if (settings.publicMcpBaseUrl) return settings.publicMcpBaseUrl.replace(/\/$/, "");
-  const origin = meta && typeof meta["room/origin"] === "string" ? (meta["room/origin"] as string) : "";
+  const origin =
+    meta && typeof meta["room/origin"] === "string" ? (meta["room/origin"] as string) : "";
   return origin.replace(/\/$/, "");
 }
-
 
 /* ------------------------------ display name ------------------------------ */
 

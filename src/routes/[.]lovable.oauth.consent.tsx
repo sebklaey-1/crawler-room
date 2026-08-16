@@ -19,10 +19,16 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   head: () => ({
     meta: [
       { title: "@room Zugriff bestätigen" },
-      { name: "description", content: "Bestätige den Zugriff einer Anwendung auf dein @room-Konto." },
+      {
+        name: "description",
+        content: "Bestätige den Zugriff einer Anwendung auf dein @room-Konto.",
+      },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "@room Zugriff bestätigen" },
-      { property: "og:description", content: "Zugriff einer Anwendung auf dein @room-Konto bestätigen." },
+      {
+        property: "og:description",
+        content: "Zugriff einer Anwendung auf dein @room-Konto bestätigen.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

@@ -34,7 +34,6 @@ export const Route = createFileRoute("/api/public/admin/cleanup")({
             headers: { "content-type": "application/json" },
           });
         } catch {
-
           return new Response(JSON.stringify({ ok: false, error: "cleanup_failed" }), {
             status: 500,
             headers: { "content-type": "application/json" },

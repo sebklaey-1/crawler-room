@@ -6,13 +6,41 @@
 export const MAX_ALIAS_LENGTH = 32;
 
 const ADJECTIVES = [
-  "Blue", "Quiet", "Green", "Silver", "Warm", "Bright", "Calm", "Golden",
-  "Soft", "Clever", "Amber", "Swift", "Gentle", "Violet", "Sunny", "Copper",
+  "Blue",
+  "Quiet",
+  "Green",
+  "Silver",
+  "Warm",
+  "Bright",
+  "Calm",
+  "Golden",
+  "Soft",
+  "Clever",
+  "Amber",
+  "Swift",
+  "Gentle",
+  "Violet",
+  "Sunny",
+  "Copper",
 ];
 
 const ANIMALS = [
-  "Lynx", "Fox", "Owl", "Panda", "Otter", "Heron", "Falcon", "Deer",
-  "Badger", "Raven", "Seal", "Ibex", "Marten", "Crane", "Hare", "Bison",
+  "Lynx",
+  "Fox",
+  "Owl",
+  "Panda",
+  "Otter",
+  "Heron",
+  "Falcon",
+  "Deer",
+  "Badger",
+  "Raven",
+  "Seal",
+  "Ibex",
+  "Marten",
+  "Crane",
+  "Hare",
+  "Bison",
 ];
 
 /**

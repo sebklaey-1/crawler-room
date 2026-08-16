@@ -108,7 +108,8 @@ export async function verifyAccessToken(token: string): Promise<AuthUser> {
   const ttl = exp ? Math.min(CACHE_TTL_MS, Math.max(0, exp * 1000 - Date.now())) : CACHE_TTL_MS;
   tokenCache.set(key, { user, expires: Date.now() + ttl });
   if (tokenCache.size > 500) {
-    for (const [entryKey, entry] of tokenCache) if (entry.expires <= Date.now()) tokenCache.delete(entryKey);
+    for (const [entryKey, entry] of tokenCache)
+      if (entry.expires <= Date.now()) tokenCache.delete(entryKey);
   }
   return user;
 }

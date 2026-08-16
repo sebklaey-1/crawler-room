@@ -115,7 +115,12 @@ async function callTool(params: any, context: RequestContext) {
   try {
     const meta = await buildMeta(params, context);
     const result = (await tool.handler(params?.arguments ?? {}, meta)) as Record<string, unknown>;
-    logEvent({ tool: tool.name, ok: true, authenticated: Boolean(context.auth), ms: Date.now() - started });
+    logEvent({
+      tool: tool.name,
+      ok: true,
+      authenticated: Boolean(context.auth),
+      ms: Date.now() - started,
+    });
     // `_content` carries MCP content blocks (e.g. an image) and never ships as data.
     const { _content, ...structured } = result as { _content?: unknown[] };
     return {
@@ -175,7 +180,9 @@ async function handleRpc(message: any, context: RequestContext): Promise<Json | 
   switch (method) {
     case "initialize": {
       const requested = params?.protocolVersion;
-      const version = SUPPORTED_PROTOCOL_VERSIONS.includes(requested) ? requested : PROTOCOL_VERSION;
+      const version = SUPPORTED_PROTOCOL_VERSIONS.includes(requested)
+        ? requested
+        : PROTOCOL_VERSION;
       return rpcResult(id, {
         protocolVersion: version,
         capabilities: { tools: { listChanged: false } },
@@ -246,7 +253,9 @@ function originAllowed(request: Request): boolean {
     const host = new URL(origin).hostname;
     if (host === "localhost" || host === "127.0.0.1") return true;
     if (host === new URL(request.url).hostname) return true;
-    return /(^|\.)(openai\.com|chatgpt\.com|oaiusercontent\.com|lovable\.app|crawler\.today)$/.test(host);
+    return /(^|\.)(openai\.com|chatgpt\.com|oaiusercontent\.com|lovable\.app|crawler\.today)$/.test(
+      host,
+    );
   } catch {
     return false;
   }
@@ -270,13 +279,19 @@ function unauthorized(origin: string, error?: "invalid_token"): Response {
 export async function handleMcpRequest(request: Request): Promise<Response> {
   const origin = new URL(request.url).origin;
 
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS_HEADERS });
-  if (!originAllowed(request)) return new Response("Forbidden origin", { status: 403, headers: CORS_HEADERS });
-  if (request.method === "DELETE") return new Response(null, { status: 204, headers: CORS_HEADERS });
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  if (!originAllowed(request))
+    return new Response("Forbidden origin", { status: 403, headers: CORS_HEADERS });
+  if (request.method === "DELETE")
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
 
   const protocolHeader = request.headers.get("mcp-protocol-version");
   if (protocolHeader && !SUPPORTED_PROTOCOL_VERSIONS.includes(protocolHeader)) {
-    return jsonResponse(rpcError(null, -32600, `Unsupported MCP protocol version: ${protocolHeader}`), 400);
+    return jsonResponse(
+      rpcError(null, -32600, `Unsupported MCP protocol version: ${protocolHeader}`),
+      400,
+    );
   }
 
   if (request.method === "GET") {
@@ -347,7 +362,9 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
   const sse = prefersSse(request);
 
   if (Array.isArray(payload)) {
-    const responses = (await Promise.all(payload.map((entry) => handleRpc(entry, context)))).filter(Boolean);
+    const responses = (await Promise.all(payload.map((entry) => handleRpc(entry, context)))).filter(
+      Boolean,
+    );
     if (context.challenge) return unauthorized(origin, "invalid_token");
     if (!responses.length) return new Response(null, { status: 202, headers: CORS_HEADERS });
     const extra = context.authRequired ? { "WWW-Authenticate": challengeHeader(origin) } : {};

@@ -4,13 +4,25 @@
  */
 
 export const CANONICAL_TOPICS = [
-  { slug: "ai", display_name: "AI", description: "Künstliche Intelligenz, Modelle und AI-Produkte" },
+  {
+    slug: "ai",
+    display_name: "AI",
+    description: "Künstliche Intelligenz, Modelle und AI-Produkte",
+  },
   { slug: "art", display_name: "Art", description: "Kunst, Illustration, Design und Kreativität" },
-  { slug: "science", display_name: "Science", description: "Wissenschaft, Forschung und Entdeckungen" },
+  {
+    slug: "science",
+    display_name: "Science",
+    description: "Wissenschaft, Forschung und Entdeckungen",
+  },
   { slug: "tech", display_name: "Tech", description: "Technologie, Software und Hardware" },
   { slug: "music", display_name: "Music", description: "Musik, Produktion und Instrumente" },
   { slug: "gaming", display_name: "Gaming", description: "Games, Entwicklung und Gaming-Kultur" },
-  { slug: "life", display_name: "Life", description: "Alltag, persönliche Interessen und lockerer Austausch" },
+  {
+    slug: "life",
+    display_name: "Life",
+    description: "Alltag, persönliche Interessen und lockerer Austausch",
+  },
 ] as const;
 
 /** Static alias map, mirrored by the `topic_aliases` table. */
@@ -41,7 +53,10 @@ export function normalizeTopicInput(raw: string): string {
  * Resolves a user-provided topic string to a canonical slug.
  * Returns null when the topic is unknown (caller emits TOPIC_NOT_FOUND).
  */
-export function resolveTopicSlug(raw: string, aliases: Record<string, string> = TOPIC_ALIASES): string | null {
+export function resolveTopicSlug(
+  raw: string,
+  aliases: Record<string, string> = TOPIC_ALIASES,
+): string | null {
   const normalized = normalizeTopicInput(raw);
   if (!normalized) return null;
   if (CANONICAL_TOPICS.some((topic) => topic.slug === normalized)) return normalized;

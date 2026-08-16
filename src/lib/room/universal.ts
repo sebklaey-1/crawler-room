@@ -72,7 +72,12 @@ export async function universalFeed(
   options: UniversalFeedOptions,
 ) {
   const settings = await universalSettings(db);
-  const limit = clampLimit(options.limit ?? settings.page_size, settings.page_size, 1, settings.max_page_size);
+  const limit = clampLimit(
+    options.limit ?? settings.page_size,
+    settings.page_size,
+    1,
+    settings.max_page_size,
+  );
 
   let query = db
     .from("messages")
@@ -146,10 +151,14 @@ export async function trendingTopics(db: Db, limit = 6) {
     .limit(1000);
 
   const counts = new Map<string, { slug: string; display_name: string; count: number }>();
-  for (const row of ((data ?? []) as any[])) {
+  for (const row of (data ?? []) as any[]) {
     const topic = row.topics;
     if (!topic || topic.slug === "universal") continue;
-    const entry = counts.get(topic.slug) ?? { slug: topic.slug, display_name: topic.display_name, count: 0 };
+    const entry = counts.get(topic.slug) ?? {
+      slug: topic.slug,
+      display_name: topic.display_name,
+      count: 0,
+    };
     entry.count += 1;
     counts.set(topic.slug, entry);
   }
@@ -189,7 +198,9 @@ export async function upcomingEvents(db: Db, limit = 5) {
 export function looksLikeSpam(text: string): boolean {
   const upperRatio = (text.match(/[A-ZÄÖÜ]/g)?.length ?? 0) / Math.max(text.length, 1);
   const repeated = /(.)\1{9,}/.test(text);
-  const promo = /\b(kaufe jetzt|buy now|promo code|rabattcode|telegram\.me|whatsapp \+\d)/i.test(text);
+  const promo = /\b(kaufe jetzt|buy now|promo code|rabattcode|telegram\.me|whatsapp \+\d)/i.test(
+    text,
+  );
   return repeated || promo || (text.length > 40 && upperRatio > 0.7);
 }
 

@@ -49,7 +49,11 @@ export async function createImageRow(
 }
 
 export async function getImageRow(db: Db, id: number): Promise<ImageRow | null> {
-  const { data, error } = await db.from("image_messages").select(COLUMNS).eq("id", id).maybeSingle();
+  const { data, error } = await db
+    .from("image_messages")
+    .select(COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
   if (error) throw roomError("INTERNAL_ERROR");
   return (data as unknown as ImageRow) ?? null;
 }
@@ -83,7 +87,11 @@ export async function findDuplicate(
 }
 
 /** Approved images of a room, newest-first limited by retention, returned oldest-first. */
-export async function listApprovedImages(db: Db, roomId: string, limit: number): Promise<ImageRow[]> {
+export async function listApprovedImages(
+  db: Db,
+  roomId: string,
+  limit: number,
+): Promise<ImageRow[]> {
   const { data, error } = await db
     .from("image_messages")
     .select(COLUMNS)
@@ -163,11 +171,15 @@ export async function enforceImageRetention(db: Db, roomId: string) {
 /** Fallback sweep: dead uploads, orphaned files and both per-room limits. */
 export async function sweepImages(db: Db): Promise<{ purged: number; retention: number }> {
   const { data: dead } = await db.rpc("purge_dead_images");
-  const deadPaths = ((dead ?? []) as Array<{ storage_path: string }>).map((row) => row.storage_path);
+  const deadPaths = ((dead ?? []) as Array<{ storage_path: string }>).map(
+    (row) => row.storage_path,
+  );
   await removeStorageObjects(db, deadPaths);
 
   const { data: excess } = await db.rpc("enforce_all_retention");
-  const excessPaths = ((excess ?? []) as Array<{ storage_path: string }>).map((row) => row.storage_path);
+  const excessPaths = ((excess ?? []) as Array<{ storage_path: string }>).map(
+    (row) => row.storage_path,
+  );
   await removeStorageObjects(db, excessPaths);
 
   return { purged: deadPaths.length, retention: excessPaths.length };
@@ -179,6 +191,6 @@ export async function aliasesFor(db: Db, membershipIds: string[]): Promise<Recor
   if (!unique.length) return {};
   const { data } = await db.from("memberships").select("id, alias").in("id", unique);
   const map: Record<string, string> = {};
-  for (const row of ((data ?? []) as Array<{ id: string; alias: string }>)) map[row.id] = row.alias;
+  for (const row of (data ?? []) as Array<{ id: string; alias: string }>) map[row.id] = row.alias;
   return map;
 }

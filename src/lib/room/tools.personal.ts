@@ -33,7 +33,14 @@ import {
   type PersonalRoom,
 } from "./personal";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
-import { countOnline, getCustomAlias, PRESENCE_WINDOW_SECONDS, touchPresence, type Db, getDb } from "./store";
+import {
+  countOnline,
+  getCustomAlias,
+  PRESENCE_WINDOW_SECONDS,
+  touchPresence,
+  type Db,
+  getDb,
+} from "./store";
 import { validateMessage } from "./validation";
 
 const handleSchema = z.object({ username: z.string().min(1) });
@@ -68,7 +75,10 @@ async function roomMessages(db: Db, room: PersonalRoom, selfMembershipId: string
 
 async function roomImages(db: Db, room: PersonalRoom) {
   const rows = await listApprovedImages(db, room.roomId, IMAGE_RETENTION);
-  const aliases = await aliasesFor(db, rows.map((row) => row.sender_membership_id));
+  const aliases = await aliasesFor(
+    db,
+    rows.map((row) => row.sender_membership_id),
+  );
   const ttl = imageConfig().signedUrlTtlSeconds;
   return Promise.all(
     rows.map(async (row) => ({
@@ -215,7 +225,9 @@ export async function handleLeaveRoom(input: unknown, meta: McpMeta) {
 }
 
 export async function handleSendRoomMessage(input: unknown, meta: McpMeta) {
-  const { username, text } = z.object({ username: z.string().min(1), text: z.string() }).parse(input);
+  const { username, text } = z
+    .object({ username: z.string().min(1), text: z.string() })
+    .parse(input);
   const identity = await resolveIdentity(meta);
   const db = await getDb();
   await touchPresence(db, identity.subjectHash);
@@ -240,7 +252,9 @@ export async function handleSendRoomMessage(input: unknown, meta: McpMeta) {
     membership_id: membership.membershipId,
     body,
     created_at: now.toISOString(),
-    expires_at: new Date(now.getTime() + settings.messageRetentionHours * 3600 * 1000).toISOString(),
+    expires_at: new Date(
+      now.getTime() + settings.messageRetentionHours * 3600 * 1000,
+    ).toISOString(),
   });
   if (error) throw roomError("INTERNAL_ERROR");
 

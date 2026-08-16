@@ -127,8 +127,8 @@ function Landing() {
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
             An anonymous social layer that lives entirely inside ChatGPT: open rooms, your own
-            permanent public room, a real profile, followers, likes, analytics and communities.
-            No separate login, completely free.
+            permanent public room, a real profile, followers, likes, analytics and communities. No
+            separate login, completely free.
           </p>
           <div className="mt-8 rounded-xl border border-border bg-card p-5 font-mono text-sm text-card-foreground">
             <p className="text-muted-foreground">In ChatGPT:</p>

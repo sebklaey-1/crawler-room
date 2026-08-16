@@ -12,7 +12,11 @@ function metadataResponse(request: Request) {
   const origin = new URL(request.url).origin;
   return new Response(JSON.stringify(protectedResourceMetadata(origin)), {
     status: 200,
-    headers: { "content-type": "application/json", "cache-control": "public, max-age=300", ...CORS },
+    headers: {
+      "content-type": "application/json",
+      "cache-control": "public, max-age=300",
+      ...CORS,
+    },
   });
 }
 

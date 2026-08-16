@@ -16,10 +16,16 @@ export const Route = createFileRoute("/oauth/consent")({
   head: () => ({
     meta: [
       { title: "@room mit einer App verbinden" },
-      { name: "description", content: "Bestätige den Zugriff einer Anwendung auf dein @room-Konto." },
+      {
+        name: "description",
+        content: "Bestätige den Zugriff einer Anwendung auf dein @room-Konto.",
+      },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "@room mit einer App verbinden" },
-      { property: "og:description", content: "Zugriff einer Anwendung auf dein @room-Konto bestätigen." },
+      {
+        property: "og:description",
+        content: "Zugriff einer Anwendung auf dein @room-Konto bestätigen.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

@@ -21,7 +21,11 @@ export const Route = createFileRoute("/.well-known/oauth-authorization-server")(
         const body = await upstream.text();
         return new Response(body, {
           status: upstream.status,
-          headers: { "content-type": "application/json", "cache-control": "public, max-age=300", ...CORS },
+          headers: {
+            "content-type": "application/json",
+            "cache-control": "public, max-age=300",
+            ...CORS,
+          },
         });
       },
       OPTIONS: () => new Response(null, { status: 204, headers: CORS }),

@@ -72,7 +72,9 @@ function profileSummary(result: any): string {
 
   const meta = [
     p.location ? `📍 ${p.location}` : null,
-    p.external_url ? `🔗 [${p.external_url}](${/^https?:\/\//.test(p.external_url) ? p.external_url : `https://${p.external_url}`})` : null,
+    p.external_url
+      ? `🔗 [${p.external_url}](${/^https?:\/\//.test(p.external_url) ? p.external_url : `https://${p.external_url}`})`
+      : null,
     p.joined_at ? `📅 seit ${String(p.joined_at).slice(0, 10)}` : null,
   ].filter(Boolean);
   if (meta.length) parts.push(meta.join(" · "));
@@ -80,7 +82,8 @@ function profileSummary(result: any): string {
   const stats: Array<[string, unknown]> = [];
   if (p.followers !== null && p.followers !== undefined) stats.push(["Followers", p.followers]);
   stats.push(["Following", p.following ?? 0]);
-  if (p.likes_received !== null && p.likes_received !== undefined) stats.push(["Likes", p.likes_received]);
+  if (p.likes_received !== null && p.likes_received !== undefined)
+    stats.push(["Likes", p.likes_received]);
   stats.push(["Jetzt hier", `🟢 ${p.people_here_now ?? 0}`]);
   parts.push(
     `| ${stats.map(([label]) => label).join(" | ")} |\n|${stats.map(() => "---:").join("|")}|\n| ${stats
@@ -141,7 +144,10 @@ function analyticsSummary(result: any): string {
   const trend = daily.length
     ? daily
         .slice(-14)
-        .map((d, i) => `${String(d.day).slice(5)}  ${bar(Number(d.profile_view ?? 0), dayMax, 16)} ${dayValues.slice(-14)[i] ?? 0}`)
+        .map(
+          (d, i) =>
+            `${String(d.day).slice(5)}  ${bar(Number(d.profile_view ?? 0), dayMax, 16)} ${dayValues.slice(-14)[i] ?? 0}`,
+        )
         .join("\n")
     : "Noch keine Daten in diesem Zeitraum.";
 
@@ -253,7 +259,8 @@ export const PROFILE_TOOLS: ProfileToolDefinition[] = [
   {
     name: "unlike_content",
     title: "Like zurücknehmen",
-    description: "Entfernt ein zuvor gesetztes Like von einem Profil, einer Nachricht oder einem Bild.",
+    description:
+      "Entfernt ein zuvor gesetztes Like von einem Profil, einer Nachricht oder einem Bild.",
     inputSchema: likeInput,
     outputSchema: OPEN_OUTPUT,
     annotations: WRITE,
@@ -289,7 +296,8 @@ export const PROFILE_TOOLS: ProfileToolDefinition[] = [
     outputSchema: OPEN_OUTPUT,
     annotations: WRITE,
     handler: (input, meta) => handleTrackProfileLink(input, meta) as Promise<Json>,
-    summary: (result) => (result.url ? `Link: ${result.url}` : "Dieses Profil hat keinen Link hinterlegt."),
+    summary: (result) =>
+      result.url ? `Link: ${result.url}` : "Dieses Profil hat keinen Link hinterlegt.",
   },
   {
     name: "block_profile",

@@ -10,18 +10,10 @@
  */
 import { generateAlias, sanitizeAlias } from "./alias";
 import { roomError } from "./errors";
-import {
-  countOnline,
-  getCustomAlias,
-  PRESENCE_WINDOW_SECONDS,
-  type Db,
-} from "./store";
+import { countOnline, getCustomAlias, PRESENCE_WINDOW_SECONDS, type Db } from "./store";
 
 export type NotificationType =
-  | "new_conversation"
-  | "public_message"
-  | "live_event"
-  | "new_follower";
+  "new_conversation" | "public_message" | "live_event" | "new_follower";
 
 export interface PersonalRoom {
   roomId: string;
@@ -109,8 +101,14 @@ export async function syncPersonalRoomName(db: Db, subjectHash: string, alias: s
 
   const handle = await uniqueHandle(db, subjectHash, slugifyHandle(alias));
   const roomName = personalRoomName(alias);
-  await db.from("user_rooms").update({ handle, room_name: roomName }).eq("id", (data as any).id);
-  await db.from("rooms").update({ title: roomName }).eq("id", (data as any).room_id ?? undefined);
+  await db
+    .from("user_rooms")
+    .update({ handle, room_name: roomName })
+    .eq("id", (data as any).id);
+  await db
+    .from("rooms")
+    .update({ title: roomName })
+    .eq("id", (data as any).room_id ?? undefined);
   return { handle, roomName };
 }
 
@@ -162,7 +160,10 @@ export async function updatePersonalRoom(
   if (!data) throw roomError("NOT_FOUND");
 
   if (update["room_name"]) {
-    await db.from("rooms").update({ title: update["room_name"] }).eq("id", (data as any).room_id);
+    await db
+      .from("rooms")
+      .update({ title: update["room_name"] })
+      .eq("id", (data as any).room_id);
   }
   return data as any;
 }
@@ -174,7 +175,13 @@ export async function joinPersonalRoom(
   db: Db,
   room: PersonalRoom,
   subjectHash: string,
-): Promise<{ membershipId: string; alias: string; joinedAt: string; lastReadMessageId: number | null; joinedNow: boolean }> {
+): Promise<{
+  membershipId: string;
+  alias: string;
+  joinedAt: string;
+  lastReadMessageId: number | null;
+  joinedNow: boolean;
+}> {
   const { data: existing } = await db
     .from("memberships")
     .select("id, alias, joined_at, last_read_message_id")
@@ -185,7 +192,10 @@ export async function joinPersonalRoom(
 
   if (existing) {
     const row = existing as any;
-    await db.from("memberships").update({ last_seen_at: new Date().toISOString() }).eq("id", row.id);
+    await db
+      .from("memberships")
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq("id", row.id);
     return {
       membershipId: row.id,
       alias: row.alias,
@@ -300,10 +310,16 @@ export async function followRoom(db: Db, room: PersonalRoom, subjectHash: string
     .from("room_followers")
     .insert({ room_id: room.roomId, follower_subject_hash: subjectHash });
   // Unique constraint => already following (idempotent, never double counted).
-  if (error && !String(error.code) .startsWith("23")) throw roomError("INTERNAL_ERROR");
+  if (error && !String(error.code).startsWith("23")) throw roomError("INTERNAL_ERROR");
 
   const alias = (await getCustomAlias(db, subjectHash)) ?? generateAlias(`${subjectHash}:follow`);
-  await notify(db, room.ownerSubjectHash, room.roomId, "new_follower", `${alias} started following your room.`);
+  await notify(
+    db,
+    room.ownerSubjectHash,
+    room.roomId,
+    "new_follower",
+    `${alias} started following your room.`,
+  );
   await trackEvent(db, room, "follow", subjectHash);
 
   return { already: Boolean(error), followers: await followerCount(db, room.roomId) };

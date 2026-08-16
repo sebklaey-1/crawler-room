@@ -21,8 +21,12 @@ interface AuthorizationDetails {
 }
 
 interface OAuthNamespace {
-  getAuthorizationDetails: (id: string) => Promise<{ data: AuthorizationDetails | null; error: unknown }>;
-  approveAuthorization: (id: string) => Promise<{ data: AuthorizationDetails | null; error: unknown }>;
+  getAuthorizationDetails: (
+    id: string,
+  ) => Promise<{ data: AuthorizationDetails | null; error: unknown }>;
+  approveAuthorization: (
+    id: string,
+  ) => Promise<{ data: AuthorizationDetails | null; error: unknown }>;
   denyAuthorization: (id: string) => Promise<{ data: AuthorizationDetails | null; error: unknown }>;
 }
 
@@ -50,7 +54,9 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
       setSignedIn(Boolean(data.session));
-      setAccountLabel(data.session?.user.email ?? (data.session?.user.is_anonymous ? "Gastkonto" : null));
+      setAccountLabel(
+        data.session?.user.email ?? (data.session?.user.is_anonymous ? "Gastkonto" : null),
+      );
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setSignedIn(Boolean(session));
@@ -117,7 +123,8 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
     () =>
       withBusy(async () => {
         const { error: guestError } = await supabase.auth.signInAnonymously();
-        if (guestError) setError("Ohne Konto ist die Verbindung hier nicht möglich. Bitte melde dich an.");
+        if (guestError)
+          setError("Ohne Konto ist die Verbindung hier nicht möglich. Bitte melde dich an.");
       }),
     [withBusy],
   );
@@ -152,7 +159,8 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
     );
   }
 
-  const clientName = details?.client?.name ?? details?.client?.client_name ?? "Die verbundene Anwendung";
+  const clientName =
+    details?.client?.name ?? details?.client?.client_name ?? "Die verbundene Anwendung";
   const scopes = (details?.scope ?? "openid profile").split(/\s+/).filter(Boolean);
 
   return (
@@ -160,8 +168,8 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
       <header className="space-y-2">
         <h1 className="text-2xl font-semibold">{clientName} mit @room verbinden</h1>
         <p className="text-sm text-muted-foreground">
-          Lesen ist ohne Anmeldung möglich. Schreiben, Folgen, Liken, Verwalten und Analytics brauchen dein
-          Konto.
+          Lesen ist ohne Anmeldung möglich. Schreiben, Folgen, Liken, Verwalten und Analytics
+          brauchen dein Konto.
         </p>
       </header>
 
@@ -207,10 +215,20 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
             <Button type="submit" disabled={busy}>
               Anmelden
             </Button>
-            <Button type="button" variant="outline" disabled={busy} onClick={() => void signIn("up")}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={() => void signIn("up")}
+            >
               Konto erstellen
             </Button>
-            <Button type="button" variant="ghost" disabled={busy} onClick={() => void continueAsGuest()}>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={busy}
+              onClick={() => void continueAsGuest()}
+            >
               Ohne Konto fortfahren
             </Button>
           </div>
@@ -223,8 +241,8 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
             <p className="text-sm text-muted-foreground">Angemeldet als {accountLabel}</p>
           ) : null}
           <p className="text-sm">
-            <strong>{clientName}</strong> darf @room in deinem Namen nutzen: Nachrichten schreiben, Räume und
-            Profil verwalten, folgen und liken.
+            <strong>{clientName}</strong> darf @room in deinem Namen nutzen: Nachrichten schreiben,
+            Räume und Profil verwalten, folgen und liken.
           </p>
           <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
             {scopes.map((scope) => (
@@ -235,7 +253,8 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
             <p className="text-xs text-muted-foreground">Rückleitung an {details.redirect_uri}</p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            Die Regeln von @room gelten weiterhin. Du kannst den Zugriff jederzeit in ChatGPT entfernen.
+            Die Regeln von @room gelten weiterhin. Du kannst den Zugriff jederzeit in ChatGPT
+            entfernen.
           </p>
           <div className="flex gap-3">
             <Button disabled={busy || !details} onClick={() => void decide("approve")}>

@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { fakeDb } from "@/test/fake-db";
-import { canManage, removeOrgMember, slugify, updateCommunity, updateOrganization } from "./communities";
+import {
+  canManage,
+  removeOrgMember,
+  slugify,
+  updateCommunity,
+  updateOrganization,
+} from "./communities";
 import { followRoom, unfollowRoom, type PersonalRoom } from "./personal";
 import { addLike } from "./profile";
 import { publicRoomView } from "./tools.personal";
@@ -21,7 +27,9 @@ const room: PersonalRoom = {
 
 describe("follow guards", () => {
   it("blocks following your own room", async () => {
-    await expect(followRoom(fakeDb(), room, "owner-hash")).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(followRoom(fakeDb(), room, "owner-hash")).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 
   it("never counts a duplicate follow twice", async () => {
@@ -71,12 +79,16 @@ describe("communities and organizations", () => {
       anonymous_identities: { data: { account_id: "acc-1" } },
       user_rooms: { data: { owner_subject_hash: "owner-hash" } },
     });
-    await expect(removeOrgMember(db, "me", "org", "@owner")).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await expect(removeOrgMember(db, "me", "org", "@owner")).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
   });
 
   it("refuses organization updates from non-managers", async () => {
     const db = fakeDb({
-      organizations: { data: { id: "org-1", owner_account_id: "acc-owner", name: "Org", slug: "org" } },
+      organizations: {
+        data: { id: "org-1", owner_account_id: "acc-owner", name: "Org", slug: "org" },
+      },
       anonymous_identities: { data: { account_id: "acc-other" } },
       organization_members: { data: { role: "member" } },
     });
@@ -112,7 +124,9 @@ describe("content safety and rendering", () => {
   it("keeps message validation limits", () => {
     expect(() => validateMessage("", { maxLength: 500, maxLinks: 2 })).toThrow();
     expect(() => validateMessage("x".repeat(501), { maxLength: 500, maxLinks: 2 })).toThrow();
-    expect(() => validateMessage("a https://a.io https://b.io https://c.io", { maxLength: 500, maxLinks: 2 })).toThrow();
+    expect(() =>
+      validateMessage("a https://a.io https://b.io https://c.io", { maxLength: 500, maxLinks: 2 }),
+    ).toThrow();
     expect(validateMessage("  hallo  ", { maxLength: 500, maxLinks: 2 })).toBe("hallo");
   });
 

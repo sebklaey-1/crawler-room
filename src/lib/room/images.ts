@@ -63,7 +63,8 @@ function stripJpeg(bytes: Uint8Array): SanitizedImage | null {
     if (length < 2 || offset + 2 + length > bytes.length) return null;
 
     const isMetadata = (marker >= 0xe0 && marker <= 0xef) || marker === 0xfe;
-    const isFrame = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
+    const isFrame =
+      marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
     if (isFrame && offset + 9 < bytes.length) {
       height = (bytes[offset + 5]! << 8) | bytes[offset + 6]!;
       width = (bytes[offset + 7]! << 8) | bytes[offset + 8]!;
@@ -128,8 +129,16 @@ function stripWebp(bytes: Uint8Array): SanitizedImage | null {
     if (offset + 8 + padded > bytes.length) break;
 
     if (type === "VP8X" && size >= 10) {
-      width = (view.getUint8(offset + 12) | (view.getUint8(offset + 13) << 8) | (view.getUint8(offset + 14) << 16)) + 1;
-      height = (view.getUint8(offset + 15) | (view.getUint8(offset + 16) << 8) | (view.getUint8(offset + 17) << 16)) + 1;
+      width =
+        (view.getUint8(offset + 12) |
+          (view.getUint8(offset + 13) << 8) |
+          (view.getUint8(offset + 14) << 16)) +
+        1;
+      height =
+        (view.getUint8(offset + 15) |
+          (view.getUint8(offset + 16) << 8) |
+          (view.getUint8(offset + 17) << 16)) +
+        1;
     }
     if (type === "VP8 " && size >= 10 && width === null) {
       const base = offset + 8 + 6;
