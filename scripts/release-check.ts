@@ -135,6 +135,17 @@ check(
   envSet("VITE_PUBLIC_SUPPORT_EMAIL") ? "set" : "missing — manual release blocker",
 );
 
+// Moderation staffing: a named responsible person plus at least one configured
+// moderator subject hash in `moderator_subjects`. Confirmed operationally by
+// setting ROOM_MODERATION_OWNER; the allowlist itself is never read from here.
+check(
+  "moderation staffing confirmed (ROOM_MODERATION_OWNER)",
+  envSet("ROOM_MODERATION_OWNER"),
+  envSet("ROOM_MODERATION_OWNER")
+    ? "named responsible person recorded"
+    : "missing — manual release blocker: name a moderator and add their subject hash to moderator_subjects",
+);
+
 /* --------------------------------- 7. scripts -------------------------------- */
 
 const pkg = JSON.parse(read("package.json") || "{}") as { scripts?: Record<string, string> };
