@@ -5,6 +5,7 @@
 import { embedded, type EmbeddedShapes } from "./dbtypes";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { aliasKey, MAX_ALIAS_LENGTH } from "./alias";
 import { retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
 
