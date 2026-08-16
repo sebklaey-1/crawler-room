@@ -6,8 +6,8 @@
  * - Authenticated calls carry a server-injected `room/auth` entry in `_meta`
  *   that the MCP transport builds from a validated OAuth bearer token. Any
  *   `room/*` key sent by a client is stripped before the handler sees it.
- * - `openai/subject` alone never authorises anything. It is only used to
- *   migrate an existing anonymous identity onto the authenticated account.
+ * - `openai/subject` alone never authorises anything and never migrates an
+ *   existing identity: it is not a proof of ownership.
  * - Raw subjects and user ids are never stored; only HMAC-SHA256 digests.
  */
 import { requireSecret } from "./config";
@@ -20,13 +20,12 @@ export type McpMeta = Record<string, unknown> | undefined;
 export const AUTH_META_KEY = "room/auth";
 
 export interface AuthMeta {
-  userId: string;
+  /** Pseudonymous subject only — the raw auth user id never reaches handlers. */
   subjectHash: string;
 }
 
 export interface Identity {
   subjectHash: string;
-  userId: string;
   sessionHash: string | null;
   locale: string | null;
 }
@@ -41,20 +40,12 @@ export function readSubject(meta: McpMeta): string | null {
   return readMetaString(meta, "openai/subject");
 }
 
-/** HMAC of the legacy anonymous subject, used only for one-time account linking. */
-export async function legacySubjectHash(meta: McpMeta): Promise<string | null> {
-  const subject = readSubject(meta);
-  if (!subject) return null;
-  return hmacSha256Hex(requireSecret("SUBJECT_HASH_SECRET"), subject);
-}
-
 export function readAuthMeta(meta: McpMeta): AuthMeta | null {
   const value = meta?.[AUTH_META_KEY];
   if (!value || typeof value !== "object") return null;
-  const { userId, subjectHash } = value as Partial<AuthMeta>;
-  if (typeof userId !== "string" || typeof subjectHash !== "string") return null;
-  if (!userId || !subjectHash) return null;
-  return { userId, subjectHash };
+  const { subjectHash } = value as Partial<AuthMeta>;
+  if (typeof subjectHash !== "string" || !subjectHash) return null;
+  return { subjectHash };
 }
 
 /** Strips every server-controlled `room/*` key from client supplied `_meta`. */
@@ -77,7 +68,6 @@ export async function resolveIdentity(meta: McpMeta): Promise<Identity> {
 
   return {
     subjectHash: auth.subjectHash,
-    userId: auth.userId,
     sessionHash: session ? await hmacSha256Hex(secret, session) : null,
     locale: readMetaString(meta, "openai/locale"),
   };
