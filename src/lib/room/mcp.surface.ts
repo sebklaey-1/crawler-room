@@ -25,6 +25,8 @@ import {
   sendCommunityMessage,
   updateCommunity,
   updateOrganization,
+  publicGetOrganization,
+  publicListOrganizations,
 } from "./communities";
 import { roomError } from "./errors";
 import { encodeMessageId } from "./ids";
