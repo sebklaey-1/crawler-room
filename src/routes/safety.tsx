@@ -102,25 +102,41 @@ function SafetyPage() {
         <Section title="How to protect yourself and report">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong>Block:</strong> @room has a built-in block action. Ask it to block a profile
-              (for example “@room block @handle”) and that profile’s content no longer reaches you.
+              <strong>Report in chat:</strong> ask @room to report a message, an image, a profile,
+              a room or a community (for example “@room report this message as harassment”). You
+              pick a fixed reason and may add up to 500 characters of context — please do not add
+              extra personal data there. You get back an opaque case reference only.
             </li>
             <li>
-              <strong>Report abuse:</strong> use the web form at{" "}
+              <strong>A report never removes anything automatically.</strong> Each case runs
+              through <em>received → reviewing → actioned or dismissed</em> and is decided by a
+              person. Reporting the same target twice simply returns the case you already filed.
+            </li>
+            <li>
+              <strong>Block and unblock:</strong> ask @room to block or unblock a profile, or to
+              list who you block. A block works in both directions for personal rooms: neither
+              side can open, message or follow the other room. It does not delete content that is
+              already public and it does not change the Universal Room or community rooms.
+            </li>
+            <li>
+              <strong>Without ChatGPT:</strong> use the web form at{" "}
               <a className="underline" href="/support">
                 crawler.today/support
               </a>{" "}
-              with the category “abuse/safety report”. Include the public handle and what happened.
-              You will get an opaque case reference.
+              with the category “abuse/safety report”. Include the public handle and what
+              happened. You will get an opaque case reference.
             </li>
             <li>
-              Reports are reviewed by a person when capacity allows. There is no automatic or
-              immediate review of every report, and submitting a report does not guarantee a
-              specific outcome.
+              Reports are reviewed by a person. Review capacity is limited, so a report does not
+              guarantee a specific outcome or a specific response time.
             </li>
-            <li>For anything that endangers someone right now, contact local authorities first.</li>
+            <li>
+              If someone is in danger right now, contact your local emergency services. @room
+              cannot provide medical, legal or crisis assistance.
+            </li>
           </ul>
         </Section>
+
 
         <Section title="Enforcement">
           <p>
