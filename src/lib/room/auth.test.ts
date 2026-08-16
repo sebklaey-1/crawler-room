@@ -86,6 +86,52 @@ describe("authentication policy", () => {
   });
 });
 
+describe("test-only auth context", () => {
+  it("accepts x-room-test-user while NODE_ENV is test", async () => {
+    expect(process.env["NODE_ENV"]).toBe("test");
+    const response = await toolCall(
+      "likes",
+      { action: "like", target_type: "profile", username: "someone" },
+      { "x-room-test-user": "00000000-0000-4000-8000-000000000001" },
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as any;
+    expect(body.result.structuredContent.error?.code).not.toBe("AUTH_REQUIRED");
+  });
+
+  it("rejects an invalid bearer token with an invalid_token challenge", async () => {
+    const response = await toolCall(
+      "likes",
+      { action: "like", target_type: "profile", username: "someone" },
+      { authorization: "Bearer not.a.token" },
+    );
+    expect(response.status).toBe(401);
+    expect(response.headers.get("www-authenticate")).toContain('error="invalid_token"');
+  });
+
+  it("carries the challenge inside the tool result meta", async () => {
+    const response = await toolCall("analytics", { action: "profile" });
+    const body = (await response.json()) as any;
+    expect(body.result._meta["mcp/www_authenticate"]).toContain("resource_metadata=");
+    expect(body.result._meta["mcp/www_authenticate"]).toContain("error_description=");
+  });
+
+  it("advertises security schemes per tool", async () => {
+    const response = await post({ jsonrpc: "2.0", id: 1, method: "tools/list" });
+    const body = (await response.json()) as any;
+    for (const tool of body.result.tools) {
+      expect(tool.securitySchemes).toEqual(tool._meta.securitySchemes);
+      const types = tool.securitySchemes.map((scheme: any) => scheme.type);
+      expect(types).toContain("oauth2");
+      expect(types.includes("noauth")).toBe((PUBLIC_ACTIONS[tool.name] ?? []).length > 0);
+    }
+    for (const name of ["followers_notifications", "likes", "analytics"]) {
+      const tool = body.result.tools.find((entry: any) => entry.name === name);
+      expect(tool.securitySchemes).toEqual([{ type: "oauth2", scopes: ["openid", "profile"] }]);
+    }
+  });
+});
+
 describe("token and identity handling", () => {
   it("reads only well-formed bearer headers", () => {
     expect(bearerToken(new Request(URL_MCP, { headers: { authorization: "Bearer abc" } }))).toBe("abc");
