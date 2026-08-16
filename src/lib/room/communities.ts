@@ -452,11 +452,13 @@ export async function removeOrgMember(
     throw roomError("FORBIDDEN", "Der Besitzer der Organisation kann nicht entfernt werden.");
   }
 
-  await db
+  const { error: deleteError } = await db
     .from("organization_members")
     .delete()
     .eq("organization_id", org.id)
     .eq("account_id", targetAccount);
+  if (deleteError) throw roomError("INTERNAL_ERROR");
+
 
   return {
     removed: true,
