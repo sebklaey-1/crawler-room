@@ -41,7 +41,7 @@ export async function matchesDatabaseToken(db: Db, provided: string): Promise<bo
       .maybeSingle();
     const expected = (data as { sha256?: string } | null)?.sha256 ?? "";
     if (error || !expected) return false;
-    return safeEqual(expected, await sha256Hex(provided));
+    return safeEqual(expected, await sha256Hex(new TextEncoder().encode(provided)));
   } catch {
     return false;
   }
