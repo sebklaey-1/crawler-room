@@ -176,7 +176,25 @@ export interface ProfileRow extends PersonalRoom {
 const PROFILE_COLUMNS =
   "room_id, handle, room_name, description, avatar_path, banner_path, location, external_url, profile_visibility, show_online_status, show_follower_count, show_likes, owner_subject_hash, created_at";
 
-function mapProfile(row: Record<string, unknown>, ownerAlias: string): ProfileRow {
+/** Raw `user_rooms` columns this module projects. */
+interface UserRoomRow {
+  room_id: string;
+  handle: string;
+  room_name: string;
+  description?: string | null;
+  avatar_path?: string | null;
+  banner_path?: string | null;
+  location?: string | null;
+  external_url?: string | null;
+  profile_visibility?: string | null;
+  show_online_status?: boolean | null;
+  show_follower_count?: boolean | null;
+  show_likes?: boolean | null;
+  owner_subject_hash: string;
+  created_at: string;
+}
+
+function mapProfile(row: UserRoomRow, ownerAlias: string): ProfileRow {
   return {
     roomId: row.room_id,
     handle: row.handle,

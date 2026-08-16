@@ -62,5 +62,14 @@ export function fakeDb(tables: Record<string, TableResult> = {}) {
       return { data: null, error: null };
     },
   };
-  return db;
+  // The fake only implements the narrow surface the tested readers use.
+  return db as unknown as ReturnType<typeof asDb>;
+}
+
+/** Identity helper that gives the fake the shape call sites expect. */
+function asDb(value: unknown) {
+  return value as import("../lib/room/db").Db & {
+    calls: Array<{ table: string }>;
+    methods: string[];
+  };
 }
