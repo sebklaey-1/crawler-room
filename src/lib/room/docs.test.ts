@@ -102,6 +102,23 @@ describe("submission dossier", () => {
     expect(SUBMISSION).toMatch(/review portal/i);
   });
 
+  it("ships no reviewer credentials and no invented contact details", () => {
+    // Credentials must never live in the repository, and the only support
+    // channel we may name is the implemented /support form.
+    expect(SUBMISSION).not.toMatch(/password\s*[:=]/i);
+    expect(SUBMISSION).not.toMatch(/[\w.+-]+@(?!room)[\w-]+\.[a-z]{2,}/i);
+    expect(SUBMISSION).not.toMatch(/\+\d[\d\s()-]{7,}/);
+    expect(SUBMISSION).toContain("https://crawler.today/support");
+  });
+
+  it("uses only crawler.today URLs", () => {
+    const urls = SUBMISSION.match(/https?:\/\/[^\s`)|]+/g) ?? [];
+    const foreign = urls.filter(
+      (url) => !url.startsWith("https://crawler.today") && !url.includes("openai.com"),
+    );
+    expect(foreign, `unexpected URLs: ${foreign.join(", ")}`).toEqual([]);
+  });
+
   it("describes support and deletion as manual queues", () => {
     expect(SUBMISSION).toMatch(/no monitored mailbox|There is no\s+monitored mailbox/i);
     expect(SUBMISSION).toMatch(/service-role/i);
