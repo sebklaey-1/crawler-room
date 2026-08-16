@@ -83,7 +83,8 @@ export async function universalFeed(
     .from("messages")
     .select("id, body, created_at, membership_id, memberships(alias)")
     .eq("room_id", membership.roomId)
-    .gte("created_at", new Date(Date.now() - settings.retention_hours * 3600 * 1000).toISOString())
+    .gte("created_at", retentionCutoffIso())
+    .gt("expires_at", new Date().toISOString())
     .order("id", { ascending: false })
     .limit(limit + 1);
 
@@ -254,7 +255,7 @@ export async function sendUniversalMessage(
       membership_id: membership.membershipId,
       body: text,
       created_at: now.toISOString(),
-      expires_at: new Date(now.getTime() + settings.retention_hours * 3600 * 1000).toISOString(),
+      expires_at: retentionDeadlineIso(now),
       idempotency_key: idempotencyKey ?? null,
     })
     .select("id, body, created_at")

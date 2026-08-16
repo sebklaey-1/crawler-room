@@ -617,13 +617,15 @@ export async function publicMetrics(db: Db, profile: ProfileRow, viewerHash: str
   const { count: messages } = await db
     .from("messages")
     .select("id", { count: "exact", head: true })
-    .eq("room_id", profile.roomId);
+    .eq("room_id", profile.roomId)
+    .gte("created_at", retentionCutoffIso());
 
   const { count: images } = await db
     .from("image_messages")
     .select("id", { count: "exact", head: true })
     .eq("room_id", profile.roomId)
-    .eq("moderation_status", "approved");
+    .eq("moderation_status", "approved")
+    .gte("created_at", retentionCutoffIso());
 
   const here = await liveCount(db, profile.roomId);
   const online = profile.showOnlineStatus ? await ownerOnline(db, profile) : null;

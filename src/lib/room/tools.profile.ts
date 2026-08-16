@@ -42,6 +42,7 @@ async function profileMessages(db: Db, profile: ProfileRow, viewerHash: string) 
     .from("messages")
     .select("id, body, created_at, memberships(alias, subject_hash)")
     .eq("room_id", profile.roomId)
+    .gte("created_at", retentionCutoffIso())
     .gt("expires_at", new Date().toISOString())
     .order("id", { ascending: false })
     .limit(20);

@@ -267,6 +267,7 @@ async function universalMessages(
     .from("messages")
     .select("id, body, created_at, membership_id, memberships(alias)")
     .eq("room_id", roomId)
+    .gte("created_at", retentionCutoffIso())
     .gt("expires_at", new Date().toISOString())
     .order("id", { ascending: false })
     .limit(limit + 1);

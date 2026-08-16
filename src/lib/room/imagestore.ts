@@ -97,6 +97,7 @@ export async function listApprovedImages(
     .select(COLUMNS)
     .eq("room_id", roomId)
     .eq("moderation_status", "approved")
+    .gte("created_at", retentionCutoffIso())
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(limit);
@@ -116,6 +117,7 @@ export async function listOwnUnpublishedImages(
     .eq("room_id", roomId)
     .eq("sender_membership_id", membershipId)
     .in("moderation_status", ["pending", "rejected", "failed"])
+    .gte("created_at", retentionCutoffIso())
     .order("created_at", { ascending: true });
   if (error) throw roomError("INTERNAL_ERROR");
   return (data ?? []) as unknown as ImageRow[];

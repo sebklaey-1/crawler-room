@@ -726,6 +726,7 @@ export async function readCommunity(db: Db, subjectHash: string, reference: unkn
     .from("messages")
     .select("id, body, created_at, membership_id, memberships(alias, subject_hash)")
     .eq("room_id", row.id)
+    .gte("created_at", retentionCutoffIso())
     .gt("expires_at", new Date().toISOString())
     .order("id", { ascending: false })
     .limit(Math.min(Math.max(limit, 1), 50));

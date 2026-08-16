@@ -55,6 +55,7 @@ async function roomMessages(db: Db, room: PersonalRoom, selfMembershipId: string
     .from("messages")
     .select("id, body, created_at, membership_id, memberships(alias)")
     .eq("room_id", room.roomId)
+    .gte("created_at", retentionCutoffIso())
     .gt("expires_at", new Date().toISOString())
     .order("id", { ascending: false })
     .limit(limit);

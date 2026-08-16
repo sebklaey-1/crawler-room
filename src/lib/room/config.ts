@@ -54,3 +54,20 @@ export function imageConfig() {
     signedUrlTtlSeconds: num("SIGNED_URL_TTL_SECONDS", 300),
   };
 }
+
+/**
+ * Absolute retention cap. Messages and images are never readable or kept
+ * longer than 24 hours, in every room type. The count limits above may
+ * delete them sooner, but they can never extend this window.
+ */
+export const MAX_RETENTION_HOURS = 24;
+
+/** ISO timestamp of the oldest content that may still be returned. */
+export function retentionCutoffIso(now: Date = new Date()): string {
+  return new Date(now.getTime() - MAX_RETENTION_HOURS * 3600 * 1000).toISOString();
+}
+
+/** Latest moment a row created at `createdAt` may survive. */
+export function retentionDeadlineIso(createdAt: Date = new Date()): string {
+  return new Date(createdAt.getTime() + MAX_RETENTION_HOURS * 3600 * 1000).toISOString();
+}
