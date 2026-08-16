@@ -12,7 +12,11 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { supportEmailEnvMatches } from "../src/lib/room/legal";
+import {
+  MODERATION_OWNER,
+  moderationOwnerEnvMatches,
+  supportEmailEnvMatches,
+} from "../src/lib/room/legal";
 
 const ROOT = process.cwd();
 const CANONICAL_RESOURCE = "https://crawler.today/api/public/mcp";
@@ -186,7 +190,7 @@ for (const file of BRANDED_FILES) {
 /* --------------------------------- 8. scripts -------------------------------- */
 
 const pkg = JSON.parse(read("package.json") || "{}") as { scripts?: Record<string, string> };
-for (const script of ["test", "build", "typecheck", "release:check"]) {
+for (const script of ["test", "build", "typecheck", "release:check", "release:check:submit"]) {
   check(`package script «${script}»`, Boolean(pkg.scripts?.[script]), "defined");
 }
 
