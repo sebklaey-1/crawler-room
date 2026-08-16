@@ -1172,6 +1172,13 @@ async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> 
  * Markdown, HTML and control characters from other people are escaped so they
  * cannot inject images, links or instructions into the summary.
  */
+/** The published `action` enum of a tool, read from its JSON input schema. */
+export function actionEnumOf(tool: SurfaceTool): string[] {
+  const schema = tool.inputSchema as { properties?: { action?: { enum?: unknown } } };
+  const values = schema?.properties?.action?.enum;
+  return Array.isArray(values) ? values.filter((v): v is string => typeof v === "string") : [];
+}
+
 function messageLines(messages: MessageView[] | undefined): string {
   if (!messages?.length) return "_Noch keine Nachrichten._";
   return ugcBlock(messages.map((message) => quoteUgcLine(message.alias ?? "", message.text ?? "")));

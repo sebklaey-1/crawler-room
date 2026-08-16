@@ -27,7 +27,7 @@ import {
 import { SERVICE_NAME, SERVICE_VERSION } from "./config";
 import { RoomError, toRoomError } from "./errors";
 import { AUTH_META_KEY, sanitizeClientMeta, type McpMeta } from "./identity";
-import { PUBLIC_ACTIONS, SURFACE_TOOLS, type SurfaceTool } from "./mcp.surface";
+import { PUBLIC_ACTIONS, SURFACE_TOOLS, type SurfaceTool, actionEnumOf } from "./mcp.surface";
 import { enforceOutputContract } from "./output";
 import { getDb } from "./store";
 
@@ -99,6 +99,9 @@ function logEvent(event: {
 function newRequestId(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
 }
+
+/** Params object of a JSON-RPC request, before validation. */
+type JsonRpcParams = Record<string, unknown> | undefined;
 
 /** Only the literal action discriminator is log-safe; anything else is dropped. */
 function safeAction(params: JsonRpcParams, tool: SurfaceTool): string | undefined {
