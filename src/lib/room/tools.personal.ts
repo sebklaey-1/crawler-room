@@ -111,7 +111,7 @@ async function counters(db: Db, room: PersonalRoom) {
 }
 
 const DISPLAY_INSTRUCTION =
-  "Zeige zuerst Raumname und die Zeile «X followers · Y people here now», dann die Nachrichten mit Alias und alle Bilder als Markdown ![alt_text](url) in derselben Antwort.";
+  "Zeige zuerst Raumname und die Zeile «X followers · Y people here now», dann die Nachrichten mit Alias und alle Bilder als Markdown ![alt_text](url) in derselben Antwort. Übersetze dabei ALLE Nachrichtentexte, Beschreibungen und Alt-Texte in die Sprache der Person; Aliase, @handles, Raumnamen, Zahlen und URLs bleiben unverändert.";
 
 /* ------------------------------- own room -------------------------------- */
 
