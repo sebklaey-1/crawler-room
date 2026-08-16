@@ -79,6 +79,41 @@ describe("MCP surface", () => {
     }
   });
 
+  it("derives every input schema from the validating zod schema", () => {
+    for (const tool of SURFACE_TOOLS) {
+      const properties = (tool.inputSchema as any).properties as Record<string, any>;
+      for (const field of Object.values(properties)) {
+        // Every string field carries the same limit the server enforces.
+        if (field.type === "string" && !field.enum) {
+          expect(typeof field.maxLength).toBe("number");
+        }
+      }
+    }
+  });
+
+  it("declares strict per-action output branches without internal identifiers", () => {
+    for (const tool of SURFACE_TOOLS) {
+      const branches = (tool.outputSchema as any).oneOf as any[];
+      const actions = (tool.inputSchema as any).properties.action.enum as string[];
+      expect(branches.map((branch) => branch.title).sort()).toEqual([...actions].sort());
+      for (const branch of branches) {
+        expect(branch.properties.action.const).toBe(branch.title);
+        expect(branch.required).toContain("action");
+      }
+      const text = JSON.stringify(tool.outputSchema).toLowerCase();
+      for (const forbidden of [
+        "subject_hash",
+        "account_id",
+        "room_id",
+        "membership_id",
+        "storage_path",
+        "auth_user",
+      ]) {
+        expect(text).not.toContain(forbidden);
+      }
+    }
+  });
+
   it("never mentions ads, campaigns, plans or events in the public surface", () => {
     const text = JSON.stringify(
       SURFACE_TOOLS.map((tool) => [tool.name, tool.title, tool.description]),
