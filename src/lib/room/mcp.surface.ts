@@ -183,17 +183,62 @@ const IMAGE_ARRAY: Json = {
   },
 };
 
-const READ_ONLY = {
-  readOnlyHint: true,
-  destructiveHint: false,
-  openWorldHint: false,
-  idempotentHint: true,
-};
-const WRITE = {
-  readOnlyHint: false,
-  destructiveHint: false,
-  openWorldHint: true,
-  idempotentHint: false,
+/**
+ * Conservative, truthful MCP annotations — one set per tool.
+ * `destructiveHint` is true whenever an action removes or irreversibly changes
+ * state; `openWorldHint` is true whenever content becomes publicly visible to
+ * other people or an external resource is contacted.
+ */
+export const TOOL_ANNOTATIONS: Record<string, Json> = {
+  // Writes public messages that other people read.
+  universal_room: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+    idempotentHint: false,
+  },
+  // leave removes membership; send publishes to an open room.
+  public_room: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true,
+    idempotentHint: false,
+  },
+  // block and set_image(remove) delete state; set_image fetches an external URL.
+  profile: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true,
+    idempotentHint: false,
+  },
+  // unfollow and mark_read are irreversible; everything stays inside @room.
+  followers_notifications: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: false,
+    idempotentHint: false,
+  },
+  // unlike removes a like; no external systems involved.
+  likes: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: false,
+    idempotentHint: false,
+  },
+  // Owner-only statistics, side-effect free and repeatable.
+  analytics: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+    idempotentHint: true,
+  },
+  // leave_community and remove_member delete state; create/update/send publish publicly.
+  communities_organizations: {
+    readOnlyHint: false,
+    destructiveHint: true,
+    openWorldHint: true,
+    idempotentHint: false,
+  },
 };
 
 function parse<T extends z.ZodTypeAny>(schema: T, input: unknown): z.infer<T> {
@@ -991,7 +1036,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         sign_in_hint: { type: "string" },
       },
     ),
-    annotations: WRITE,
+    annotations: TOOL_ANNOTATIONS["universal_room"]!,
     handler: universalHandler,
     summary: (result) =>
       `Universal Room — ${result.room?.online_now ?? 0} gerade online\n\n${messageLines(result.messages)}`,
@@ -1087,7 +1132,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         sign_in_hint: { type: "string" },
       },
     ),
-    annotations: WRITE,
+    annotations: TOOL_ANNOTATIONS["public_room"]!,
     handler: publicRoomHandler,
     summary: (result) => {
       const room = result.room ?? {};
@@ -1141,7 +1186,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         sign_in_hint: { type: "string" },
       },
     ),
-    annotations: WRITE,
+    annotations: TOOL_ANNOTATIONS["profile"]!,
     handler: profileHandler,
     summary: (result) =>
       result.profile ? profileCard(result) : String(result.message ?? "Fertig."),
@@ -1187,7 +1232,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         message: { type: "string" },
       },
     ),
-    annotations: WRITE,
+    annotations: TOOL_ANNOTATIONS["followers_notifications"]!,
     handler: followersHandler,
     summary: (result) => {
       if (result.notifications) {
@@ -1231,7 +1276,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         message: { type: "string" },
       },
     ),
-    annotations: WRITE,
+    annotations: TOOL_ANNOTATIONS["likes"]!,
     handler: likesHandler,
     summary: (result) => `${result.message} (${result.likes} Likes)`,
   },
@@ -1263,7 +1308,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         display_instruction: { type: "string" },
       },
     ),
-    annotations: READ_ONLY,
+    annotations: TOOL_ANNOTATIONS["analytics"]!,
     handler: analyticsHandler,
     summary: (result) => analyticsCard(result),
   },
@@ -1312,7 +1357,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         sign_in_hint: { type: "string" },
       },
     ),
-    annotations: WRITE,
+    annotations: TOOL_ANNOTATIONS["communities_organizations"]!,
     handler: communitiesHandler,
     summary: (result) => {
       if (result.communities) {
