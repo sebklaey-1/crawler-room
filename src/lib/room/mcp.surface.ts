@@ -286,6 +286,29 @@ const websiteField = z
   .max(300)
   .refine(isSafeWebsite, "Die Website muss mit http:// oder https:// beginnen.");
 
+/** A profile image must be a public https URL — never http, data: or a private host. */
+export function isSafeImageUrl(value: string): boolean {
+  const raw = value.trim();
+  if (!raw) return false;
+  try {
+    const url = new URL(raw);
+    return url.protocol === "https:" && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+/** Trimmed @handle / slug reference; whitespace-only input is rejected. */
+function handleField(max: number) {
+  return z.string().trim().min(1, "Bitte gib einen @handle an.").max(max);
+}
+
+const imageUrlField = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine(isSafeImageUrl, "Bilder sind nur über eine öffentliche https-Adresse möglich.");
+
 function tag<T extends Json>(action: string, result: T): Json {
   return { action, ...result };
 }
@@ -443,7 +466,7 @@ async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
 const publicRoomInput = z
   .object({
     action: z.enum(["mine", "open", "update", "leave", "send"]),
-    username: z.string().trim().max(64).optional(),
+    username: handleField(64).optional(),
     text: z.string().max(2000).optional(),
     room_name: name(80).optional(),
     description: text(500).optional(),
@@ -511,20 +534,20 @@ async function publicRoomHandler(input: unknown, meta: McpMeta): Promise<Json> {
 const profileInput = z
   .object({
     action: z.enum(["get", "update", "change_handle", "set_image", "open_link", "block"]),
-    username: z.string().max(64).optional(),
+    username: handleField(64).optional(),
     display_name: name(80).optional(),
     bio: text(280).optional(),
     location: text(60).optional(),
-    external_url: z.string().max(300).optional(),
+    external_url: websiteField.optional(),
     profile_visibility: z.enum(["public", "private"]).optional(),
     show_online_status: z.boolean().optional(),
     show_follower_count: z.boolean().optional(),
     show_likes: z.boolean().optional(),
-    handle: z.string().max(64).optional(),
+    handle: handleField(64).optional(),
     kind: z.enum(["avatar", "banner"]).optional(),
-    image_url: z.string().max(2000).nullable().optional(),
+    image_url: imageUrlField.nullable().optional(),
     remove: z.boolean().optional(),
-    reason: z.string().max(200).optional(),
+    reason: text(200).optional(),
   })
   .strict();
 
@@ -606,7 +629,7 @@ const followersInput = z
       "list_notifications",
       "update_settings",
     ]),
-    username: z.string().max(64).optional(),
+    username: handleField(64).optional(),
     only_unread: z.boolean().optional(),
     mark_read: z.boolean().optional(),
     new_room_message: z.boolean().optional(),
@@ -698,8 +721,8 @@ const likesInput = z
   .object({
     action: z.enum(["like", "unlike"]),
     target_type: z.enum(["profile", "message", "image"]),
-    target_id: z.string().max(200).optional(),
-    username: z.string().max(64).optional(),
+    target_id: z.string().trim().min(1).max(200).optional(),
+    username: handleField(64).optional(),
   })
   .strict();
 
@@ -758,16 +781,23 @@ const communitiesInput = z
       "add_member",
       "remove_member",
     ]),
-    community: z.string().trim().max(120).optional(),
-    organization: z.string().trim().max(120).optional(),
+    community: handleField(120).optional(),
+    organization: handleField(120).optional(),
     title: name(120).optional(),
     name: name(120).optional(),
     description: text(1000).optional(),
     website: websiteField.optional(),
-    slug: name(60).optional(),
-    text: z.string().max(2000).optional(),
-    username: z.string().max(64).optional(),
+    slug: z
+      .string()
+      .trim()
+      .min(1)
+      .max(60)
+      .regex(/^[a-z0-9][a-z0-9-]*$/i, "Slugs dürfen nur Buchstaben, Zahlen und Bindestriche enthalten.")
+      .optional(),
+    text: z.string().trim().min(1).max(2000).optional(),
+    username: handleField(64).optional(),
     role: z.enum(["admin", "member"]).optional(),
+
     query: z.string().max(80).optional(),
     limit: z.number().int().min(1).max(50).optional(),
   })
