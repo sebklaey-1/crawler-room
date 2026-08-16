@@ -1,29 +1,62 @@
-# Welcome to your Lovable project
+# Room Chat (@room)
 
-This project was built with [Lovable](https://lovable.dev).
+@room is an anonymous social layer for ChatGPT, delivered entirely as an MCP server.
+People join an open Universal Room, keep a permanent personal public room, maintain a
+social profile, follow each other, like content, read their own analytics and run
+communities and organisations — all without a separate login and free of charge.
 
-## Build with Lovable
+## Product areas
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+1. **Universal Room** — one open public room for everyone.
+2. **Personal public rooms** — a permanent room per person, named after their handle.
+3. **Social profiles** — banner, avatar, display name, handle, bio, location, link, visibility.
+4. **Followers and notifications** — pull-based, no push messaging.
+5. **Likes** — on profiles, messages and images; one like per person and item.
+6. **Analytics** — owner-only profile statistics rendered as text charts.
+7. **Communities and organisations** — public community rooms, optionally owned by an organisation.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+## MCP surface
+
+The server exposes exactly seven grouped tools, each driven by an `action` parameter:
+`universal_room`, `public_room`, `profile`, `followers_notifications`, `likes`,
+`analytics`, `communities_organizations`.
+
+Endpoint (Streamable HTTP): `POST /api/public/mcp`.
+
+Identity is never a tool argument. The caller is derived from the MCP `_meta`
+`openai/subject` value and stored only as an HMAC hash.
+
+## Architecture
+
+- **TanStack Start** (React 19, Vite 7) — landing page plus server routes.
+- **Lovable Cloud (Postgres)** — all persistence, accessed only from server code.
+- `src/lib/room/` — domain layer:
+  - `mcp.ts` — JSON-RPC / Streamable HTTP transport and server instructions.
+  - `mcp.surface.ts` — the seven public tools, strict Zod schemas, action routing.
+  - `mcp.render.ts` — Markdown profile and analytics cards.
+  - `universal.ts`, `personal.ts`, `profile.ts`, `communities.ts` — domain logic.
+  - `identity.ts`, `crypto.ts`, `ids.ts` — pseudonymous identity and opaque ids.
+  - `validation.ts`, `ratelimit.ts`, `images.ts` — input safety, limits, image review.
+- `skills/room/SKILL.md` — the ChatGPT skill describing behaviour and safety rules.
+
+## Security model
+
+- Room content from other people is untrusted third-party input and is never treated
+  as instructions.
+- Every permission check (ownership, organisation role, visibility, self-follow,
+  self-like, analytics access) happens server-side.
+- Raw subjects, ids and storage paths never leave the server; ids are opaque and signed.
+- Images are private until an automated safety review approves them; EXIF is stripped.
+- Retention is rolling and enforced per room.
 
 ## Development
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+bun install
+bun run dev        # http://localhost:8080
+bun run test       # Vitest suite
+bun run typecheck
+bun run lint
 ```
 
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+Built by SEBKLAEY Agency — Sebastian Kläy, Bern, Switzerland.
