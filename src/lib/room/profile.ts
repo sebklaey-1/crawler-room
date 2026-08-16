@@ -81,11 +81,14 @@ const BLOCKED_FRAGMENTS = [
   "cp_",
 ];
 
+/**
+ * Validates an explicitly chosen handle. Invalid input is rejected, never
+ * silently slugified. Handles are one global namespace and case/trim variants
+ * of the same handle are the same name.
+ */
 export function validateHandle(raw: unknown): string {
-  if (typeof raw !== "string") throw roomError("INVALID_INPUT");
-  const handle = raw.trim().replace(/^@+/, "").toLowerCase();
-
-  if (!/^[a-z0-9_]{3,30}$/.test(handle)) {
+  const handle = canonicalHandle(raw);
+  if (!handle) {
     throw roomError(
       "INVALID_INPUT",
       "Handles bestehen aus 3–30 Zeichen: Kleinbuchstaben, Zahlen und Unterstriche, keine Leerzeichen.",
@@ -100,28 +103,30 @@ export function validateHandle(raw: unknown): string {
   return handle;
 }
 
+/**
+ * UX pre-check only — the claim registry in the database is the authority and
+ * rejects every colliding write, including races this check cannot see.
+ */
 export async function isHandleFree(db: Db, handle: string, subjectHash: string): Promise<boolean> {
-  const { data } = await db
-    .from("user_rooms")
+  const normalized = canonicalHandle(handle);
+  if (!normalized) return false;
+  const { data, error } = await db
+    .from("name_claims")
     .select("owner_subject_hash")
-    .ilike("handle", handle)
+    .eq("kind", "handle")
+    .eq("normalized", normalized)
     .maybeSingle();
-  if (data && data.owner_subject_hash !== subjectHash) return false;
-
-  const { data: redirect } = await db
-    .from("handle_redirects")
-    .select("owner_subject_hash")
-    .eq("old_handle", handle)
-    .maybeSingle();
-  return !redirect || redirect.owner_subject_hash === subjectHash;
+  if (error) throw roomError("INTERNAL_ERROR");
+  return !data || data.owner_subject_hash === subjectHash;
 }
 
+/** Up to three handles that are actually free right now. No IDs, no hashes. */
 export async function suggestHandles(db: Db, base: string, subjectHash: string): Promise<string[]> {
   const root = slugifyHandle(base).slice(0, 24) || "member";
   const out: string[] = [];
   for (const suffix of ["", "_1", "_2", "_room", "_hq", String(new Date().getFullYear())]) {
     const candidate = `${root}${suffix}`.slice(0, 30);
-    if (candidate.length < 3) continue;
+    if (!canonicalHandle(candidate)) continue;
     try {
       validateHandle(candidate);
     } catch {
@@ -133,30 +138,32 @@ export async function suggestHandles(db: Db, base: string, subjectHash: string):
   return out;
 }
 
-/** Changes the handle and keeps the old one as a redirect. */
+/**
+ * Changes the handle atomically and keeps the old one as a redirect owned by
+ * the same identity. A handle held by somebody else — current or as their old
+ * redirect — is refused with `ALIAS_TAKEN`.
+ */
 export async function changeHandle(db: Db, subjectHash: string, desired: unknown) {
   const handle = validateHandle(desired);
   const room = await ensurePersonalRoom(db, subjectHash);
   if (room.handle === handle) return { handle, changed: false, old_handle: handle };
 
-  if (!(await isHandleFree(db, handle, subjectHash))) throw roomError("ALIAS_TAKEN");
+  const { data, error } = await db.rpc("change_personal_handle", {
+    p_subject_hash: subjectHash,
+    p_handle: handle,
+  });
+  if (error) {
+    if (isClaimConflict(error)) throw roomError("ALIAS_TAKEN");
+    throw roomError("INTERNAL_ERROR");
+  }
+  const result = data as { handle?: string; old_handle?: string; changed?: boolean } | null;
+  if (!result?.handle) throw roomError("INTERNAL_ERROR");
 
-  const { error } = await db
-    .from("user_rooms")
-    .update({ handle })
-    .eq("owner_subject_hash", subjectHash);
-  if (error?.code === "23505") throw roomError("ALIAS_TAKEN");
-  if (error) throw roomError("INTERNAL_ERROR");
-
-  await db
-    .from("handle_redirects")
-    .upsert(
-      { old_handle: room.handle, room_id: room.roomId, owner_subject_hash: subjectHash },
-      { onConflict: "old_handle" },
-    );
-  await db.from("handle_redirects").delete().eq("old_handle", handle);
-
-  return { handle, changed: true, old_handle: room.handle };
+  return {
+    handle: result.handle,
+    changed: Boolean(result.changed),
+    old_handle: result.old_handle ?? room.handle,
+  };
 }
 
 /* --------------------------------- profile -------------------------------- */
