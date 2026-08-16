@@ -9,7 +9,7 @@
 import { generateAlias } from "./alias";
 import { config, retentionCutoffIso, retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
-import { encodeMessageId, encodeRoomId } from "./ids";
+import { decodeOrgId, encodeMessageId, encodeOrgId, encodeRoomId } from "./ids";
 import { normalizeHandleInput } from "./personal";
 import { countOnline, getCustomAlias, type Db } from "./store";
 import { validateMessage } from "./validation";
