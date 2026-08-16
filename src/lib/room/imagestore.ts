@@ -64,8 +64,11 @@ export async function updateImageRow(db: Db, id: number, patch: Record<string, u
 }
 
 export async function deleteImageRow(db: Db, row: Pick<ImageRow, "id" | "storage_path">) {
-  await removeStorageObjects(db, [row.storage_path]);
+  // Queue first: the object must never become unreachable garbage because the
+  // row disappeared before the storage delete was recorded.
+  await queueStorageDeletion(db, [row.storage_path]);
   await db.from("image_messages").delete().eq("id", row.id);
+  await removeStorageObjects(db, [row.storage_path]);
 }
 
 export async function findDuplicate(
@@ -140,20 +143,96 @@ export async function downloadObject(db: Db, path: string): Promise<Uint8Array |
   return new Uint8Array(await data.arrayBuffer());
 }
 
-export async function removeStorageObjects(db: Db, paths: string[]) {
+/** Deterministic object variants of one stored image (original + thumbnail). */
+export function storageVariants(path: string): string[] {
+  return [path, path.replace(/(\.[a-z0-9]+)?$/i, "_thumb$1")];
+}
+
+/**
+ * Records the deterministic storage paths in the persistent deletion queue.
+ * Always runs *before* the owning `image_messages` row disappears.
+ */
+export async function queueStorageDeletion(db: Db, paths: string[]): Promise<void> {
   const cleaned = paths.filter(Boolean);
   if (!cleaned.length) return;
-  // Originals plus any derived thumbnail variant.
-  const all = cleaned.flatMap((path) => [path, path.replace(/(\.[a-z0-9]+)?$/i, "_thumb$1")]);
-  const { error } = await db.storage.from(IMAGE_BUCKET).remove(all);
-  if (error) {
-    // Documented retry path: the row is already gone, `sweepImages` and the
-    // maintenance job re-run `remove()` for the same deterministic paths,
-    // and the bucket is private, so an orphan is never readable.
+  await db.rpc("queue_storage_deletion", { p_paths: cleaned });
+}
+
+export interface StorageRemovalResult {
+  removed: string[];
+  failed: string[];
+  errorCategory?: string;
+}
+
+/** Coarse, non-identifying failure category. Never contains a path or URL. */
+function errorCategory(error: { message?: string; statusCode?: string } | null): string {
+  const status = String((error as { statusCode?: string } | null)?.statusCode ?? "");
+  if (status === "404") return "not_found";
+  if (status === "403" || status === "401") return "forbidden";
+  if (status.startsWith("5")) return "upstream_error";
+  return "storage_error";
+}
+
+/**
+ * Deletes objects from the private bucket and keeps the persistent queue in
+ * sync: success clears the entry, failure increases `attempts`, stores a safe
+ * category and schedules a bounded backoff. The failure is reported to the
+ * caller instead of being swallowed. Missing objects count as cleaned up.
+ */
+export async function removeStorageObjects(db: Db, paths: string[]): Promise<StorageRemovalResult> {
+  const cleaned = Array.from(new Set(paths.filter(Boolean)));
+  if (!cleaned.length) return { removed: [], failed: [] };
+
+  const removed: string[] = [];
+  const failed: string[] = [];
+  let category: string | undefined;
+
+  // One path at a time: a single failing object must not block the others.
+  for (const path of cleaned) {
+    const { error } = await db.storage.from(IMAGE_BUCKET).remove(storageVariants(path));
+    const kind = error ? errorCategory(error as { statusCode?: string; message?: string }) : null;
+    if (!error || kind === "not_found") {
+      removed.push(path);
+    } else {
+      failed.push(path);
+      category = kind ?? "storage_error";
+    }
+  }
+
+  if (removed.length) await db.rpc("complete_storage_deletion", { p_paths: removed });
+  if (failed.length) {
+    await db.rpc("fail_storage_deletion", {
+      p_paths: failed,
+      p_category: category ?? "storage_error",
+    });
+    // Structured, content-free operational signal — never a path, URL or token.
     console.warn(
-      JSON.stringify({ service: "room-mcp", op: "storage_remove_failed", count: all.length }),
+      JSON.stringify({
+        service: "room-mcp",
+        op: "storage_remove_failed",
+        count: failed.length,
+        category: category ?? "storage_error",
+      }),
     );
   }
+  return { removed, failed, ...(category ? { errorCategory: category } : {}) };
+}
+
+/** Retries every due queue entry in bounded, idempotent batches. */
+export async function processDeletionQueue(
+  db: Db,
+  limit = 100,
+): Promise<{ processed: number; removed: number; failed: number }> {
+  const { data, error } = await db.rpc("due_storage_deletions", { p_limit: limit });
+  if (error) return { processed: 0, removed: 0, failed: 0 };
+  const paths = ((data ?? []) as Array<{ storage_path: string }>).map((row) => row.storage_path);
+  if (!paths.length) return { processed: 0, removed: 0, failed: 0 };
+  const result = await removeStorageObjects(db, paths);
+  return {
+    processed: paths.length,
+    removed: result.removed.length,
+    failed: result.failed.length,
+  };
 }
 
 export async function signedUrl(db: Db, path: string, ttlSeconds: number): Promise<string | null> {
@@ -202,8 +281,14 @@ export async function enforceRoomRetention(db: Db, roomId: string): Promise<void
   }
 }
 
-/** Fallback sweep: dead uploads, orphaned files and both per-room limits. */
-export async function sweepImages(db: Db): Promise<{ purged: number; retention: number }> {
+/**
+ * Fallback sweep: dead uploads, both per-room limits and every due entry of
+ * the persistent deletion queue. The SQL functions queue each storage path in
+ * the same transaction that deletes the row, so nothing can be orphaned.
+ */
+export async function sweepImages(
+  db: Db,
+): Promise<{ purged: number; retention: number; queue: number; queueFailed: number }> {
   const { data: dead } = await db.rpc("purge_dead_images");
   const deadPaths = ((dead ?? []) as Array<{ storage_path: string }>).map(
     (row) => row.storage_path,
@@ -216,7 +301,14 @@ export async function sweepImages(db: Db): Promise<{ purged: number; retention: 
   );
   await removeStorageObjects(db, excessPaths);
 
-  return { purged: deadPaths.length, retention: excessPaths.length };
+  const queue = await processDeletionQueue(db, 100);
+
+  return {
+    purged: deadPaths.length,
+    retention: excessPaths.length,
+    queue: queue.removed,
+    queueFailed: queue.failed,
+  };
 }
 
 /** Sender aliases for a set of image rows (no other membership data leaves the server). */

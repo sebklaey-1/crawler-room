@@ -96,10 +96,22 @@ export function canonicalResource(requestOrigin?: string): string {
   return PRODUCTION_MCP_RESOURCE;
 }
 
-/** Fixed URL of the protected-resource metadata document. */
+/**
+ * RFC 9728 metadata URL of the protected resource.
+ *
+ * The well-known suffix is inserted *between host and resource path*, so a
+ * resource with the path `/api/public/mcp` is described by
+ * `/.well-known/oauth-protected-resource/api/public/mcp`. Only that URL is
+ * ever advertised in a challenge.
+ */
 export function resourceMetadataUrl(requestOrigin?: string): string {
-  return `${new URL(canonicalResource(requestOrigin)).origin}/.well-known/oauth-protected-resource`;
+  const resource = new URL(canonicalResource(requestOrigin));
+  const path = resource.pathname.replace(/\/+$/, "");
+  return `${resource.origin}/.well-known/oauth-protected-resource${path}`;
 }
+
+/** Compatibility alias served on the root well-known path (same document). */
+export const ROOT_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource";
 
 let verifyClient: SupabaseClient | null = null;
 
@@ -273,7 +285,7 @@ export function protectedResourceMetadata(requestOrigin?: string) {
     bearer_methods_supported: ["header"],
     scopes_supported: [...REQUIRED_SCOPES],
     resource_name: "Crawler Room",
-    resource_documentation: new URL(resource).origin + "/",
+    resource_documentation: new URL(resource).origin + "/crawler-room",
   };
 }
 

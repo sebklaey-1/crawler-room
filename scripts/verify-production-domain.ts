@@ -17,7 +17,7 @@
  */
 const ORIGIN = "https://crawler.today";
 const RESOURCE = `${ORIGIN}/api/public/mcp`;
-const METADATA = `${ORIGIN}/.well-known/oauth-protected-resource`;
+const METADATA = `${ORIGIN}/.well-known/oauth-protected-resource/api/public/mcp`;
 const CONSENT = `${ORIGIN}/oauth/consent`;
 const HEALTH = `${ORIGIN}/api/public/health`;
 const TOOL_NAMES = [

@@ -14,17 +14,17 @@ nothing is aspirational.
 
 ## Public URLs
 
-| Purpose                                | URL                                                          |
-| -------------------------------------- | ------------------------------------------------------------ |
-| Landing page                           | `https://crawler.today/`                                     |
-| Privacy policy                         | `https://crawler.today/privacy`                              |
-| Terms of use                           | `https://crawler.today/terms`                                |
-| Support and abuse reports              | `https://crawler.today/support`                              |
-| Safety and content rules               | `https://crawler.today/safety`                               |
-| Data deletion                          | `https://crawler.today/data-deletion`                        |
-| OAuth consent                          | `https://crawler.today/oauth/consent`                        |
-| Protected-resource metadata (RFC 9728) | `https://crawler.today/.well-known/oauth-protected-resource` |
-| Domain verification                    | `https://crawler.today/.well-known/openai-apps-challenge`    |
+| Purpose                                | URL                                                                         |
+| -------------------------------------- | --------------------------------------------------------------------------- |
+| Landing page                           | `https://crawler.today/`                                                    |
+| Privacy policy                         | `https://crawler.today/privacy`                                             |
+| Terms of use                           | `https://crawler.today/terms`                                               |
+| Support and abuse reports              | `https://crawler.today/support`                                             |
+| Safety and content rules               | `https://crawler.today/safety`                                              |
+| Data deletion                          | `https://crawler.today/data-deletion`                                       |
+| OAuth consent                          | `https://crawler.today/oauth/consent`                                       |
+| Protected-resource metadata (RFC 9728) | `https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
+| Domain verification                    | `https://crawler.today/.well-known/openai-apps-challenge`                   |
 
 All five mandatory pages are server-rendered, publicly reachable without authentication, and
 linked from the landing page and the consent screen.

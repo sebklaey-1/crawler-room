@@ -4,14 +4,14 @@ The Crawler Room MCP endpoint is an OAuth 2.0 **protected resource** (RFC 9728).
 authorization server is this project's own Cloud auth service; Crawler Room never
 issues, stores or forwards credentials.
 
-| Value                         | Setting                                                      |
-| ----------------------------- | ------------------------------------------------------------ |
-| App domain (canonical)        | `https://crawler.today`                                      |
-| Canonical MCP resource        | `https://crawler.today/api/public/mcp`                       |
-| Protected resource metadata   | `https://crawler.today/.well-known/oauth-protected-resource` |
-| Authorization server (issuer) | `${SUPABASE_URL}/auth/v1`                                    |
-| Consent page                  | `https://crawler.today/oauth/consent`                        |
-| Scopes                        | `openid`, `profile` (no `email`)                             |
+| Value                         | Setting                                                                     |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| App domain (canonical)        | `https://crawler.today`                                                     |
+| Canonical MCP resource        | `https://crawler.today/api/public/mcp`                                      |
+| Protected resource metadata   | `https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
+| Authorization server (issuer) | `${SUPABASE_URL}/auth/v1`                                                   |
+| Consent page                  | `https://crawler.today/oauth/consent`                                       |
+| Scopes                        | `openid`, `profile` (no `email`)                                            |
 
 Clients discover the authorization server through the protected-resource
 metadata and then read the issuer's own discovery documents

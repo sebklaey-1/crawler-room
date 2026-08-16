@@ -285,6 +285,55 @@ check(
   "override is inert outside NODE_ENV=test and getDb() fails closed inside it",
 );
 
+/* ------------------- 10. automated retention + storage retries --------------- */
+
+const imagestore = read("src/lib/room/imagestore.ts");
+check(
+  "storage paths are queued before an image row is deleted",
+  imagestore.includes("queueStorageDeletion") &&
+    imagestore.indexOf("queueStorageDeletion(db, [row.storage_path])") <
+      imagestore.indexOf('.from("image_messages").delete()'),
+  "deleteImageRow queues first, deletes second",
+);
+check(
+  "storage removal reports failures instead of only logging them",
+  imagestore.includes("complete_storage_deletion") &&
+    imagestore.includes("fail_storage_deletion") &&
+    imagestore.includes("StorageRemovalResult"),
+  "queue entries are completed or retried with a bounded backoff",
+);
+check(
+  "sweep drains the persistent deletion queue in bounded batches",
+  imagestore.includes("due_storage_deletions") &&
+    /processDeletionQueue\(db, 100\)/.test(imagestore),
+  "sweepImages processes up to 100 due paths per run",
+);
+
+const cleanupRoute = read("src/routes/api.public.admin.cleanup.ts");
+check(
+  "cleanup route authenticates through the vault-backed token registry",
+  cleanupRoute.includes("authorizeCleanup") &&
+    cleanupRoute.includes("startMaintenanceRun") &&
+    cleanupRoute.includes("finishMaintenanceRun"),
+  "fail-closed auth plus a maintenance run record per invocation",
+);
+
+const maintenance = read("src/lib/room/maintenance.ts");
+check(
+  "no cleanup token material in source",
+  maintenance.includes("internal_secret_hashes") &&
+    maintenance.includes("safeEqual") &&
+    !/crawler_room_cleanup_token\s*=\s*"[^"]{16,}"/.test(maintenance),
+  "only the secret name and its SHA-256 comparison live in code",
+);
+
+check(
+  "path-specific RFC 9728 metadata route present",
+  existsSync(join(ROOT, "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts")) &&
+    auth.includes("/.well-known/oauth-protected-resource"),
+  "challenges point at https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp",
+);
+
 /* --------------------------------- report ------------------------------------ */
 
 let failed = 0;

@@ -71,7 +71,7 @@ describe("authentication policy", () => {
     });
     expect(response.status).toBe(401);
     expect(response.headers.get("www-authenticate")).toContain(
-      'resource_metadata="http://localhost/.well-known/oauth-protected-resource"',
+      'resource_metadata="http://localhost/.well-known/oauth-protected-resource/api/public/mcp"',
     );
     const body = await response.json();
     expect(body.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
@@ -231,7 +231,7 @@ describe("protected resource discovery", () => {
       expect(canonicalResource("https://evil.test")).toBe(PRODUCTION_MCP_RESOURCE);
       expect(protectedResourceMetadata("https://evil.test").resource).toBe(PRODUCTION_MCP_RESOURCE);
       expect(challengeHeader("https://evil.test")).toBe(
-        'Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource"',
+        'Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp"',
       );
     } finally {
       delete process.env["ROOM_MCP_RESOURCE"];
@@ -256,13 +256,13 @@ describe("protected resource discovery", () => {
   it("falls back to the production resource when nothing is configured", () => {
     expect(canonicalResource()).toBe(PRODUCTION_MCP_RESOURCE);
     expect(resourceMetadataUrl()).toBe(
-      "https://crawler.today/.well-known/oauth-protected-resource",
+      "https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp",
     );
   });
 
   it("builds a spec compliant challenge", () => {
     expect(challengeHeader("https://room.example", "invalid_token")).toBe(
-      'Bearer resource_metadata="https://room.example/.well-known/oauth-protected-resource", error="invalid_token"',
+      'Bearer resource_metadata="https://room.example/.well-known/oauth-protected-resource/api/public/mcp", error="invalid_token"',
     );
   });
 });

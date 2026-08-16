@@ -78,21 +78,59 @@ for (const step of [
 
 /* ------------------------------- 3. cleanup cron ----------------------------- */
 
-item(
-  "retention cleanup scheduled (cleanup_expired / cleanup_support_requests)",
-  envSet("ROOM_SUBMIT_CLEANUP_CRON_READY"),
-  envSet("ROOM_SUBMIT_CLEANUP_CRON_READY")
-    ? "confirmed"
-    : "manual — schedule the cleanup job and set ROOM_SUBMIT_CLEANUP_CRON_READY",
-);
+/**
+ * The retention cleanup is scheduled inside the database (pg_cron + pg_net).
+ * It only stays a manual item while the database cannot confirm exactly one
+ * active job together with the vault secret and its server-side hash.
+ */
+async function cleanupSchedulerReady(): Promise<{ ok: boolean; detail: string }> {
+  const url = process.env["SUPABASE_URL"]?.trim();
+  const key = process.env["SUPABASE_SERVICE_ROLE_KEY"]?.trim();
+  if (!url || !key) {
+    return {
+      ok: envSet("ROOM_SUBMIT_CLEANUP_CRON_READY"),
+      detail: envSet("ROOM_SUBMIT_CLEANUP_CRON_READY")
+        ? "confirmed manually — database not reachable from here"
+        : "cannot verify — service credentials not available here",
+    };
+  }
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const db = createClient(url, key, { auth: { persistSession: false } });
+    const { data, error } = await db.rpc("cleanup_scheduler_status");
+    if (error) return { ok: false, detail: `cannot verify — ${error.message}` };
+    // Booleans and counts only — never a secret value.
+    const status = (data ?? {}) as Record<string, unknown>;
+    const ok =
+      status["pg_cron"] === true &&
+      status["pg_net"] === true &&
+      status["vault_secret_present"] === true &&
+      status["token_hash_present"] === true &&
+      status["active_jobs"] === 1;
+    return {
+      ok,
+      detail: ok
+        ? "database confirms exactly one active cleanup job with a vault-backed token"
+        : `database reports ${JSON.stringify(status["active_jobs"] ?? 0)} active job(s); extensions/secret incomplete`,
+    };
+  } catch (error) {
+    return { ok: false, detail: `cannot verify — ${(error as Error).message}` };
+  }
+}
+
+const cleanup = await cleanupSchedulerReady();
+item("retention cleanup scheduled every 15 minutes in the database", cleanup.ok, cleanup.detail);
 
 /* --------------------------- 4. live domain verification --------------------- */
 
 async function liveResourceReachable(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const response = await fetch(`${PRODUCTION_ORIGIN}/.well-known/oauth-protected-resource`, {
-      redirect: "follow",
-    });
+    const response = await fetch(
+      `${PRODUCTION_ORIGIN}/.well-known/oauth-protected-resource/api/public/mcp`,
+      {
+        redirect: "follow",
+      },
+    );
     if (!response.ok) return { ok: false, detail: `metadata endpoint returned ${response.status}` };
     const body = (await response.json()) as { resource?: string };
     return {

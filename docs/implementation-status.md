@@ -46,7 +46,7 @@ it is retained for migration history only and the column no longer exists.
 - **Exactly seven public tools** (live `tools/list`): `universal_room`, `public_room`,
   `profile`, `followers_notifications`, `likes`, `analytics`, `communities_organizations`.
 - **Canonical resource** `https://crawler.today/api/public/mcp` in code, metadata, hook and docs.
-- **Protected-resource URL** `https://crawler.today/.well-known/oauth-protected-resource`
+- **Protected-resource URL** `https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp`
   in the metadata document and in every `WWW-Authenticate` challenge.
 - **No production derivation from host/origin.** Local derivation is guarded by
   `process.env.NODE_ENV === "test"` only (`src/lib/room/auth.ts`, `src/lib/room/mcp.ts`).
@@ -110,7 +110,7 @@ output or logs.
 
 `initialize` ok · `tools/list` returns exactly the seven names · public read
 (`communities_organizations list_organizations`) HTTP 200 · protected action without a token
-HTTP 401 + `WWW-Authenticate: Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource"`
+HTTP 401 + `WWW-Authenticate: Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp"`
 · malformed JSON-RPC → `-32600` · batch isolation ok (one entry succeeds while the other
 fails independently) · authenticated read path covered by `auth.test.ts` under
 `NODE_ENV=test` (the dev server correctly refuses the test header).
