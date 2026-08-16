@@ -106,14 +106,14 @@ export async function isHandleFree(db: Db, handle: string, subjectHash: string):
     .select("owner_subject_hash")
     .ilike("handle", handle)
     .maybeSingle();
-  if (data && (data as any).owner_subject_hash !== subjectHash) return false;
+  if (data && (data).owner_subject_hash !== subjectHash) return false;
 
   const { data: redirect } = await db
     .from("handle_redirects")
     .select("owner_subject_hash")
     .eq("old_handle", handle)
     .maybeSingle();
-  return !redirect || (redirect as any).owner_subject_hash === subjectHash;
+  return !redirect || (redirect).owner_subject_hash === subjectHash;
 }
 
 export async function suggestHandles(db: Db, base: string, subjectHash: string): Promise<string[]> {
@@ -205,7 +205,7 @@ async function loadByColumn(db: Db, column: string, value: string): Promise<Prof
     .maybeSingle();
   if (error) throw roomError("INTERNAL_ERROR");
   if (!data) return null;
-  const row = data as any;
+  const row = data;
   const alias = (await getCustomAlias(db, row.owner_subject_hash)) ?? row.room_name;
   return mapProfile(row, alias);
 }
@@ -230,7 +230,7 @@ export async function findProfileByHandle(db: Db, rawHandle: string) {
     .maybeSingle();
   if (!data) return null;
 
-  const moved = await loadByColumn(db, "owner_subject_hash", (data as any).owner_subject_hash);
+  const moved = await loadByColumn(db, "owner_subject_hash", (data).owner_subject_hash);
   return moved ? { profile: moved, redirected_from: handle } : null;
 }
 
@@ -421,7 +421,7 @@ export async function likeCountsFor(
     .eq("target_type", targetType)
     .in("target_id", targetIds);
   for (const id of targetIds) out[id] = { likes: 0, liked_by_me: false };
-  for (const row of (data ?? []) as any[]) {
+  for (const row of (data ?? [])) {
     const entry = out[row.target_id];
     if (!entry) continue;
     entry.likes += 1;
@@ -534,7 +534,7 @@ export async function profileAnalytics(db: Db, profile: ProfileRow, days: 7 | 30
     .limit(20000);
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = (data ?? []) as any[];
+  const rows = (data ?? []);
   const totals: Record<string, number> = {};
   const uniqueVisitors = new Set<string>();
   const roomVisitors = new Set<string>();
@@ -593,7 +593,7 @@ export async function topContent(db: Db, profile: ProfileRow) {
     .limit(5000);
 
   const tally: Record<string, Record<string, number>> = { message: {}, image: {} };
-  for (const row of (data ?? []) as any[]) {
+  for (const row of (data ?? [])) {
     const bucket = tally[row.target_type];
     if (!bucket) continue;
     bucket[row.target_id] = (bucket[row.target_id] ?? 0) + 1;
@@ -684,7 +684,7 @@ export async function isBlocked(db: Db, subjectHash: string, other: string): Pro
       `and(subject_hash.eq.${subjectHash},blocked_subject_hash.eq.${other}),and(subject_hash.eq.${other},blocked_subject_hash.eq.${subjectHash})`,
     )
     .limit(1);
-  return ((data ?? []) as any[]).length > 0;
+  return ((data ?? [])).length > 0;
 }
 
 /**
@@ -703,7 +703,7 @@ export async function unblockPerson(
     .eq("blocked_subject_hash", blocked)
     .select("id");
   if (error) throw roomError("INTERNAL_ERROR");
-  return ((data ?? []) as any[]).length > 0;
+  return ((data ?? [])).length > 0;
 }
 
 /**
@@ -734,7 +734,7 @@ export async function listBlocks(
     );
 
   const byHash = new Map<string, { handle: string; room_name: string }>();
-  for (const row of (roomRows ?? []) as any[]) {
+  for (const row of (roomRows ?? [])) {
     byHash.set(row.owner_subject_hash, { handle: row.handle, room_name: row.room_name });
   }
 

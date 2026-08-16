@@ -2,6 +2,7 @@
  * MCP handlers for personal rooms, the follow graph and notifications.
  * No login: the owner is always the pseudonymous subject from `_meta`.
  */
+import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { z } from "zod";
 
 import { generateAlias, sanitizeAlias } from "./alias";
@@ -67,11 +68,11 @@ async function roomMessages(db: Db, room: PersonalRoom, selfMembershipId: string
     .limit(limit);
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = ((data ?? []) as any[]).reverse();
+  const rows = ((data ?? [])).reverse();
   return Promise.all(
     rows.map(async (row) => ({
       id: await encodeMessageId(row.id),
-      alias: row.memberships?.alias ?? "Unbekannt",
+      alias: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias ?? "Unbekannt",
       text: row.body as string,
       created_at: new Date(row.created_at).toISOString(),
       is_self: row.membership_id === selfMembershipId,

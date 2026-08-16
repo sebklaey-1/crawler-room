@@ -57,8 +57,8 @@ export function profileCard(result: any): string {
       .join(" | ")} |`,
   );
 
-  const messages = (result.tabs?.messages ?? []) as any[];
-  const images = (result.tabs?.images ?? []) as any[];
+  const messages = (result.tabs?.messages ?? []);
+  const images = (result.tabs?.images ?? []);
 
   parts.push(
     `### 💬 Nachrichten\n${
@@ -109,7 +109,7 @@ export function analyticsCard(result: any): string {
     .map(([label, value]) => `${label.padEnd(20, " ")} ${bar(value, max)} ${value}`)
     .join("\n");
 
-  const daily = (result.daily ?? []) as any[];
+  const daily = (result.daily ?? []);
   const dayValues = daily.map((entry) => Number(entry.profile_view ?? 0));
   const dayMax = Math.max(1, ...dayValues);
   const trend = daily.length

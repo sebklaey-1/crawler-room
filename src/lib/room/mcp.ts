@@ -104,7 +104,7 @@ function newRequestId(): string {
 function safeAction(params: any, tool: SurfaceTool): string | undefined {
   const value = params?.arguments?.action;
   if (typeof value !== "string") return undefined;
-  const allowed = ((tool.inputSchema as any)?.properties?.action?.enum ?? []) as string[];
+  const allowed = ((tool.inputSchema)?.properties?.action?.enum ?? []) as string[];
   return allowed.includes(value) ? value : undefined;
 }
 
@@ -206,7 +206,7 @@ async function callTool(params: any, context: RequestContext) {
 
 function describeTool(tool: SurfaceTool) {
   const publicActions = PUBLIC_ACTIONS[tool.name] ?? [];
-  const allActions = ((tool.inputSchema as any)?.properties?.action?.enum ?? []) as string[];
+  const allActions = ((tool.inputSchema)?.properties?.action?.enum ?? []) as string[];
   return {
     name: tool.name,
     title: tool.title,

@@ -16,7 +16,7 @@ export const PUBLISHER = "SEBKLAEY Agency — Sebastian Kläy";
  * reports a release blocker.
  */
 export function publicSupportEmail(): string | null {
-  const raw = (import.meta as any).env?.["VITE_PUBLIC_SUPPORT_EMAIL"];
+  const raw = (import.meta).env?.["VITE_PUBLIC_SUPPORT_EMAIL"];
   const value = typeof raw === "string" ? raw.trim() : "";
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) ? value : null;
 }

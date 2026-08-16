@@ -2,12 +2,13 @@
  * Server-only data access. All queries run with the service role key inside
  * request handlers — the browser never talks to the database.
  */
+import { embedded, type EmbeddedShapes } from "./dbtypes";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
 
-export type Db = SupabaseClient<any, "public", any>;
+export type Db = SupabaseClient;
 
 export async function getDb(): Promise<Db> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -51,7 +52,8 @@ export async function loadAliasMap(db: Db): Promise<Record<string, string>> {
     normalized_alias: string;
     topics: { slug: string } | null;
   }>) {
-    if (row.topics?.slug) map[row.normalized_alias] = row.topics.slug;
+    const slug = embedded<EmbeddedShapes["topics"]>(row.topics)?.slug;
+    if (slug) map[row.normalized_alias] = slug;
   }
 
   return map;
@@ -112,13 +114,13 @@ export async function getActiveMembership(
     .from("memberships")
     .select("id, alias, joined_at, last_read_message_id, room_id, rooms(room_number, capacity)")
     .eq("subject_hash", subjectHash)
-    .eq("topic_id", (topic as any).id)
+    .eq("topic_id", (topic).id)
     .is("left_at", null)
     .maybeSingle();
   if (error) throw roomError("INTERNAL_ERROR");
   if (!data) return null;
 
-  const row = data as any;
+  const row = data;
   const memberCount = await countActiveMembers(db, row.room_id);
   return {
     membershipId: row.id,
@@ -126,10 +128,10 @@ export async function getActiveMembership(
     joinedAt: row.joined_at,
     lastReadMessageId: row.last_read_message_id,
     roomId: row.room_id,
-    roomNumber: row.rooms.room_number,
-    capacity: row.rooms.capacity,
+    roomNumber: embedded<EmbeddedShapes["rooms"]>(row.rooms)?.room_number ?? 1,
+    capacity: embedded<EmbeddedShapes["rooms"]>(row.rooms)?.capacity ?? 0,
     memberCount,
-    topic: { slug: (topic as any).slug, display_name: (topic as any).display_name },
+    topic: { slug: (topic).slug, display_name: (topic).display_name },
   };
 }
 
@@ -174,14 +176,14 @@ export async function fetchVisibleMessages(
   const { data, error } = await query;
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = (data ?? []) as any[];
+  const rows = (data ?? []);
   const hasMore = rows.length > options.limit;
   const visible = rows.slice(0, options.limit).map((row) => ({
     id: row.id as number,
     body: row.body as string,
     created_at: row.created_at as string,
     membership_id: row.membership_id as string,
-    alias: (row.memberships?.alias as string) ?? "Unbekannt",
+    alias: (embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias as string) ?? "Unbekannt",
   }));
   return { messages: visible, hasMore };
 }
@@ -229,7 +231,7 @@ export async function insertMessage(
     .select("id, body, created_at, membership_id")
     .single();
   if (error || !data) throw roomError("INTERNAL_ERROR");
-  const row = data as any;
+  const row = data;
 
   // Rolling retention: a room keeps only its newest 7 text messages.
   const { enforceRoomRetention } = await import("./imagestore");
@@ -265,7 +267,7 @@ export async function listMyRooms(db: Db, subjectHash: string) {
     .is("left_at", null)
     .order("joined_at", { ascending: true });
   if (error) throw roomError("INTERNAL_ERROR");
-  return (data ?? []) as any[];
+  return (data ?? []);
 }
 
 export async function insertReport(
@@ -321,7 +323,7 @@ export async function getCustomAlias(db: Db, subjectHash: string): Promise<strin
     .select("custom_alias")
     .eq("subject_hash", subjectHash)
     .maybeSingle();
-  return ((data as any)?.custom_alias as string | null) ?? null;
+  return ((data)?.custom_alias as string | null) ?? null;
 }
 
 /** Sets the display name everywhere: identity record + all active memberships. */
@@ -332,7 +334,7 @@ export async function isAliasTaken(db: Db, subjectHash: string, alias: string): 
     .select("subject_hash")
     .ilike("custom_alias", alias.replace(/[%_]/g, "\\$&"))
     .limit(5);
-  return ((data ?? []) as any[]).some((row) => row.subject_hash !== subjectHash);
+  return ((data ?? [])).some((row) => row.subject_hash !== subjectHash);
 }
 
 export async function setSubjectAlias(
@@ -358,5 +360,5 @@ export async function setSubjectAlias(
     .select("id");
   if (memberError) throw roomError("INTERNAL_ERROR");
 
-  return { alias, roomsUpdated: ((data ?? []) as any[]).length };
+  return { alias, roomsUpdated: ((data ?? [])).length };
 }

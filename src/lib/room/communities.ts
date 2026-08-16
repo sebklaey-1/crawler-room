@@ -6,6 +6,7 @@
  * against the pseudonymous subject from MCP `_meta` — never against input.
  * No prices, plans, billing, ads or campaigns are involved.
  */
+import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { generateAlias } from "./alias";
 import { config, retentionCutoffIso, retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
@@ -77,10 +78,10 @@ export async function ensureAccount(db: Db, subjectHash: string): Promise<string
     .maybeSingle();
   if (readError) throw roomError("INTERNAL_ERROR");
 
-  const existing = (identity as any)?.account_id as string | null | undefined;
+  const existing = (identity)?.account_id as string | null | undefined;
   if (existing) return existing;
 
-  const alias = (identity as any)?.custom_alias ?? generateAlias(`${subjectHash}:account`);
+  const alias = (identity)?.custom_alias ?? generateAlias(`${subjectHash}:account`);
   const id = crypto.randomUUID();
   const { error } = await db.from("accounts").insert({ id, display_alias: alias });
   if (error) throw roomError("INTERNAL_ERROR");
@@ -92,7 +93,7 @@ export async function ensureAccount(db: Db, subjectHash: string): Promise<string
         .eq("subject_hash", subjectHash)
     : await db.from("anonymous_identities").insert({ subject_hash: subjectHash, account_id: id });
 
-  if ((linked as any)?.error) {
+  if ((linked)?.error) {
     // Unique race: another request created the identity or account link first.
     const raced = await accountIdFor(db, subjectHash);
     if (!raced) throw roomError("INTERNAL_ERROR");
@@ -108,7 +109,7 @@ export async function accountIdFor(db: Db, subjectHash: string): Promise<string 
     .eq("subject_hash", subjectHash)
     .maybeSingle();
   if (error) throw roomError("INTERNAL_ERROR");
-  return ((data as any)?.account_id as string | null) ?? null;
+  return ((data)?.account_id as string | null) ?? null;
 }
 
 async function aliasFor(db: Db, subjectHash: string): Promise<string> {
@@ -123,7 +124,7 @@ async function subjectHashForHandle(db: Db, rawHandle: unknown): Promise<string>
     .ilike("handle", handle)
     .maybeSingle();
   if (!data) throw roomError("NOT_FOUND", `Ich finde kein Profil mit dem Handle @${handle}.`);
-  return (data as any).owner_subject_hash as string;
+  return (data).owner_subject_hash as string;
 }
 
 /* ------------------------------ organizations ------------------------------ */
@@ -150,7 +151,7 @@ export async function orgRoleOf(
     .eq("id", organizationId)
     .maybeSingle();
   if (orgError) throw roomError("INTERNAL_ERROR");
-  if ((org as any)?.owner_account_id === accountId) return "owner";
+  if ((org)?.owner_account_id === accountId) return "owner";
 
   const { data, error } = await db
     .from("organization_members")
@@ -159,7 +160,7 @@ export async function orgRoleOf(
     .eq("account_id", accountId)
     .maybeSingle();
   if (error) throw roomError("INTERNAL_ERROR");
-  return fromDbRole((data as any)?.role as string | undefined);
+  return fromDbRole((data)?.role as string | undefined);
 }
 
 async function serializeOrg(row: any, role: OrgRole | null) {
@@ -200,7 +201,7 @@ export async function createOrganization(
   // The owner is defined by `organizations.owner_account_id`; the membership
   // row must use a role the database constraint allows.
   const { error: memberError } = await db.from("organization_members").insert({
-    organization_id: (data as any).id,
+    organization_id: (data).id,
     account_id: accountId,
     role: toDbRole("admin"),
   });
@@ -219,7 +220,7 @@ export async function listOrganizations(db: Db, subjectHash: string, limit = 50)
     .limit(limit);
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = (data ?? []) as any[];
+  const rows = (data ?? []);
   const out = [];
   for (const row of rows) out.push(await serializeOrg(row, await orgRoleOf(db, row.id, accountId)));
   return out;
@@ -234,7 +235,7 @@ async function findOrg(db: Db, reference: string) {
   if (opaque) {
     const { data } = await db.from("organizations").select("*").eq("id", opaque).maybeSingle();
     if (!data) throw roomError("NOT_FOUND", "Diese Organisation gibt es nicht.");
-    return data as any;
+    return data;
   }
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   const query = db.from("organizations").select("*");
@@ -242,7 +243,7 @@ async function findOrg(db: Db, reference: string) {
     ? await query.eq("id", value).maybeSingle()
     : await query.ilike("slug", value).maybeSingle();
   if (!data) throw roomError("NOT_FOUND", "Diese Organisation gibt es nicht.");
-  return data as any;
+  return data;
 }
 
 export async function getOrganization(db: Db, subjectHash: string, reference: string) {
@@ -259,7 +260,7 @@ export async function getOrganization(db: Db, subjectHash: string, reference: st
     .limit(50);
 
   const list = [];
-  for (const room of (communities ?? []) as any[]) {
+  for (const room of (communities ?? [])) {
     list.push({
       id: await encodeRoomId(room.id),
       slug: room.slug,
@@ -294,7 +295,7 @@ export async function publicListOrganizations(db: Db, limit = 50) {
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) throw roomError("INTERNAL_ERROR");
-  return await Promise.all(((data ?? []) as any[]).map(serializePublicOrg));
+  return await Promise.all(((data ?? [])).map(serializePublicOrg));
 }
 
 /** Anonymous organization view with its public communities. Reads only. */
@@ -310,7 +311,7 @@ export async function publicGetOrganization(db: Db, reference: string) {
     .limit(50);
 
   const list = [];
-  for (const room of (communities ?? []) as any[]) {
+  for (const room of (communities ?? [])) {
     list.push({
       id: await encodeRoomId(room.id),
       slug: room.slug,
@@ -370,8 +371,8 @@ export async function listOrgMembers(db: Db, subjectHash: string, reference: str
 
   return {
     organization: await serializeOrg(org, role),
-    members: ((data ?? []) as any[]).map((row) => ({
-      alias: row.accounts?.display_alias ?? "Mitglied",
+    members: ((data ?? [])).map((row) => ({
+      alias: embedded<EmbeddedShapes["accounts"]>(row.accounts)?.display_alias ?? "Mitglied",
       role: row.account_id === org.owner_account_id ? "owner" : (fromDbRole(row.role) ?? "member"),
       since: row.created_at as string,
       is_owner: row.account_id === org.owner_account_id,
@@ -413,7 +414,7 @@ export async function addOrgMember(
     const { error } = await db
       .from("organization_members")
       .update({ role: dbRole })
-      .eq("id", (existing as any).id);
+      .eq("id", (existing).id);
     if (error) throw roomError("INTERNAL_ERROR");
   } else {
     const { error } = await db
@@ -527,9 +528,9 @@ async function serializeCommunity(db: Db, row: CommunityRow, subjectHash: string
       .maybeSingle();
     if (org) {
       organization = {
-        id: await encodeOrgId((org as any).id as string),
-        name: (org as any).name as string,
-        slug: ((org as any).slug as string | null) ?? null,
+        id: await encodeOrgId((org).id as string),
+        name: (org).name as string,
+        slug: ((org).slug as string | null) ?? null,
       };
     }
   }
@@ -619,7 +620,7 @@ export async function listCommunities(
   if (error) throw roomError("INTERNAL_ERROR");
 
   const out = [];
-  for (const row of (data ?? []) as any[]) {
+  for (const row of (data ?? [])) {
     out.push(await serializeCommunity(db, row as CommunityRow, subjectHash));
   }
   return out;
@@ -678,10 +679,10 @@ async function joinCommunityRow(
     await db
       .from("memberships")
       .update({ last_seen_at: new Date().toISOString() })
-      .eq("id", (existing as any).id);
+      .eq("id", (existing).id);
     return {
-      membershipId: (existing as any).id as string,
-      alias: (existing as any).alias as string,
+      membershipId: (existing).id as string,
+      alias: (existing).alias as string,
       joinedNow: false,
     };
   }
@@ -694,8 +695,8 @@ async function joinCommunityRow(
     .single();
   if (error || !data) throw roomError("ROOM_UNAVAILABLE");
   return {
-    membershipId: (data as any).id as string,
-    alias: (data as any).alias as string,
+    membershipId: (data).id as string,
+    alias: (data).alias as string,
     joinedNow: true,
   };
 }
@@ -720,7 +721,7 @@ export async function leaveCommunity(db: Db, subjectHash: string, reference: unk
     .is("left_at", null)
     .select("id");
   return {
-    left: ((data ?? []) as any[]).length > 0,
+    left: ((data ?? [])).length > 0,
     community: await serializeCommunity(db, row, subjectHash),
   };
 }
@@ -738,13 +739,13 @@ export async function readCommunity(db: Db, subjectHash: string, reference: unkn
   if (error) throw roomError("INTERNAL_ERROR");
 
   const messages = [];
-  for (const message of ((data ?? []) as any[]).reverse()) {
+  for (const message of ((data ?? [])).reverse()) {
     messages.push({
       id: await encodeMessageId(message.id),
-      alias: message.memberships?.alias ?? "Unbekannt",
+      alias: embedded<EmbeddedShapes["memberships"]>(message.memberships)?.alias ?? "Unbekannt",
       text: message.body as string,
       created_at: new Date(message.created_at).toISOString(),
-      is_self: message.memberships?.subject_hash === subjectHash,
+      is_self: embedded<EmbeddedShapes["memberships"]>(message.memberships)?.subject_hash === subjectHash,
     });
   }
 

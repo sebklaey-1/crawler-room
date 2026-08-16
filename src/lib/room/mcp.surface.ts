@@ -8,6 +8,7 @@
  * rooms, private rooms, invitations, plans, prices, ads, campaigns, events or
  * polls in this surface.
  */
+import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { retentionCutoffIso } from "./config";
 import { z } from "zod";
 
@@ -399,7 +400,7 @@ async function universalMessages(
   const { data, error } = await query;
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = (data ?? []) as any[];
+  const rows = (data ?? []);
   const hasMore = rows.length > limit;
   const page = rows.slice(0, limit);
   const nextCursor = hasMore && page.length ? String(page[page.length - 1].id) : null;
@@ -408,7 +409,7 @@ async function universalMessages(
   for (const row of page.reverse()) {
     messages.push({
       id: await encodeMessageId(row.id),
-      alias: row.memberships?.alias ?? "Unbekannt",
+      alias: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias ?? "Unbekannt",
       text: row.body as string,
       created_at: new Date(row.created_at).toISOString(),
       is_self: row.membership_id === membershipId,
@@ -431,7 +432,7 @@ async function anonymousUniversal(
     .eq("kind", "universal")
     .limit(1)
     .maybeSingle();
-  const roomId = (row as any)?.id as string | undefined;
+  const roomId = (row)?.id as string | undefined;
   if (!roomId) throw roomError("ROOM_UNAVAILABLE");
 
   const feed = await universalMessages(db, roomId, "", {
@@ -853,7 +854,7 @@ async function followersHandler(input: unknown, meta: McpMeta): Promise<Json> {
   }
   if (data.new_follower !== undefined) patch["new_follower"] = data.new_follower;
 
-  const result = (await handleNotificationSettings(patch, meta)) as any;
+  const result = (await handleNotificationSettings(patch, meta));
   return tag("update_settings", {
     settings: {
       new_room_message: Boolean(
@@ -1444,7 +1445,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     summary: (result) => {
       if (result.reported) return reportSummary(result);
       if (result.blocks) {
-        const list = (result.blocks as any[])
+        const list = (result.blocks)
           .map((entry) => `- @${entry.handle} (${sanitizeUgcLabel(entry.display_name)})`)
           .join("\n");
         return list || "Du blockierst niemanden.";
@@ -1497,19 +1498,19 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     handler: followersHandler,
     summary: (result) => {
       if (result.notifications) {
-        const list = (result.notifications as any[])
+        const list = (result.notifications)
           .map((entry) => `- ${sanitizeUgcText(entry.message, 300)}`)
           .join("\n");
         return list || "Keine neuen Meldungen.";
       }
       if (result.followers) {
-        const list = (result.followers as any[])
+        const list = (result.followers)
           .map((entry) => `- ${sanitizeUgcLabel(entry.alias)}`)
           .join("\n");
         return `${result.total ?? 0} Follower\n${list}`;
       }
       if (result.rooms) {
-        const list = (result.rooms as any[])
+        const list = (result.rooms)
           .map((room) => `- @${sanitizeUgcLabel(room.handle)} (${room.followers} followers)`)
           .join("\n");
         return list || "Du folgst noch keinem Raum.";
@@ -1628,7 +1629,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     summary: (result) => {
       if (result.reported) return reportSummary(result);
       if (result.communities) {
-        const list = (result.communities as any[])
+        const list = (result.communities)
           .map(
             (entry) =>
               `- **${sanitizeUgcLabel(entry.title)}** (${sanitizeUgcLabel(entry.slug ?? entry.id)}) · ${entry.members} Mitglieder`,
@@ -1637,7 +1638,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         return list || "Noch keine Communities.";
       }
       if (result.organizations) {
-        const list = (result.organizations as any[])
+        const list = (result.organizations)
           .map(
             (entry) =>
               `- **${sanitizeUgcLabel(entry.name)}** (${sanitizeUgcLabel(entry.slug ?? entry.id)})`,
@@ -1646,19 +1647,19 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         return list || "Noch keine Organisationen.";
       }
       if (result.members) {
-        return (result.members as any[])
+        return (result.members)
           .map((entry) => `- ${sanitizeUgcLabel(entry.alias)} · ${entry.role}`)
           .join("\n");
       }
       if (result.messages) {
-        return `## ${sanitizeUgcLabel(result.community?.title ?? "Community")}\n\n${messageLines(result.messages as any[])}`;
+        return `## ${sanitizeUgcLabel(result.community?.title ?? "Community")}\n\n${messageLines(result.messages)}`;
       }
       if (result.community) {
-        const community = result.community as any;
+        const community = result.community;
         return `## ${sanitizeUgcLabel(community.title)}\n${sanitizeUgcText(community.description, 500)}\n\n${community.members} Mitglieder · ${community.people_here_now} gerade hier`;
       }
       if (result.organization) {
-        const org = result.organization as any;
+        const org = result.organization;
         return `## ${sanitizeUgcLabel(org.name)}\n${sanitizeUgcText(org.description, 500)}`;
       }
       return String(result.message ?? "Fertig.");

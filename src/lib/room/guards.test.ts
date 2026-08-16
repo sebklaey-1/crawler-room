@@ -211,7 +211,7 @@ describe("public reads never write", () => {
     const listDb = fakeDb({ organizations: { data: [row] } });
     const orgs = await publicListOrganizations(listDb).catch(() => []);
     expect(listDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
-    for (const org of orgs as any[]) {
+    for (const org of orgs) {
       expect(org.owner_account_id).toBeUndefined();
       expect(org.my_role).toBeUndefined();
       expect(org.is_member).toBeUndefined();
@@ -220,7 +220,7 @@ describe("public reads never write", () => {
     }
 
     const getDb = fakeDb({ organizations: { data: row } });
-    const single = (await publicGetOrganization(getDb, "acme").catch(() => null)) as any;
+    const single = (await publicGetOrganization(getDb, "acme").catch(() => null));
     expect(getDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
     expect(getDb.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
     if (single) {

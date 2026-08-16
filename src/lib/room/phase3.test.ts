@@ -21,7 +21,7 @@ function tool(name: string) {
 }
 
 function actionsOf(name: string): string[] {
-  return (tool(name).inputSchema as any).properties.action.enum as string[];
+  return (tool(name).inputSchema).properties.action.enum as string[];
 }
 
 describe("phase 3 — report surface", () => {
@@ -52,7 +52,7 @@ describe("phase 3 — report surface", () => {
 
   it("publishes the reason enum and the details limit in every report schema", () => {
     for (const name of REPORT_TOOLS) {
-      const properties = (tool(name).inputSchema as any).properties as Record<string, any>;
+      const properties = (tool(name).inputSchema).properties as Record<string, any>;
       expect(properties["reason"].enum).toEqual([...REPORT_REASONS]);
       expect(properties["details"].maxLength).toBe(REPORT_DETAILS_MAX);
       expect(tool(name).description).toMatch(/nichts automatisch/i);
@@ -61,7 +61,7 @@ describe("phase 3 — report surface", () => {
 
   it("declares a minimal report output branch without identifiers", () => {
     for (const name of REPORT_TOOLS) {
-      const branch = ((tool(name).outputSchema as any).oneOf as any[]).find(
+      const branch = ((tool(name).outputSchema).oneOf).find(
         (entry) => entry.title === "report",
       );
       expect(branch).toBeTruthy();
@@ -111,7 +111,7 @@ describe("phase 3 — report surface", () => {
       message: "ok",
     });
     expect(JSON.stringify(result)).not.toContain("secret");
-    expect((result as any).blocks[0]).toEqual({ handle: "anna", display_name: "Anna" });
+    expect((result).blocks[0]).toEqual({ handle: "anna", display_name: "Anna" });
   });
 });
 

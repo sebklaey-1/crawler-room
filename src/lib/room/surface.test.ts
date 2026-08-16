@@ -44,7 +44,7 @@ async function rpc(method: string, params?: unknown) {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
     }),
   );
-  return (await response.json()) as any;
+  return (await response.json());
 }
 
 async function callTool(name: string, args: unknown, meta?: Record<string, unknown>) {
@@ -70,18 +70,18 @@ describe("MCP surface", () => {
 
   it("keeps every input schema strict and action-driven", () => {
     for (const tool of SURFACE_TOOLS) {
-      expect((tool.inputSchema as any).additionalProperties).toBe(false);
-      expect((tool.inputSchema as any).required).toContain("action");
-      expect((tool.inputSchema as any).properties.action.enum.length).toBeGreaterThan(0);
+      expect((tool.inputSchema).additionalProperties).toBe(false);
+      expect((tool.inputSchema).required).toContain("action");
+      expect((tool.inputSchema).properties.action.enum.length).toBeGreaterThan(0);
       // Identity is never a tool input.
-      expect(Object.keys((tool.inputSchema as any).properties)).not.toContain("subject");
+      expect(Object.keys((tool.inputSchema).properties)).not.toContain("subject");
       expect(JSON.stringify(tool.inputSchema)).not.toContain("openai/subject");
     }
   });
 
   it("derives every input schema from the validating zod schema", () => {
     for (const tool of SURFACE_TOOLS) {
-      const properties = (tool.inputSchema as any).properties as Record<string, any>;
+      const properties = (tool.inputSchema).properties as Record<string, any>;
       for (const field of Object.values(properties)) {
         // Every string field carries the same limit the server enforces.
         if (field.type === "string" && !field.enum) {
@@ -93,8 +93,8 @@ describe("MCP surface", () => {
 
   it("declares strict per-action output branches without internal identifiers", () => {
     for (const tool of SURFACE_TOOLS) {
-      const branches = (tool.outputSchema as any).oneOf as any[];
-      const actions = (tool.inputSchema as any).properties.action.enum as string[];
+      const branches = (tool.outputSchema).oneOf;
+      const actions = (tool.inputSchema).properties.action.enum as string[];
       expect(branches.map((branch) => branch.title).sort()).toEqual([...actions].sort());
       for (const branch of branches) {
         expect(branch.properties.action.const).toBe(branch.title);
