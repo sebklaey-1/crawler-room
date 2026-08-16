@@ -2,8 +2,9 @@
  * The public MCP surface of @room: exactly seven grouped tools.
  *
  * Each tool takes an `action` discriminator plus validated arguments and
- * routes to existing, reviewed domain logic. Identity always comes from MCP
- * `_meta` (`openai/subject`) — never from tool input. There are no topic
+ * routes to existing, reviewed domain logic. Identity always comes from the
+ * verified OAuth access token — never from tool input and never from an
+ * unauthenticated `_meta` subject. There are no topic
  * rooms, private rooms, invitations, plans, prices, ads, campaigns, events or
  * polls in this surface.
  */
