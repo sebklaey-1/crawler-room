@@ -286,8 +286,14 @@ export async function enforceRoomRetention(db: Db, roomId: string): Promise<void
   }
 }
 
-/** Fallback sweep: dead uploads, orphaned files and both per-room limits. */
-export async function sweepImages(db: Db): Promise<{ purged: number; retention: number }> {
+/**
+ * Fallback sweep: dead uploads, both per-room limits and every due entry of
+ * the persistent deletion queue. The SQL functions queue each storage path in
+ * the same transaction that deletes the row, so nothing can be orphaned.
+ */
+export async function sweepImages(
+  db: Db,
+): Promise<{ purged: number; retention: number; queue: number; queueFailed: number }> {
   const { data: dead } = await db.rpc("purge_dead_images");
   const deadPaths = ((dead ?? []) as Array<{ storage_path: string }>).map(
     (row) => row.storage_path,
@@ -300,8 +306,16 @@ export async function sweepImages(db: Db): Promise<{ purged: number; retention: 
   );
   await removeStorageObjects(db, excessPaths);
 
-  return { purged: deadPaths.length, retention: excessPaths.length };
+  const queue = await processDeletionQueue(db, 100);
+
+  return {
+    purged: deadPaths.length,
+    retention: excessPaths.length,
+    queue: queue.removed,
+    queueFailed: queue.failed,
+  };
 }
+
 
 /** Sender aliases for a set of image rows (no other membership data leaves the server). */
 export async function aliasesFor(db: Db, membershipIds: string[]): Promise<Record<string, string>> {
