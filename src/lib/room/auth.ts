@@ -115,7 +115,11 @@ export function __setTestClaimsVerifier(verifier: ClaimsVerifier | null): void {
 }
 
 async function verifiedClaims(token: string): Promise<Record<string, unknown> | null> {
-  if (process.env["NODE_ENV"] === "test" && testVerifier) return testVerifier(token);
+  if (process.env["NODE_ENV"] === "test") {
+    // Offline by construction: the suite never reaches the network.
+    if (testVerifier) return testVerifier(token);
+    throw roomError("INVALID_TOKEN");
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS);
