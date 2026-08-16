@@ -1394,7 +1394,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     name: "profile",
     title: "Profil",
     description:
-      "Social-Profil mit Banner, Profilbild, Anzeigename, @handle, Bio, Ort, Link und Privatsphäre. action: get, update, change_handle, set_image (kind avatar|banner, image_url oder remove), open_link, block, unblock, list_blocks, report. Nur das eigene Profil ist bearbeitbar; die Prüfung erfolgt serverseitig. Blockieren wirkt gegenseitig auf Profilansicht, Folgen und Nachrichten in persönlichen Räumen. " +
+      "Social-Profil mit Banner, Profilbild, Anzeigename, @handle, Bio, Ort, Link und Privatsphäre. action: get, update, change_handle, set_image (kind avatar|banner, image_url oder remove), open_link, block, unblock, list_blocks, report. @handle und gewählter Anzeigename sind global eindeutig; ein neuer Anzeigename ändert das @handle nicht, dafür gibt es nur change_handle. Nur das eigene Profil ist bearbeitbar; die Prüfung erfolgt serverseitig. Blockieren wirkt gegenseitig auf Profilansicht, Folgen und Nachrichten in persönlichen Räumen. " +
       REPORT_DESCRIPTION,
     inputSchema: inputSchemaFor(profileInput, {
       username: "@handle eines fremden Profils.",
