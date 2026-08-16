@@ -114,7 +114,7 @@ export async function getActiveMembership(
     .from("memberships")
     .select("id, alias, joined_at, last_read_message_id, room_id, rooms(room_number, capacity)")
     .eq("subject_hash", subjectHash)
-    .eq("topic_id", (topic).id)
+    .eq("topic_id", topic.id)
     .is("left_at", null)
     .maybeSingle();
   if (error) throw roomError("INTERNAL_ERROR");
@@ -131,7 +131,7 @@ export async function getActiveMembership(
     roomNumber: embedded<EmbeddedShapes["rooms"]>(row.rooms)?.room_number ?? 1,
     capacity: embedded<EmbeddedShapes["rooms"]>(row.rooms)?.capacity ?? 0,
     memberCount,
-    topic: { slug: (topic).slug, display_name: (topic).display_name },
+    topic: { slug: topic.slug, display_name: topic.display_name },
   };
 }
 
@@ -176,14 +176,15 @@ export async function fetchVisibleMessages(
   const { data, error } = await query;
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = (data ?? []);
+  const rows = data ?? [];
   const hasMore = rows.length > options.limit;
   const visible = rows.slice(0, options.limit).map((row) => ({
     id: row.id as number,
     body: row.body as string,
     created_at: row.created_at as string,
     membership_id: row.membership_id as string,
-    alias: (embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias as string) ?? "Unbekannt",
+    alias:
+      (embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias as string) ?? "Unbekannt",
   }));
   return { messages: visible, hasMore };
 }
@@ -267,7 +268,7 @@ export async function listMyRooms(db: Db, subjectHash: string) {
     .is("left_at", null)
     .order("joined_at", { ascending: true });
   if (error) throw roomError("INTERNAL_ERROR");
-  return (data ?? []);
+  return data ?? [];
 }
 
 export async function insertReport(
@@ -323,7 +324,7 @@ export async function getCustomAlias(db: Db, subjectHash: string): Promise<strin
     .select("custom_alias")
     .eq("subject_hash", subjectHash)
     .maybeSingle();
-  return ((data)?.custom_alias as string | null) ?? null;
+  return (data?.custom_alias as string | null) ?? null;
 }
 
 /** Sets the display name everywhere: identity record + all active memberships. */
@@ -334,7 +335,7 @@ export async function isAliasTaken(db: Db, subjectHash: string, alias: string): 
     .select("subject_hash")
     .ilike("custom_alias", alias.replace(/[%_]/g, "\\$&"))
     .limit(5);
-  return ((data ?? [])).some((row) => row.subject_hash !== subjectHash);
+  return (data ?? []).some((row) => row.subject_hash !== subjectHash);
 }
 
 export async function setSubjectAlias(
@@ -360,5 +361,5 @@ export async function setSubjectAlias(
     .select("id");
   if (memberError) throw roomError("INTERNAL_ERROR");
 
-  return { alias, roomsUpdated: ((data ?? [])).length };
+  return { alias, roomsUpdated: (data ?? []).length };
 }

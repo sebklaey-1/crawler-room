@@ -65,7 +65,9 @@ export function profileCard(result: SummaryResult): string {
     `### 💬 Nachrichten\n${
       messages.length
         ? `${UGC_BANNER}\n${messages
-            .map((m: MessageView) => `${quoteUgcLine(m.alias ?? "", m.text ?? "")}  ♥ ${m.likes ?? 0}`)
+            .map(
+              (m: MessageView) => `${quoteUgcLine(m.alias ?? "", m.text ?? "")}  ♥ ${m.likes ?? 0}`,
+            )
             .join("\n")}`
         : "_Noch keine Nachrichten._"
     }`,

@@ -180,7 +180,7 @@ async function loadOwnedCampaign(db: Db, ctx: AccountContext, campaignId: string
     .eq("id", campaignId)
     .maybeSingle();
   if (!data) throw roomError("NOT_FOUND");
-  await requireOrganizationAccess(db, ctx, (data).organization_id);
+  await requireOrganizationAccess(db, ctx, data.organization_id);
   return data;
 }
 
@@ -189,7 +189,12 @@ export async function submitCampaignForReview(db: Db, ctx: AccountContext, campa
   const org = await requireBusinessOrg(db, ctx, campaign.organization_id);
 
   if (!org.verified) throw roomError("ORGANIZATION_REQUIRED");
-  if (!campaign.title || !campaign.description || !(campaign.topics as string[] | null)?.length || !campaign.ends_at) {
+  if (
+    !campaign.title ||
+    !campaign.description ||
+    !(campaign.topics as string[] | null)?.length ||
+    !campaign.ends_at
+  ) {
     throw roomError("CAMPAIGN_INVALID");
   }
   if (!["draft", "rejected"].includes(campaign.status)) throw roomError("CAMPAIGN_INVALID");
@@ -199,7 +204,7 @@ export async function submitCampaignForReview(db: Db, ctx: AccountContext, campa
     .select("total_budget_cents")
     .eq("campaign_id", campaign.id)
     .maybeSingle();
-  if (!budget || (budget).total_budget_cents <= 0) throw roomError("BILLING_REQUIRED");
+  if (!budget || budget.total_budget_cents <= 0) throw roomError("BILLING_REQUIRED");
 
   const policy = screenCampaignCopy({
     title: campaign.title,
@@ -333,7 +338,7 @@ export async function selectPlacements(
     .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
     .limit(50);
 
-  const candidates = ((data ?? [])).filter((campaign) => {
+  const candidates = (data ?? []).filter((campaign) => {
     if (campaign.ends_at && new Date(campaign.ends_at).getTime() < Date.now()) return false;
     if (campaign.safety_status === "fail") return false;
     return true;
@@ -359,13 +364,13 @@ export async function selectPlacements(
       .in("campaign_id", ids),
   ]);
 
-  const hiddenSet = new Set(((hidden ?? [])).map((row) => row.campaign_id));
+  const hiddenSet = new Set((hidden ?? []).map((row) => row.campaign_id));
   const seenCounts = new Map<string, number>();
-  for (const row of (impressions ?? [])) {
+  for (const row of impressions ?? []) {
     seenCounts.set(row.campaign_id, (seenCounts.get(row.campaign_id) ?? 0) + 1);
   }
   const exhausted = new Set(
-    ((budgets ?? []))
+    (budgets ?? [])
       .filter((b) => b.total_budget_cents > 0 && b.spent_cents >= b.total_budget_cents)
       .map((b) => b.campaign_id),
   );
@@ -389,8 +394,11 @@ export async function selectPlacements(
       placement_id: await encodeCampaignId(campaign.id),
       campaign_id: await encodeCampaignId(campaign.id),
       label: "Gesponserter Raum",
-      organization: embedded<EmbeddedShapes["organizations"]>(campaign.organizations)?.name ?? "Organisation",
-      verified: Boolean(embedded<EmbeddedShapes["organizations"]>(campaign.organizations)?.verified),
+      organization:
+        embedded<EmbeddedShapes["organizations"]>(campaign.organizations)?.name ?? "Organisation",
+      verified: Boolean(
+        embedded<EmbeddedShapes["organizations"]>(campaign.organizations)?.verified,
+      ),
       title: campaign.title,
       description: campaign.description,
       cta_label: campaign.cta_label,
@@ -442,10 +450,10 @@ export async function bumpMetric(
     await db
       .from("campaign_metrics")
       .update({
-        [field]: ((data)[field] ?? 0) + amount,
-        spend_cents: ((data).spend_cents ?? 0) + spendCents,
+        [field]: (data[field] ?? 0) + amount,
+        spend_cents: (data.spend_cents ?? 0) + spendCents,
       })
-      .eq("id", (data).id);
+      .eq("id", data.id);
   }
 
   if (spendCents > 0) {
@@ -457,8 +465,8 @@ export async function bumpMetric(
     if (budget) {
       await db
         .from("campaign_budgets")
-        .update({ spent_cents: ((budget).spent_cents ?? 0) + spendCents })
-        .eq("id", (budget).id);
+        .update({ spent_cents: (budget.spent_cents ?? 0) + spendCents })
+        .eq("id", budget.id);
     }
   }
 }
@@ -470,7 +478,7 @@ export async function recordSponsoredEntry(db: Db, campaignId: string) {
     .select("cost_per_entry_cents")
     .eq("campaign_id", campaignId)
     .maybeSingle();
-  await bumpMetric(db, campaignId, "entries", 1, (budget)?.cost_per_entry_cents ?? 0);
+  await bumpMetric(db, campaignId, "entries", 1, budget?.cost_per_entry_cents ?? 0);
 }
 
 export async function hideCampaign(db: Db, subjectHash: string, campaignId: string) {
@@ -519,13 +527,13 @@ export async function campaignAnalytics(db: Db, ctx: AccountContext, organizatio
     .eq("organization_id", organizationId);
 
   const results = [];
-  for (const campaign of (campaigns ?? [])) {
+  for (const campaign of campaigns ?? []) {
     const { data: metrics } = await db
       .from("campaign_metrics")
       .select("impressions, entries, cta_clicks, event_signups, hides, reports, spend_cents")
       .eq("campaign_id", campaign.id);
 
-    const totals = ((metrics ?? [])).reduce(
+    const totals = (metrics ?? []).reduce(
       (acc, row) => ({
         impressions: acc.impressions + (row.impressions ?? 0),
         entries: acc.entries + (row.entries ?? 0),

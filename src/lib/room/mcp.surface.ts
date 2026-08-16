@@ -401,7 +401,7 @@ async function universalMessages(
   const { data, error } = await query;
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = (data ?? []);
+  const rows = data ?? [];
   const hasMore = rows.length > limit;
   const page = rows.slice(0, limit);
   const nextCursor = hasMore && page.length ? String(page[page.length - 1]?.id ?? "") : null;
@@ -433,7 +433,7 @@ async function anonymousUniversal(
     .eq("kind", "universal")
     .limit(1)
     .maybeSingle();
-  const roomId = (row)?.id as string | undefined;
+  const roomId = row?.id as string | undefined;
   if (!roomId) throw roomError("ROOM_UNAVAILABLE");
 
   const feed = await universalMessages(db, roomId, "", {
@@ -855,7 +855,7 @@ async function followersHandler(input: unknown, meta: McpMeta): Promise<Json> {
   }
   if (data.new_follower !== undefined) patch["new_follower"] = data.new_follower;
 
-  const result = (await handleNotificationSettings(patch, meta));
+  const result = await handleNotificationSettings(patch, meta);
   return tag("update_settings", {
     settings: {
       new_room_message: Boolean(
@@ -1454,7 +1454,10 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       if (result.reported) return reportSummary(result);
       if (result.blocks) {
         const list = result.blocks
-          .map((entry: LabelledEntry) => `- @${entry.handle} (${sanitizeUgcLabel(entry.display_name ?? "")})`)
+          .map(
+            (entry: LabelledEntry) =>
+              `- @${entry.handle} (${sanitizeUgcLabel(entry.display_name ?? "")})`,
+          )
           .join("\n");
         return list || "Du blockierst niemanden.";
       }
@@ -1519,7 +1522,10 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       }
       if (result.rooms) {
         const list = result.rooms
-          .map((room: LabelledEntry) => `- @${sanitizeUgcLabel(room.handle ?? "")} (${room.followers ?? 0} followers)`)
+          .map(
+            (room: LabelledEntry) =>
+              `- @${sanitizeUgcLabel(room.handle ?? "")} (${room.followers ?? 0} followers)`,
+          )
           .join("\n");
         return list || "Du folgst noch keinem Raum.";
       }
@@ -1656,7 +1662,10 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       }
       if (result.members) {
         return result.members
-          .map((entry: LabelledEntry) => `- ${sanitizeUgcLabel(entry.alias ?? "")} · ${entry.role ?? ""}`)
+          .map(
+            (entry: LabelledEntry) =>
+              `- ${sanitizeUgcLabel(entry.alias ?? "")} · ${entry.role ?? ""}`,
+          )
           .join("\n");
       }
       if (result.messages) {

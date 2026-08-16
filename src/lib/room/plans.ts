@@ -96,7 +96,7 @@ export async function getSetting<T extends Record<string, any>>(
   fallback: T,
 ): Promise<T> {
   const { data } = await db.from("platform_settings").select("value").eq("key", key).maybeSingle();
-  const value = (data)?.value;
+  const value = data?.value;
   return value && typeof value === "object" ? { ...fallback, ...value } : fallback;
 }
 

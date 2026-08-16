@@ -41,14 +41,14 @@ export async function ensureAccount(
     .maybeSingle();
   if (error) throw roomError("INTERNAL_ERROR");
 
-  if (existing && (existing).account_id) {
+  if (existing && existing.account_id) {
     await db
       .from("anonymous_identities")
       .update({ last_seen_at: new Date().toISOString() })
       .eq("subject_hash", subjectHash);
     return {
-      accountId: (existing).account_id,
-      customAlias: (existing).custom_alias ?? null,
+      accountId: existing.account_id,
+      customAlias: existing.custom_alias ?? null,
     };
   }
 
@@ -58,7 +58,7 @@ export async function ensureAccount(
     .select("id")
     .single();
   if (accountError || !account) throw roomError("INTERNAL_ERROR");
-  const accountId = (account).id as string;
+  const accountId = account.id as string;
 
   const { error: linkError } = await db
     .from("anonymous_identities")
@@ -68,7 +68,7 @@ export async function ensureAccount(
     );
   if (linkError) throw roomError("INTERNAL_ERROR");
 
-  return { accountId, customAlias: (existing)?.custom_alias ?? null };
+  return { accountId, customAlias: existing?.custom_alias ?? null };
 }
 
 /** Full server-side entitlement snapshot. Never trust client-provided plans. */
@@ -107,7 +107,7 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
     }
   }
 
-  for (const row of (overrides ?? [])) {
+  for (const row of overrides ?? []) {
     if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) continue;
     if (typeof row.value === "boolean") entitlements[row.key] = row.value;
     else if (typeof row.value === "number")
@@ -126,8 +126,8 @@ export async function resolveEntitlements(db: Db, subjectHash: string): Promise<
     readOnlyPaidFeatures: false,
     entitlements,
     limits,
-    isPlatformAdmin: ((roles ?? [])).some((r) => r.role === "platform_admin"),
-    stripeCustomerId: (account)?.stripe_customer_id ?? null,
+    isPlatformAdmin: (roles ?? []).some((r) => r.role === "platform_admin"),
+    stripeCustomerId: account?.stripe_customer_id ?? null,
   };
 }
 
@@ -215,7 +215,7 @@ export async function requireOrganizationAccess(
     .maybeSingle();
   if (!org) throw roomError("NOT_FOUND");
 
-  let role = (org).owner_account_id === ctx.accountId ? "organization_admin" : "";
+  let role = org.owner_account_id === ctx.accountId ? "organization_admin" : "";
   if (!role) {
     const { data: member } = await db
       .from("organization_members")
@@ -223,17 +223,17 @@ export async function requireOrganizationAccess(
       .eq("organization_id", organizationId)
       .eq("account_id", ctx.accountId)
       .maybeSingle();
-    role = (member)?.role ?? "";
+    role = member?.role ?? "";
   }
   if (!role || (role !== "organization_admin" && role !== "moderator"))
     throw roomError("FORBIDDEN");
 
   return {
-    id: (org).id,
-    name: (org).name,
-    verified: Boolean((org).verified),
-    billingReady: Boolean((org).billing_ready),
-    suspended: Boolean((org).suspended_at),
+    id: org.id,
+    name: org.name,
+    verified: Boolean(org.verified),
+    billingReady: Boolean(org.billing_ready),
+    suspended: Boolean(org.suspended_at),
     role,
   };
 }

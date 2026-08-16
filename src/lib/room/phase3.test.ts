@@ -110,7 +110,10 @@ describe("phase 3 — report surface", () => {
       message: "ok",
     });
     expect(JSON.stringify(result)).not.toContain("secret");
-    expect((asRecord(result)["blocks"] as unknown[])[0]).toEqual({ handle: "anna", display_name: "Anna" });
+    expect((asRecord(result)["blocks"] as unknown[])[0]).toEqual({
+      handle: "anna",
+      display_name: "Anna",
+    });
   });
 });
 

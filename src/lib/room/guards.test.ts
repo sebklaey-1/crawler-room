@@ -222,7 +222,7 @@ describe("public reads never write", () => {
     }
 
     const getDb = fakeDb({ organizations: { data: row } });
-    const single = (await publicGetOrganization(getDb, "acme").catch(() => null));
+    const single = await publicGetOrganization(getDb, "acme").catch(() => null);
     expect(getDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
     expect(getDb.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
     if (single) {

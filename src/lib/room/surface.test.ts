@@ -45,7 +45,7 @@ async function rpc(method: string, params?: unknown) {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
     }),
   );
-  return (await response.json());
+  return await response.json();
 }
 
 async function callTool(name: string, args: unknown, meta?: Record<string, unknown>) {

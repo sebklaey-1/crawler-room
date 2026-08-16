@@ -66,7 +66,7 @@ describe("authentication policy", () => {
     expect(response.headers.get("www-authenticate")).toContain(
       'resource_metadata="http://localhost/.well-known/oauth-protected-resource"',
     );
-    const body = (await response.json());
+    const body = await response.json();
     expect(body.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
   });
 
@@ -105,7 +105,7 @@ describe("authentication policy", () => {
 
   it("advertises which actions need an account in tools/list", async () => {
     const response = await post({ jsonrpc: "2.0", id: 1, method: "tools/list" });
-    const body = (await response.json());
+    const body = await response.json();
     const likes = body.result.tools.find((tool: any) => tool.name === "likes");
     expect(likes._meta["room/public_actions"]).toEqual([]);
     expect(likes._meta["room/authenticated_actions"]).toEqual(["like", "unlike"]);
@@ -128,7 +128,7 @@ describe("test-only auth context", () => {
       { "x-room-test-user": "00000000-0000-4000-8000-000000000001" },
     );
     expect(response.status).toBe(200);
-    const body = (await response.json());
+    const body = await response.json();
     expect(body.result.structuredContent.error?.code).not.toBe("AUTH_REQUIRED");
   });
 
@@ -144,14 +144,14 @@ describe("test-only auth context", () => {
 
   it("carries the challenge inside the tool result meta", async () => {
     const response = await toolCall("analytics", { action: "profile" });
-    const body = (await response.json());
+    const body = await response.json();
     expect(body.result._meta["mcp/www_authenticate"]).toContain("resource_metadata=");
     expect(body.result._meta["mcp/www_authenticate"]).toContain("error_description=");
   });
 
   it("advertises security schemes per tool", async () => {
     const response = await post({ jsonrpc: "2.0", id: 1, method: "tools/list" });
-    const body = (await response.json());
+    const body = await response.json();
     for (const tool of body.result.tools) {
       expect(tool.securitySchemes).toEqual(tool._meta.securitySchemes);
       const types = tool.securitySchemes.map((scheme: any) => scheme.type);
@@ -337,7 +337,7 @@ describe("streamable http hardening", () => {
       { jsonrpc: "2.0", id: { bad: true }, method: "ping" },
     ];
     for (const message of bad) {
-      const body = (await (await post(message)).json());
+      const body = await (await post(message)).json();
       expect(body.error.code).toBe(-32600);
     }
   });
@@ -351,7 +351,7 @@ describe("streamable http hardening", () => {
       }),
     );
     expect(response.status).toBe(400);
-    expect(((await response.json())).error.code).toBe(-32700);
+    expect((await response.json()).error.code).toBe(-32700);
   });
 
   it("isolates batch entries so one auth failure never leaks", async () => {

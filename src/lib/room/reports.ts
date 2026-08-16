@@ -108,7 +108,8 @@ async function messageTarget(
     kind: "message",
     ref: String(row.id),
     roomId: row.room_id,
-    ownerSubjectHash: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash ?? null,
+    ownerSubjectHash:
+      embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash ?? null,
     snapshot: await snapshotHash(String(row.body ?? "")),
     label: "Nachricht",
   };
@@ -135,7 +136,8 @@ async function imageTarget(
     kind: "image",
     ref: String(row.id),
     roomId: row.room_id,
-    ownerSubjectHash: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash ?? null,
+    ownerSubjectHash:
+      embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash ?? null,
     snapshot: await snapshotHash(String(row.storage_path ?? "")),
     label: "Bild",
   };
@@ -148,7 +150,7 @@ export async function universalRoomId(db: Db): Promise<string> {
     .eq("kind", "universal")
     .limit(1)
     .maybeSingle();
-  const id = (data)?.id as string | undefined;
+  const id = data?.id as string | undefined;
   if (!id) throw roomError("ROOM_UNAVAILABLE");
   return id;
 }

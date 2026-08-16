@@ -68,7 +68,7 @@ async function roomMessages(db: Db, room: PersonalRoom, selfMembershipId: string
     .limit(limit);
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = ((data ?? [])).reverse();
+  const rows = (data ?? []).reverse();
   return Promise.all(
     rows.map(async (row) => ({
       id: await encodeMessageId(row.id),

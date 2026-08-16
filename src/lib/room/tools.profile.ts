@@ -49,7 +49,7 @@ async function profileMessages(db: Db, profile: ProfileRow, viewerHash: string) 
     .limit(20);
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = ((data ?? [])).reverse();
+  const rows = (data ?? []).reverse();
   const likes = await likeCountsFor(
     db,
     "message",
@@ -62,7 +62,9 @@ async function profileMessages(db: Db, profile: ProfileRow, viewerHash: string) 
       alias: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias ?? "Unbekannt",
       text: row.body as string,
       created_at: new Date(row.created_at).toISOString(),
-      is_owner: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash === profile.ownerSubjectHash,
+      is_owner:
+        embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash ===
+        profile.ownerSubjectHash,
       likes: likes[String(row.id)]?.likes ?? 0,
       liked_by_me: likes[String(row.id)]?.liked_by_me ?? false,
     })),
@@ -311,8 +313,7 @@ async function resolveLikeTarget(
   if (!data) throw roomError("IMAGE_NOT_FOUND");
   return {
     targetId: String(id),
-    ownerSubjectHash:
-      embedded<EmbeddedShapes["memberships"]>(data.memberships)?.subject_hash ?? "",
+    ownerSubjectHash: embedded<EmbeddedShapes["memberships"]>(data.memberships)?.subject_hash ?? "",
     roomId: data.room_id,
   };
 }
@@ -391,7 +392,10 @@ export async function handleProfileAnalytics(input: unknown, meta: McpMeta) {
 export async function handleTrackProfileLink(input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
-  const found = await findProfileByHandle(db, String(payloadOf<{ username?: string }>(input).username ?? ""));
+  const found = await findProfileByHandle(
+    db,
+    String(payloadOf<{ username?: string }>(input).username ?? ""),
+  );
   if (!found) throw roomError("NOT_FOUND", "Dieses Profil gibt es nicht.");
 
   await recordEvent(db, {
@@ -406,7 +410,10 @@ export async function handleTrackProfileLink(input: unknown, meta: McpMeta) {
 export async function handleBlockProfile(input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
-  const found = await findProfileByHandle(db, String(payloadOf<{ username?: string }>(input).username ?? ""));
+  const found = await findProfileByHandle(
+    db,
+    String(payloadOf<{ username?: string }>(input).username ?? ""),
+  );
   if (!found) throw roomError("NOT_FOUND", "Dieses Profil gibt es nicht.");
 
   await blockPerson(

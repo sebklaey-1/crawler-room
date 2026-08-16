@@ -88,7 +88,7 @@ export function inputSchemaFor(
   schema: z.ZodTypeAny,
   descriptions: Record<string, string> = {},
 ): Json {
-  const shape = (schema)._def.shape();
+  const shape = schema._def.shape();
   const properties: Json = {};
   const required: string[] = [];
 

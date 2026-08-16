@@ -54,7 +54,7 @@ async function uniqueHandle(db: Db, subjectHash: string, desired: string): Promi
       .select("owner_subject_hash")
       .eq("handle", candidate)
       .maybeSingle();
-    if (!data || (data).owner_subject_hash === subjectHash) return candidate;
+    if (!data || data.owner_subject_hash === subjectHash) return candidate;
   }
   return `${desired}_${subjectHash.slice(0, 6)}`;
 }
@@ -102,10 +102,7 @@ export async function syncPersonalRoomName(db: Db, subjectHash: string, alias: s
 
   const handle = await uniqueHandle(db, subjectHash, slugifyHandle(alias));
   const roomName = personalRoomName(alias);
-  await db
-    .from("user_rooms")
-    .update({ handle, room_name: roomName })
-    .eq("id", (data).id);
+  await db.from("user_rooms").update({ handle, room_name: roomName }).eq("id", data.id);
   await db
     .from("rooms")
     .update({ title: roomName })
@@ -161,10 +158,7 @@ export async function updatePersonalRoom(
   if (!data) throw roomError("NOT_FOUND");
 
   if (update["room_name"]) {
-    await db
-      .from("rooms")
-      .update({ title: update["room_name"] })
-      .eq("id", (data).room_id);
+    await db.from("rooms").update({ title: update["room_name"] }).eq("id", data.room_id);
   }
   return data;
 }
@@ -240,7 +234,7 @@ export async function leavePersonalRoom(db: Db, roomId: string, subjectHash: str
     .is("left_at", null)
     .select("id");
   if (error) throw roomError("INTERNAL_ERROR");
-  return ((data ?? [])).length > 0;
+  return (data ?? []).length > 0;
 }
 
 /** People currently in the room (live), never the follower list. */
@@ -254,7 +248,7 @@ export async function presentMembers(db: Db, roomId: string, limit = 50) {
     .order("last_seen_at", { ascending: false })
     .limit(limit);
   if (error) throw roomError("INTERNAL_ERROR");
-  return ((data ?? [])).map((row) => ({
+  return (data ?? []).map((row) => ({
     alias: row.alias as string,
     joined_at: row.joined_at as string,
     last_seen_at: row.last_seen_at as string,
@@ -362,7 +356,7 @@ export async function listFollowers(db: Db, roomId: string, limit = 100) {
     .limit(limit);
   if (error) throw roomError("INTERNAL_ERROR");
 
-  const rows = (data ?? []);
+  const rows = data ?? [];
   const out = [];
   for (const row of rows) {
     const alias =
@@ -383,7 +377,7 @@ export async function listFollowedRooms(db: Db, subjectHash: string) {
     .limit(100);
   if (error) return [];
   const out = [];
-  for (const row of (data ?? [])) {
+  for (const row of data ?? []) {
     out.push({
       handle: embedded<EmbeddedShapes["user_rooms"]>(row.user_rooms)?.handle as string,
       room_name: embedded<EmbeddedShapes["user_rooms"]>(row.user_rooms)?.room_name as string,
@@ -471,7 +465,7 @@ export async function notifyFollowers(
     .eq("room_id", room.roomId)
     .limit(5000);
 
-  const rows = (data ?? []);
+  const rows = data ?? [];
   if (!rows.length) return 0;
 
   const allowed: string[] = [];
@@ -507,7 +501,7 @@ export async function listNotifications(
 
   const { data, error } = await query;
   if (error) throw roomError("INTERNAL_ERROR");
-  return ((data ?? [])).map((row) => ({
+  return (data ?? []).map((row) => ({
     type: row.notification_type as string,
     message: row.message as string,
     read: Boolean(row.read),
