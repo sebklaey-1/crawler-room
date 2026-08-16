@@ -12,7 +12,9 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "release:check": "bun run scripts/release-check.ts",
+    "verify:domain": "bun run scripts/verify-production-domain.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
