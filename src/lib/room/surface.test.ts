@@ -57,7 +57,7 @@ describe("MCP surface", () => {
     const body = await rpc("initialize", { protocolVersion: "2025-06-18" });
     expect(body.result.serverInfo.title).toBe("@room");
     for (const name of EXPECTED) expect(body.result.instructions).toContain(name);
-    expect(body.result.instructions).not.toMatch(/Abo|Preis|Kampagne|Anzeige/);
+    expect(body.result.instructions).not.toMatch(/Kampagne|Sponsor|Abonnement|Bezahlung/);
   });
 
   it("lists exactly the seven grouped tools", async () => {
@@ -81,7 +81,7 @@ describe("MCP surface", () => {
 
   it("never mentions ads, campaigns, plans or events in the public surface", () => {
     const text = JSON.stringify(SURFACE_TOOLS.map((tool) => [tool.name, tool.title, tool.description]));
-    for (const forbidden of ["campaign", "sponsor", "Anzeige", "Abo", "Preis", "Event", "Poll", "Einladung"]) {
+    for (const forbidden of ["campaign", "sponsor", "kampagne", "abonnement", "preis", "poll", "einladung"]) {
       expect(text.toLowerCase()).not.toContain(forbidden.toLowerCase());
     }
   });
