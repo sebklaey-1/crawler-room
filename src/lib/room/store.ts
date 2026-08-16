@@ -1,10 +1,10 @@
-import { retentionDeadlineIso } from "./config";
 /**
  * Server-only data access. All queries run with the service role key inside
  * request handlers — the browser never talks to the database.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
 
 export type Db = SupabaseClient<any, "public", any>;
