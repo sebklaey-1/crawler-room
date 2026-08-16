@@ -386,10 +386,10 @@ async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
 const publicRoomInput = z
   .object({
     action: z.enum(["mine", "open", "update", "leave", "send"]),
-    username: z.string().max(64).optional(),
+    username: z.string().trim().max(64).optional(),
     text: z.string().max(2000).optional(),
-    room_name: z.string().max(80).optional(),
-    description: z.string().max(500).optional(),
+    room_name: name(80).optional(),
+    description: text(500).optional(),
   })
   .strict();
 
@@ -455,9 +455,9 @@ const profileInput = z
   .object({
     action: z.enum(["get", "update", "change_handle", "set_image", "open_link", "block"]),
     username: z.string().max(64).optional(),
-    display_name: z.string().max(80).optional(),
-    bio: z.string().max(280).optional(),
-    location: z.string().max(60).optional(),
+    display_name: name(80).optional(),
+    bio: text(280).optional(),
+    location: text(60).optional(),
     external_url: z.string().max(300).optional(),
     profile_visibility: z.enum(["public", "private"]).optional(),
     show_online_status: z.boolean().optional(),
@@ -701,13 +701,13 @@ const communitiesInput = z
       "add_member",
       "remove_member",
     ]),
-    community: z.string().max(120).optional(),
-    organization: z.string().max(120).optional(),
-    title: z.string().max(120).optional(),
-    name: z.string().max(120).optional(),
-    description: z.string().max(1000).optional(),
-    website: z.string().max(300).optional(),
-    slug: z.string().max(60).optional(),
+    community: z.string().trim().max(120).optional(),
+    organization: z.string().trim().max(120).optional(),
+    title: name(120).optional(),
+    name: name(120).optional(),
+    description: text(1000).optional(),
+    website: websiteField.optional(),
+    slug: name(60).optional(),
     text: z.string().max(2000).optional(),
     username: z.string().max(64).optional(),
     role: z.enum(["admin", "member"]).optional(),
