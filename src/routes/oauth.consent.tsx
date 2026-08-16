@@ -36,5 +36,10 @@ export const Route = createFileRoute("/oauth/consent")({
       <p className="text-muted-foreground">Bitte starte die Verbindung in ChatGPT neu.</p>
     </main>
   ),
-  component: () => <OAuthConsent authorizationId={Route.useSearch().authorization_id} />,
+  component: ConsentPage,
 });
+
+function ConsentPage() {
+  const { authorization_id: authorizationId } = Route.useSearch();
+  return <OAuthConsent authorizationId={authorizationId} />;
+}
