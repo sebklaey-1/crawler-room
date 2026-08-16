@@ -146,7 +146,7 @@ export async function universalFeed(
 
   let query = db
     .from("messages")
-    .select("id, body, created_at, membership_id, memberships(alias)")
+    .select("id, body, created_at, membership_id, memberships(alias, subject_hash)")
     .eq("room_id", membership.roomId)
     .gte("created_at", retentionCutoffIso())
     .gt("expires_at", new Date().toISOString())
@@ -163,16 +163,26 @@ export async function universalFeed(
   const hasMore = rows.length > limit;
   const page = rows.slice(0, limit);
 
+  const handles = await universalHandles(
+    db,
+    page.map((row) => embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash),
+  );
+
   const messages = [];
   for (const row of page.reverse()) {
+    const author = embedded<EmbeddedShapes["memberships"]>(row.memberships);
     messages.push({
       id: await encodeMessageId(row.id),
-      alias: embedded<EmbeddedShapes["memberships"]>(row.memberships)?.alias ?? "Unbekannt",
+      alias: universalSender(
+        author?.subject_hash ? handles.get(author.subject_hash) : null,
+        author?.alias,
+      ),
       text: row.body as string,
       created_at: row.created_at as string,
       is_self: row.membership_id === membership.membershipId,
     });
   }
+
 
   const nextCursor = hasMore && page.length ? String(page[0]?.id ?? "") : null;
 
