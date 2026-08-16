@@ -1,3 +1,4 @@
+import { actionEnum, asRecord, branchesOf, propertiesOf, schemaOf } from "./jsonschema";
 import { describe, expect, it } from "vitest";
 
 import { handleMcpRequest } from "./mcp";
@@ -62,7 +63,9 @@ describe("MCP surface", () => {
 
   it("lists exactly the seven grouped tools", async () => {
     const body = await rpc("tools/list");
-    const names = body.result.tools.map((tool: any) => tool.name);
+    const names = (asRecord(asRecord(body)["result"])["tools"] as unknown[]).map(
+      (entry) => asRecord(entry)["name"],
+    );
     expect(names).toEqual(EXPECTED);
     expect(names).toHaveLength(7);
     for (const removed of REMOVED) expect(names).not.toContain(removed);
@@ -70,18 +73,18 @@ describe("MCP surface", () => {
 
   it("keeps every input schema strict and action-driven", () => {
     for (const tool of SURFACE_TOOLS) {
-      expect((tool.inputSchema).additionalProperties).toBe(false);
-      expect((tool.inputSchema).required).toContain("action");
-      expect((tool.inputSchema).properties.action.enum.length).toBeGreaterThan(0);
+      expect(schemaOf(tool.inputSchema).additionalProperties).toBe(false);
+      expect(schemaOf(tool.inputSchema).required).toContain("action");
+      expect(actionEnum(tool.inputSchema).length).toBeGreaterThan(0);
       // Identity is never a tool input.
-      expect(Object.keys((tool.inputSchema).properties)).not.toContain("subject");
+      expect(Object.keys(propertiesOf(tool.inputSchema))).not.toContain("subject");
       expect(JSON.stringify(tool.inputSchema)).not.toContain("openai/subject");
     }
   });
 
   it("derives every input schema from the validating zod schema", () => {
     for (const tool of SURFACE_TOOLS) {
-      const properties = (tool.inputSchema).properties as Record<string, any>;
+      const properties = propertiesOf(tool.inputSchema);
       for (const field of Object.values(properties)) {
         // Every string field carries the same limit the server enforces.
         if (field.type === "string" && !field.enum) {
@@ -93,11 +96,11 @@ describe("MCP surface", () => {
 
   it("declares strict per-action output branches without internal identifiers", () => {
     for (const tool of SURFACE_TOOLS) {
-      const branches = (tool.outputSchema).oneOf;
-      const actions = (tool.inputSchema).properties.action.enum as string[];
+      const branches = branchesOf(tool.outputSchema);
+      const actions = actionEnum(tool.inputSchema);
       expect(branches.map((branch) => branch.title).sort()).toEqual([...actions].sort());
       for (const branch of branches) {
-        expect(branch.properties.action.const).toBe(branch.title);
+        expect(branch.properties?.["action"]?.const).toBe(branch.title);
         expect(branch.required).toContain("action");
       }
       const text = JSON.stringify(tool.outputSchema).toLowerCase();

@@ -1,3 +1,4 @@
+import { asRecord } from "./jsonschema";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -364,13 +365,16 @@ describe("streamable http hardening", () => {
       },
       { jsonrpc: "2.0", id: 3, method: "tools/list" },
     ]);
-    const body = (await response.json());
-    const ping = body.find((entry) => entry.id === 1);
-    const analytics = body.find((entry) => entry.id === 2);
-    const list = body.find((entry) => entry.id === 3);
-    expect(ping.result).toEqual({});
-    expect(analytics.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
-    expect(list.result.tools.length).toBe(7);
+    const body = (await response.json()) as Array<Record<string, unknown>>;
+    const byId = (id: number) => asRecord(body.find((entry) => entry["id"] === id));
+    const ping = byId(1);
+    const analytics = byId(2);
+    const list = byId(3);
+    expect(ping["result"]).toEqual({});
+    expect(
+      asRecord(asRecord(asRecord(analytics["result"])["structuredContent"])["error"])["code"],
+    ).toBe("AUTH_REQUIRED");
+    expect((asRecord(list["result"])["tools"] as unknown[]).length).toBe(7);
   });
 
   it("accepts application/json with a charset", async () => {
