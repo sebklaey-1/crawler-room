@@ -15,7 +15,14 @@
  * - Transport hardening: body size limit, content-type and Accept checks,
  *   protocol-version negotiation and Origin validation (DNS rebinding).
  */
-import { bearerToken, challengeHeader, verifyAccessToken, resolveAuthSubject, type AuthUser } from "./auth";
+import {
+  authSubjectHash,
+  bearerToken,
+  challengeHeader,
+  resolveAuthSubject,
+  verifyAccessToken,
+  type AuthUser,
+} from "./auth";
 import { SERVICE_NAME, SERVICE_VERSION } from "./config";
 import { RoomError, toRoomError } from "./errors";
 import { AUTH_META_KEY, legacySubjectHash, sanitizeClientMeta, type McpMeta } from "./identity";
@@ -55,6 +62,8 @@ interface RequestContext {
   /** Set when a tool call was rejected for missing or invalid credentials. */
   challenge: "invalid_token" | null;
   authRequired: boolean;
+  /** True only for the automated test harness (NODE_ENV=test). */
+  testAuth: boolean;
 }
 
 function rpcResult(id: unknown, result: Json) {
@@ -74,6 +83,14 @@ function logEvent(event: Record<string, unknown>) {
 async function buildMeta(params: any, context: RequestContext): Promise<McpMeta> {
   const meta = sanitizeClientMeta((params?._meta ?? {}) as McpMeta);
   meta["room/origin"] = context.origin;
+
+  if (context.auth && context.testAuth) {
+    meta[AUTH_META_KEY] = {
+      userId: context.auth.userId,
+      subjectHash: await authSubjectHash(context.auth.userId),
+    };
+    return meta;
+  }
 
   if (context.auth) {
     const db = await getDb();
@@ -306,8 +323,15 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
 
   // Authenticate once per request; the token itself never reaches a handler.
   let auth: AuthUser | null = null;
+  let testAuth = false;
+  const testUser =
+    process.env["NODE_ENV"] === "test" ? request.headers.get("x-room-test-user")?.trim() : null;
+  if (testUser) {
+    auth = { userId: testUser, issuer: null, expiresAt: null };
+    testAuth = true;
+  }
   const token = bearerToken(request);
-  if (token) {
+  if (!testAuth && token) {
     try {
       auth = await verifyAccessToken(token);
     } catch (error) {
@@ -319,7 +343,7 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
     }
   }
 
-  const context: RequestContext = { origin, auth, challenge: null, authRequired: false };
+  const context: RequestContext = { origin, auth, challenge: null, authRequired: false, testAuth };
   const sse = prefersSse(request);
 
   if (Array.isArray(payload)) {
