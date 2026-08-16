@@ -64,9 +64,13 @@ export async function updateImageRow(db: Db, id: number, patch: Record<string, u
 }
 
 export async function deleteImageRow(db: Db, row: Pick<ImageRow, "id" | "storage_path">) {
-  await removeStorageObjects(db, [row.storage_path]);
+  // Queue first: the object must never become unreachable garbage because the
+  // row disappeared before the storage delete was recorded.
+  await queueStorageDeletion(db, [row.storage_path]);
   await db.from("image_messages").delete().eq("id", row.id);
+  await removeStorageObjects(db, [row.storage_path]);
 }
+
 
 export async function findDuplicate(
   db: Db,
