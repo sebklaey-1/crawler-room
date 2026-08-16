@@ -69,7 +69,11 @@ for (const step of [
   ["custom access token hook enabled", "ROOM_SUBMIT_TOKEN_HOOK_READY"],
   ["anonymous sign-in policy reviewed", "ROOM_SUBMIT_ANON_POLICY_READY"],
 ] as const) {
-  item(step[0], envSet(step[1]), envSet(step[1]) ? "confirmed" : `manual — confirm and set ${step[1]}`);
+  item(
+    step[0],
+    envSet(step[1]),
+    envSet(step[1]) ? "confirmed" : `manual — confirm and set ${step[1]}`,
+  );
 }
 
 /* ------------------------------- 3. cleanup cron ----------------------------- */
@@ -112,7 +116,11 @@ for (const step of [
   ["OpenAI portal metadata submitted (name «Crawler Room»)", "ROOM_SUBMIT_PORTAL_METADATA_READY"],
   ["reviewer test account / walkthrough handed over", "ROOM_SUBMIT_REVIEWER_ASSETS_READY"],
 ] as const) {
-  item(step[0], envSet(step[1]), envSet(step[1]) ? "confirmed" : `manual — confirm and set ${step[1]}`);
+  item(
+    step[0],
+    envSet(step[1]),
+    envSet(step[1]) ? "confirmed" : `manual — confirm and set ${step[1]}`,
+  );
 }
 
 /* ---------------------------------- report ----------------------------------- */

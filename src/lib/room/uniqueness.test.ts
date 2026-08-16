@@ -156,7 +156,10 @@ suite("global handle and alias claims", () => {
       room_name: "Squatter's Room",
     });
     expect(error).not.toBeNull();
-    await client.from("rooms").delete().eq("id", (room as { id: string }).id);
+    await client
+      .from("rooms")
+      .delete()
+      .eq("id", (room as { id: string }).id);
   });
 
   it("gives two parallel first-time provisionings different names", async () => {
