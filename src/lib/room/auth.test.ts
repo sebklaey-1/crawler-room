@@ -75,7 +75,11 @@ describe("authentication policy", () => {
     );
     const body = await response.json();
     expect(body.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
+    const challenge = body.result._meta["mcp/www_authenticate"];
+    expect(challenge).toContain('error="invalid_token"');
+    expect(challenge).toContain("error_description=");
   });
+
 
   it("rejects an unsupported protocol version", async () => {
     const response = await post(
