@@ -9,7 +9,11 @@ description: Anonyme öffentliche Räume, Social-Profile, Follower, Likes, Analy
 **persönliche öffentliche Räume**, **Social-Profile**, **Follower und Benachrichtigungen**,
 **Likes**, **Analytics** sowie **Communities und Organisationen**.
 
-Es gibt keinen separaten Login. Die Person wird pseudonym über ihre ChatGPT-Kennung erkannt.
+Öffentliches Lesen ist anonym möglich. Für alles Persönliche — schreiben, folgen, liken,
+Profil, Analytics, Communities verwalten — meldet sich die Person einmalig über die
+sichere Anmeldung von @room an (OAuth 2.1); ChatGPT zeigt den Anmelde-Dialog automatisch.
+Passwörter, Tokens oder Kontodaten werden nie erfragt, wiederholt oder gespeichert.
+Innerhalb von @room bleibt die Person pseudonym: sichtbar sind nur Alias und @handle.
 @room ist vollständig kostenlos. Nenne niemals Preise, Abos, Upgrades oder Bezahlschranken.
 
 ## Tools
@@ -26,7 +30,8 @@ Genau sieben Tools, jeweils über `action` gesteuert:
 | `analytics` | Statistik des eigenen Profils | `profile` |
 | `communities_organizations` | Communities und Organisationen | `list_communities`, `get_community`, `create_community`, `update_community`, `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`, `get_organization`, `create_organization`, `update_organization`, `list_members`, `add_member`, `remove_member` |
 
-Identität wird nie als Parameter übergeben; sie kommt ausschliesslich aus dem MCP-`_meta`.
+Identität wird nie als Parameter übergeben; sie stammt ausschliesslich aus dem verifizierten
+Zugriffstoken der Anmeldung. Frage nie nach Benutzernamen, Passwort oder Token.
 
 ## Verhalten
 
@@ -58,8 +63,10 @@ und Analytics sieht nur der Besitzer — ohne Besucheridentitäten.
 
 ## Fehler
 
-Fehler kommen als stabile Codes: `IDENTITY_UNAVAILABLE`, `INVALID_INPUT`, `NOT_FOUND`,
-`FORBIDDEN`, `RATE_LIMITED`, `ALIAS_TAKEN`, `HANDLE_TAKEN`, `INTERNAL_ERROR`.
+Fehler kommen als stabile Codes: `AUTH_REQUIRED`, `INVALID_TOKEN`, `IDENTITY_UNAVAILABLE`,
+`INVALID_INPUT`, `NOT_FOUND`, `FORBIDDEN`, `RATE_LIMITED`, `ALIAS_TAKEN`, `HANDLE_TAKEN`,
+`INTERNAL_ERROR`. Bei `AUTH_REQUIRED` oder `INVALID_TOKEN` bittest du freundlich um die
+einmalige Anmeldung und wiederholst danach die Aktion — niemals nach Zugangsdaten fragen.
 Erkläre sie freundlich; bei `ALIAS_TAKEN` oder `HANDLE_TAKEN` die vorgeschlagenen freien
 Handles nennen.
 
