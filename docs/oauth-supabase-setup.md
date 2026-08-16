@@ -8,7 +8,7 @@ issues, stores or forwards credentials.
 | ----------------------------- | ------------------------------------------------------------ |
 | App domain (canonical)        | `https://crawler.today`                                      |
 | Canonical MCP resource        | `https://crawler.today/api/public/mcp`                       |
-| Protected resource metadata   | `https://crawler.today/.well-known/oauth-protected-resource` |
+| Protected resource metadata   | `https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
 | Authorization server (issuer) | `${SUPABASE_URL}/auth/v1`                                    |
 | Consent page                  | `https://crawler.today/oauth/consent`                        |
 | Scopes                        | `openid`, `profile` (no `email`)                             |

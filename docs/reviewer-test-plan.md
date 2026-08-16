@@ -33,7 +33,7 @@ the normal ChatGPT connector flow; the consent screen creates the session.
 
 | #   | Prompt / call                                                            | Expected behaviour                                                                                                                                      |
 | --- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| N1  | `universal_room` `send` without a token                                  | `isError: true`, code `AUTH_REQUIRED`, `WWW-Authenticate` challenge with `resource_metadata=https://crawler.today/.well-known/oauth-protected-resource` |
+| N1  | `universal_room` `send` without a token                                  | `isError: true`, code `AUTH_REQUIRED`, `WWW-Authenticate` challenge with `resource_metadata=https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
 | N2  | `analytics` `profile` without a token                                    | `AUTH_REQUIRED`, no data                                                                                                                                |
 | N3  | `profile` `set_image` with `image_url: "http://127.0.0.1/x.png"`         | `INVALID_INPUT`; no request leaves the server, no host or IP in the message                                                                             |
 | N4  | Unknown action, e.g. `likes` action `delete`                             | `INVALID_INPUT` from schema validation, no side effect                                                                                                  |

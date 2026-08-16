@@ -43,7 +43,7 @@ Public reads are side-effect free.
   `room_scopes` covering `openid` and `profile`.
 - Fail-closed: any missing or mismatching claim rejects the call with a
   RFC 9728 `WWW-Authenticate` challenge pointing at
-  `https://crawler.today/.well-known/oauth-protected-resource`.
+  `https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp`.
 - Identity is `auth_user_hash` = HMAC(secret, `"auth:" + sub`). Raw subjects,
   emails and tokens are never stored.
 

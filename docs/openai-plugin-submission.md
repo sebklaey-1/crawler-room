@@ -23,7 +23,7 @@ nothing is aspirational.
 | Safety and content rules               | `https://crawler.today/safety`                               |
 | Data deletion                          | `https://crawler.today/data-deletion`                        |
 | OAuth consent                          | `https://crawler.today/oauth/consent`                        |
-| Protected-resource metadata (RFC 9728) | `https://crawler.today/.well-known/oauth-protected-resource` |
+| Protected-resource metadata (RFC 9728) | `https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
 | Domain verification                    | `https://crawler.today/.well-known/openai-apps-challenge`    |
 
 All five mandatory pages are server-rendered, publicly reachable without authentication, and
