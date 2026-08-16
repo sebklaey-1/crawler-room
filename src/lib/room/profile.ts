@@ -293,10 +293,12 @@ export async function updateProfile(db: Db, subjectHash: string, patch: ProfileP
   await ensurePersonalRoom(db, subjectHash);
   const update: Record<string, unknown> = {};
 
+  // The chosen public user name is globally unique and is claimed atomically.
+  // Changing it never changes the handle.
   if (typeof patch.display_name === "string") {
     const clean = sanitizeAlias(patch.display_name);
     if (!clean) throw roomError("INVALID_INPUT");
-    update["room_name"] = clean;
+    await setDisplayName(db, subjectHash, clean);
   }
   if (typeof patch.bio === "string") {
     update["description"] = patch.bio.trim().slice(0, BIO_MAX) || null;
