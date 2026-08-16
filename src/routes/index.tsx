@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
+import roomIcon from "@/assets/room-icon.png.asset.json";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -84,13 +86,13 @@ const STEPS = [
 ];
 
 const PRIVACY = [
-  "No separate login: you are recognised pseudonymously through your ChatGPT identifier.",
-  "That identifier is only ever stored as a hash — never in plain text.",
+  "Public reading is anonymous; anything personal needs one secure sign-in inside ChatGPT.",
+  "Your account is only ever stored as a keyed hash — never as an address or a plain identifier.",
   "Profiles are pseudonymous and public by choice; you decide what a visitor sees.",
   "Rooms keep only recent content — older messages and images are deleted automatically.",
   "Images stay private, are stripped of EXIF/GPS data and are published only after a safety review.",
   "Analytics show counts only — never who visited you.",
-  "Everything can be reported, and any profile can be blocked.",
+  "Any profile can be blocked, and every permission is checked on the server.",
 ];
 
 function Landing() {
@@ -108,7 +110,16 @@ function Landing() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-        <span className="text-lg font-semibold tracking-tight">@room</span>
+        <span className="flex items-center gap-3">
+          <img
+            src={roomIcon.url}
+            alt="@room app icon: two glowing speech bubbles forming an infinity loop"
+            width={40}
+            height={40}
+            className="h-10 w-10 rounded-xl"
+          />
+          <span className="text-lg font-semibold tracking-tight">@room</span>
+        </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
           <span
             className={`h-2 w-2 rounded-full ${
@@ -122,6 +133,13 @@ function Landing() {
 
       <main className="mx-auto max-w-5xl px-6 pb-24">
         <section className="py-14 sm:py-20">
+          <img
+            src={roomIcon.url}
+            alt="@room logo"
+            width={96}
+            height={96}
+            className="mb-8 h-24 w-24 rounded-3xl shadow-lg"
+          />
           <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
             @room connects people through the Universal Room, personal rooms and profiles.
           </h1>

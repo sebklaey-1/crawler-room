@@ -70,25 +70,37 @@ export function authIssuer(): string {
   return base ? `${base}/auth/v1` : "";
 }
 
+/** The one and only production origin of @room. */
+export const PRODUCTION_ORIGIN = "https://crawler.today";
+/** The one and only production MCP resource identifier. */
+export const PRODUCTION_MCP_RESOURCE = `${PRODUCTION_ORIGIN}/api/public/mcp`;
+
 /**
  * Canonical MCP resource identifier.
  *
- * Production MUST configure `ROOM_MCP_RESOURCE` with the exact https URL; the
- * value never derives from a request header, so a spoofed `Host` can never
- * point the protected-resource metadata at a foreign resource. Only the
- * automated test harness may fall back to the request origin.
+ * The value never derives from a request header, so a spoofed `Host` or
+ * `X-Forwarded-Host` can never point discovery or a challenge at a foreign
+ * resource. `ROOM_MCP_RESOURCE` may only ever repeat the exact production
+ * value; anything else fails closed. Only the automated test harness may fall
+ * back to the request origin.
  */
 export function canonicalResource(requestOrigin?: string): string {
   const configured = (process.env["ROOM_MCP_RESOURCE"] ?? "").trim().replace(/\/+$/, "");
   if (configured) {
-    if (!/^https:\/\//i.test(configured)) throw roomError("INTERNAL_ERROR");
+    if (configured !== PRODUCTION_MCP_RESOURCE) throw roomError("INTERNAL_ERROR");
     return configured;
   }
   if (process.env["NODE_ENV"] === "test" && requestOrigin) {
     return `${requestOrigin.replace(/\/+$/, "")}/api/public/mcp`;
   }
-  throw roomError("INTERNAL_ERROR");
+  return PRODUCTION_MCP_RESOURCE;
 }
+
+/** Fixed URL of the protected-resource metadata document. */
+export function resourceMetadataUrl(requestOrigin?: string): string {
+  return `${new URL(canonicalResource(requestOrigin)).origin}/.well-known/oauth-protected-resource`;
+}
+
 
 let verifyClient: SupabaseClient | null = null;
 
@@ -266,13 +278,19 @@ export function protectedResourceMetadata(requestOrigin?: string) {
   };
 }
 
+/**
+ * Bearer challenge. The `resource_metadata` URL always comes from the
+ * canonical resource — in production `https://crawler.today/...` — and never
+ * from the (spoofable) request origin. `requestOrigin` is honoured only by the
+ * test harness.
+ */
 export function challengeHeader(
-  origin: string,
+  requestOrigin?: string,
   error?: "invalid_token" | "insufficient_scope",
   description?: string,
 ): string {
-  const metadata = `${origin}/.well-known/oauth-protected-resource`;
-  const parts = [`Bearer resource_metadata="${metadata}"`];
+  const parts = [`Bearer resource_metadata="${resourceMetadataUrl(requestOrigin)}"`];
+
   if (error) parts.push(`error="${error}"`);
   if (description) parts.push(`error_description="${description.replace(/"/g, "'")}"`);
   return parts.join(", ");

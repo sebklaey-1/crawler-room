@@ -19,6 +19,26 @@ const COMMUNITY_TEXT_RETENTION = 100;
 
 export type OrgRole = "owner" | "admin" | "member";
 
+/**
+ * Database roles allowed by the `organization_members.role` check constraint.
+ * Ownership itself lives on `organizations.owner_account_id`; an optional
+ * owner membership row is stored as `organization_admin`.
+ */
+export type DbOrgRole = "member" | "moderator" | "organization_admin";
+
+/** Public role → storable database role. Never writes `owner` or `admin`. */
+export function toDbRole(role: OrgRole): DbOrgRole {
+  return role === "member" ? "member" : "organization_admin";
+}
+
+/** Stored database role → public role. Legacy `moderator` reads as `admin`. */
+export function fromDbRole(role: string | null | undefined): OrgRole | null {
+  if (!role) return null;
+  if (role === "organization_admin" || role === "moderator" || role === "admin") return "admin";
+  return "member";
+}
+
+
 export function slugify(raw: string): string {
   const slug = String(raw ?? "")
     .toLowerCase()
@@ -51,11 +71,12 @@ export function canManage(input: {
 
 /** Every pseudonymous subject can own organizations through a lazy account row. */
 export async function ensureAccount(db: Db, subjectHash: string): Promise<string> {
-  const { data: identity } = await db
+  const { data: identity, error: readError } = await db
     .from("anonymous_identities")
     .select("subject_hash, account_id, custom_alias")
     .eq("subject_hash", subjectHash)
     .maybeSingle();
+  if (readError) throw roomError("INTERNAL_ERROR");
 
   const existing = (identity as any)?.account_id as string | null | undefined;
   if (existing) return existing;
@@ -65,25 +86,29 @@ export async function ensureAccount(db: Db, subjectHash: string): Promise<string
   const { error } = await db.from("accounts").insert({ id, display_alias: alias });
   if (error) throw roomError("INTERNAL_ERROR");
 
-  if (identity) {
-    await db
-      .from("anonymous_identities")
-      .update({ account_id: id })
-      .eq("subject_hash", subjectHash);
-  } else {
-    await db.from("anonymous_identities").insert({ subject_hash: subjectHash, account_id: id });
+  const linked = identity
+    ? await db.from("anonymous_identities").update({ account_id: id }).eq("subject_hash", subjectHash)
+    : await db.from("anonymous_identities").insert({ subject_hash: subjectHash, account_id: id });
+
+  if ((linked as any)?.error) {
+    // Unique race: another request created the identity or account link first.
+    const raced = await accountIdFor(db, subjectHash);
+    if (!raced) throw roomError("INTERNAL_ERROR");
+    return raced;
   }
   return id;
 }
 
 export async function accountIdFor(db: Db, subjectHash: string): Promise<string | null> {
-  const { data } = await db
+  const { data, error } = await db
     .from("anonymous_identities")
     .select("account_id")
     .eq("subject_hash", subjectHash)
     .maybeSingle();
+  if (error) throw roomError("INTERNAL_ERROR");
   return ((data as any)?.account_id as string | null) ?? null;
 }
+
 
 async function aliasFor(db: Db, subjectHash: string): Promise<string> {
   return (await getCustomAlias(db, subjectHash)) ?? generateAlias(`${subjectHash}:member`);
@@ -118,23 +143,24 @@ export async function orgRoleOf(
   accountId: string | null,
 ): Promise<OrgRole | null> {
   if (!accountId) return null;
-  const { data: org } = await db
+  const { data: org, error: orgError } = await db
     .from("organizations")
     .select("owner_account_id")
     .eq("id", organizationId)
     .maybeSingle();
+  if (orgError) throw roomError("INTERNAL_ERROR");
   if ((org as any)?.owner_account_id === accountId) return "owner";
 
-  const { data } = await db
+  const { data, error } = await db
     .from("organization_members")
     .select("role")
     .eq("organization_id", organizationId)
     .eq("account_id", accountId)
     .maybeSingle();
-  const role = (data as any)?.role as string | undefined;
-  if (role === "owner" || role === "admin" || role === "member") return role;
-  return role ? "member" : null;
+  if (error) throw roomError("INTERNAL_ERROR");
+  return fromDbRole((data as any)?.role as string | undefined);
 }
+
 
 function serializeOrg(row: any, role: OrgRole | null) {
   return {
@@ -171,9 +197,17 @@ export async function createOrganization(
     .single();
   if (error || !data) throw roomError("INTERNAL_ERROR");
 
-  await db
+  // The owner is defined by `organizations.owner_account_id`; the membership
+  // row must use a role the database constraint allows.
+  const { error: memberError } = await db
     .from("organization_members")
-    .insert({ organization_id: (data as any).id, account_id: accountId, role: "owner" });
+    .insert({
+      organization_id: (data as any).id,
+      account_id: accountId,
+      role: toDbRole("admin"),
+    });
+  if (memberError) throw roomError("INTERNAL_ERROR");
+
 
   return serializeOrg(data, "owner");
 }
@@ -323,21 +357,24 @@ export async function listOrgMembers(db: Db, subjectHash: string, reference: str
   const accountId = await accountIdFor(db, subjectHash);
   const role = await orgRoleOf(db, org.id, accountId);
 
-  const { data } = await db
+  const { data, error } = await db
     .from("organization_members")
     .select("account_id, role, created_at, accounts(display_alias)")
     .eq("organization_id", org.id)
     .order("created_at", { ascending: true })
     .limit(200);
+  if (error) throw roomError("INTERNAL_ERROR");
 
   return {
     organization: serializeOrg(org, role),
     members: ((data ?? []) as any[]).map((row) => ({
       alias: row.accounts?.display_alias ?? "Mitglied",
-      role: row.account_id === org.owner_account_id ? "owner" : (row.role as string),
+      role:
+        row.account_id === org.owner_account_id ? "owner" : (fromDbRole(row.role) ?? "member"),
       since: row.created_at as string,
       is_owner: row.account_id === org.owner_account_id,
     })),
+
   };
 }
 
@@ -359,24 +396,28 @@ export async function addOrgMember(
 
   const targetSubject = await subjectHashForHandle(db, username);
   const targetAccount = await ensureAccount(db, targetSubject);
+  // Ownership is never granted through a membership row.
   const safeRole: OrgRole = role === "owner" ? "admin" : role;
+  const dbRole = toDbRole(safeRole);
 
-  const { data: existing } = await db
+  const { data: existing, error: readError } = await db
     .from("organization_members")
     .select("id")
     .eq("organization_id", org.id)
     .eq("account_id", targetAccount)
     .maybeSingle();
+  if (readError) throw roomError("INTERNAL_ERROR");
 
   if (existing) {
-    await db
+    const { error } = await db
       .from("organization_members")
-      .update({ role: safeRole })
+      .update({ role: dbRole })
       .eq("id", (existing as any).id);
+    if (error) throw roomError("INTERNAL_ERROR");
   } else {
     const { error } = await db
       .from("organization_members")
-      .insert({ organization_id: org.id, account_id: targetAccount, role: safeRole });
+      .insert({ organization_id: org.id, account_id: targetAccount, role: dbRole });
     if (error) throw roomError("INTERNAL_ERROR");
   }
 
@@ -386,6 +427,7 @@ export async function addOrgMember(
     alias: await aliasFor(db, targetSubject),
     organization: serializeOrg(org, myRole),
   };
+
 }
 
 export async function removeOrgMember(
@@ -410,11 +452,13 @@ export async function removeOrgMember(
     throw roomError("FORBIDDEN", "Der Besitzer der Organisation kann nicht entfernt werden.");
   }
 
-  await db
+  const { error: deleteError } = await db
     .from("organization_members")
     .delete()
     .eq("organization_id", org.id)
     .eq("account_id", targetAccount);
+  if (deleteError) throw roomError("INTERNAL_ERROR");
+
 
   return {
     removed: true,

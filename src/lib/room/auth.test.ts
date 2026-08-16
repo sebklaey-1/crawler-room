@@ -5,6 +5,8 @@ import {
   protectedResourceMetadata,
   challengeHeader,
   canonicalResource,
+  resourceMetadataUrl,
+  PRODUCTION_MCP_RESOURCE,
   verifyAccessToken,
   __setTestClaimsVerifier,
 } from "./auth";
@@ -199,18 +201,42 @@ describe("protected resource discovery", () => {
     expect(metadata.bearer_methods_supported).toEqual(["header"]);
   });
 
-  it("prefers the configured resource over any request origin", () => {
-    process.env["ROOM_MCP_RESOURCE"] = "https://zinga-room.lovable.app/api/public/mcp";
+  it("prefers the configured production resource over any request origin", () => {
+    process.env["ROOM_MCP_RESOURCE"] = PRODUCTION_MCP_RESOURCE;
     try {
-      expect(canonicalResource("https://evil.test")).toBe(
-        "https://zinga-room.lovable.app/api/public/mcp",
-      );
+      expect(PRODUCTION_MCP_RESOURCE).toBe("https://crawler.today/api/public/mcp");
+      expect(canonicalResource("https://evil.test")).toBe(PRODUCTION_MCP_RESOURCE);
       expect(protectedResourceMetadata("https://evil.test").resource).toBe(
-        "https://zinga-room.lovable.app/api/public/mcp",
+        PRODUCTION_MCP_RESOURCE,
+      );
+      expect(challengeHeader("https://evil.test")).toBe(
+        'Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource"',
       );
     } finally {
       delete process.env["ROOM_MCP_RESOURCE"];
     }
+  });
+
+  it("rejects the retired zinga resource and any foreign configuration", () => {
+    for (const wrong of [
+      "https://zinga-room.lovable.app/api/public/mcp",
+      "https://evil.test/api/public/mcp",
+      "http://crawler.today/api/public/mcp",
+    ]) {
+      process.env["ROOM_MCP_RESOURCE"] = wrong;
+      try {
+        expect(() => canonicalResource("https://crawler.today")).toThrow();
+      } finally {
+        delete process.env["ROOM_MCP_RESOURCE"];
+      }
+    }
+  });
+
+  it("falls back to the production resource when nothing is configured", () => {
+    expect(canonicalResource()).toBe(PRODUCTION_MCP_RESOURCE);
+    expect(resourceMetadataUrl()).toBe(
+      "https://crawler.today/.well-known/oauth-protected-resource",
+    );
   });
 
   it("builds a spec compliant challenge", () => {

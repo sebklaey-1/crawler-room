@@ -23,12 +23,13 @@ The server exposes exactly seven grouped tools, each driven by an `action` param
 
 Endpoint (Streamable HTTP): `POST /api/public/mcp`.
 
-Identity is never a tool argument. The caller is derived from the MCP `_meta`
-`openai/subject` value and stored only as an HMAC hash.
+Identity is never a tool argument. Public reads stay anonymous; every personal or
+writing action requires an OAuth 2.1 access token bound to the canonical resource
+`https://crawler.today/api/public/mcp`. Only an HMAC hash of the account is stored.
 
 ## Architecture
 
-- **TanStack Start** (React 19, Vite 7) — landing page plus server routes.
+- **TanStack Start** (React 19, Vite 8) — landing page plus server routes.
 - **Lovable Cloud (Postgres)** — all persistence, accessed only from server code.
 - `src/lib/room/` — domain layer:
   - `mcp.ts` — JSON-RPC / Streamable HTTP transport and server instructions.
