@@ -424,7 +424,7 @@ export async function resolveReport(
   resolution?: string,
 ): Promise<{ receipt: string; status: ReportStatus }> {
   if (!(await isModerator(db, moderatorSubjectHash))) throw roomError("FORBIDDEN");
-  if (!REPORT_STATUSES.includes(decision) || decision === "received")
+  if (!(["reviewing", "actioned", "dismissed"] as string[]).includes(decision))
     throw roomError("INVALID_INPUT");
 
   const patch: Record<string, unknown> = {
