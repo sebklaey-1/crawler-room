@@ -201,9 +201,38 @@ function need<T>(value: T | undefined | null, message: string): T {
   return value;
 }
 
+/** Trimmed free text. */
+function text(max: number) {
+  return z.string().trim().max(max);
+}
+
+/** Trimmed name/title: whitespace-only input is rejected. */
+function name(max: number) {
+  return z.string().trim().min(1, "Der Name darf nicht leer sein.").max(max);
+}
+
+/** Empty or a real http/https URL — never javascript:, data: or file:. */
+export function isSafeWebsite(value: string): boolean {
+  const raw = value.trim();
+  if (!raw) return true;
+  try {
+    const url = new URL(raw);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+const websiteField = z
+  .string()
+  .trim()
+  .max(300)
+  .refine(isSafeWebsite, "Die Website muss mit http:// oder https:// beginnen.");
+
 function tag<T extends Json>(action: string, result: T): Json {
   return { action, ...result };
 }
+
 
 /* ============================== 1. universal ============================== */
 
