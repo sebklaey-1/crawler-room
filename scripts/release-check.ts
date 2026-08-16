@@ -120,10 +120,17 @@ function envSet(name: string): boolean {
   return Boolean(value && value.trim());
 }
 
+// The canonical resource lives in source (`PRODUCTION_MCP_RESOURCE`). An env
+// override is tolerated only when it carries the exact same URL.
+const configuredResource = (process.env["ROOM_MCP_RESOURCE"] ?? "").trim();
 check(
-  "ROOM_MCP_RESOURCE configured",
-  process.env["ROOM_MCP_RESOURCE"]?.trim() === CANONICAL_RESOURCE,
-  process.env["ROOM_MCP_RESOURCE"] ? "set" : "missing",
+  "MCP resource canonical",
+  configuredResource === "" || configuredResource === CANONICAL_RESOURCE,
+  configuredResource === ""
+    ? "source of truth in src/lib/room/auth.ts"
+    : configuredResource === CANONICAL_RESOURCE
+      ? "env matches canonical resource"
+      : `env ROOM_MCP_RESOURCE «${configuredResource}» conflicts with ${CANONICAL_RESOURCE}`,
 );
 for (const secret of ["SUBJECT_HASH_SECRET", "MESSAGE_ID_SECRET"]) {
   check(`${secret} configured`, envSet(secret), envSet(secret) ? "set" : "missing");
