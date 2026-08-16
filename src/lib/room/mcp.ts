@@ -16,6 +16,7 @@
  *   protocol-version negotiation and Origin validation (DNS rebinding).
  */
 import {
+  PRODUCTION_ORIGIN,
   authSubjectHash,
   bearerToken,
   challengeHeader,
