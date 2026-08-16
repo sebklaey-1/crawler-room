@@ -8,6 +8,7 @@
  * Only server-issued signed image URLs are emitted as active Markdown images.
  */
 import { quoteUgcLine, sanitizeUgcLabel, sanitizeUgcText, UGC_BANNER } from "./ugc";
+import type { DailyPoint, ImageView, MessageView, ProfileView, SummaryResult } from "./viewtypes";
 
 /** Escapes a URL and only allows https targets produced by the server. */
 function safeUrl(value: unknown): string | null {
@@ -21,8 +22,8 @@ function safeUrl(value: unknown): string | null {
   }
 }
 
-export function profileCard(result: any): string {
-  const p = result.profile ?? {};
+export function profileCard(result: SummaryResult): string {
+  const p: ProfileView = result.profile ?? {};
   if (p.visibility === "private" && !p.is_owner)
     return String(result.message ?? "Dieses Profil ist privat.");
 
@@ -57,14 +58,14 @@ export function profileCard(result: any): string {
       .join(" | ")} |`,
   );
 
-  const messages = (result.tabs?.messages ?? []);
-  const images = (result.tabs?.images ?? []);
+  const messages: MessageView[] = result.tabs?.messages ?? [];
+  const images: ImageView[] = result.tabs?.images ?? [];
 
   parts.push(
     `### 💬 Nachrichten\n${
       messages.length
         ? `${UGC_BANNER}\n${messages
-            .map((m) => `${quoteUgcLine(m.alias, m.text)}  ♥ ${m.likes}`)
+            .map((m: MessageView) => `${quoteUgcLine(m.alias ?? "", m.text ?? "")}  ♥ ${m.likes ?? 0}`)
             .join("\n")}`
         : "_Noch keine Nachrichten._"
     }`,
@@ -73,9 +74,9 @@ export function profileCard(result: any): string {
   if (images.length) {
     parts.push(
       `### 🖼️ Bilder\n${images
-        .map((i) => {
+        .map((i: ImageView) => {
           const url = safeUrl(i.url);
-          const caption = `_${sanitizeUgcLabel(i.alias)} · ♥ ${i.likes}_`;
+          const caption = `_${sanitizeUgcLabel(i.alias ?? "")} · ♥ ${i.likes ?? 0}_`;
           return url ? `![Bild](${url})\n${caption}` : caption;
         })
         .join("\n\n")}`,
@@ -91,7 +92,7 @@ function bar(value: number, max: number, width = 20): string {
   return "█".repeat(filled) + "░".repeat(Math.max(0, width - filled));
 }
 
-export function analyticsCard(result: any): string {
+export function analyticsCard(result: SummaryResult): string {
   const metrics: Array<[string, number]> = [
     ["Profilaufrufe", result.profile_views ?? 0],
     ["Eindeutige Besuche", result.unique_visitors ?? 0],
@@ -109,14 +110,14 @@ export function analyticsCard(result: any): string {
     .map(([label, value]) => `${label.padEnd(20, " ")} ${bar(value, max)} ${value}`)
     .join("\n");
 
-  const daily = (result.daily ?? []);
-  const dayValues = daily.map((entry) => Number(entry.profile_view ?? 0));
+  const daily: DailyPoint[] = result.daily ?? [];
+  const dayValues = daily.map((entry: DailyPoint) => Number(entry.profile_view ?? 0));
   const dayMax = Math.max(1, ...dayValues);
   const trend = daily.length
     ? daily
         .slice(-14)
         .map(
-          (entry, index) =>
+          (entry: DailyPoint, index: number) =>
             `${String(entry.day).slice(5)}  ${bar(Number(entry.profile_view ?? 0), dayMax, 16)} ${
               dayValues.slice(-14)[index] ?? 0
             }`,
@@ -125,7 +126,7 @@ export function analyticsCard(result: any): string {
     : "Noch keine Daten in diesem Zeitraum.";
 
   return [
-    `## 📊 Statistik für @${sanitizeUgcLabel(result.handle)} · ${result.range_days} Tage`,
+    `## 📊 Statistik für @${sanitizeUgcLabel(result.handle ?? "")} · ${result.range_days ?? 0} Tage`,
     "```text",
     chart,
     "```",

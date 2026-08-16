@@ -101,10 +101,11 @@ function newRequestId(): string {
 }
 
 /** Only the literal action discriminator is log-safe; anything else is dropped. */
-function safeAction(params: any, tool: SurfaceTool): string | undefined {
-  const value = params?.arguments?.action;
+function safeAction(params: JsonRpcParams, tool: SurfaceTool): string | undefined {
+  const args = params?.["arguments"] as { action?: unknown } | undefined;
+  const value = args?.action;
   if (typeof value !== "string") return undefined;
-  const allowed = ((tool.inputSchema)?.properties?.action?.enum ?? []) as string[];
+  const allowed = actionEnumOf(tool);
   return allowed.includes(value) ? value : undefined;
 }
 
@@ -206,7 +207,7 @@ async function callTool(params: any, context: RequestContext) {
 
 function describeTool(tool: SurfaceTool) {
   const publicActions = PUBLIC_ACTIONS[tool.name] ?? [];
-  const allActions = ((tool.inputSchema)?.properties?.action?.enum ?? []) as string[];
+  const allActions = actionEnumOf(tool);
   return {
     name: tool.name,
     title: tool.title,

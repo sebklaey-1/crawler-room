@@ -78,6 +78,7 @@ import { listBlocks, unblockPerson } from "./profile";
 import { quoteUgcLine, sanitizeUgcLabel, sanitizeUgcText, ugcBlock } from "./ugc";
 import { findRoomByHandle, normalizeHandleInput } from "./personal";
 import { profileCard, analyticsCard } from "./mcp.render";
+import type { ImageView, LabelledEntry, MessageView, RoomView, SummaryResult } from "./viewtypes";
 import { publicRoomView } from "./tools.personal";
 import { publicProfileView } from "./tools.profile";
 
@@ -93,7 +94,7 @@ export interface SurfaceTool {
   /** MCP security schemes advertised in tools/list (noauth and/or oauth2). */
   securitySchemes?: Json[];
   handler: (input: unknown, meta: McpMeta) => Promise<Json>;
-  summary: (result: any) => string;
+  summary: (result: SummaryResult) => string;
 }
 
 /**
@@ -403,7 +404,7 @@ async function universalMessages(
   const rows = (data ?? []);
   const hasMore = rows.length > limit;
   const page = rows.slice(0, limit);
-  const nextCursor = hasMore && page.length ? String(page[page.length - 1].id) : null;
+  const nextCursor = hasMore && page.length ? String(page[page.length - 1]?.id ?? "") : null;
 
   const messages = [];
   for (const row of page.reverse()) {
@@ -1171,22 +1172,22 @@ async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> 
  * Markdown, HTML and control characters from other people are escaped so they
  * cannot inject images, links or instructions into the summary.
  */
-function messageLines(messages: any[] | undefined): string {
+function messageLines(messages: MessageView[] | undefined): string {
   if (!messages?.length) return "_Noch keine Nachrichten._";
-  return ugcBlock(messages.map((message) => quoteUgcLine(message.alias, message.text)));
+  return ugcBlock(messages.map((message) => quoteUgcLine(message.alias ?? "", message.text ?? "")));
 }
 
 /**
  * Only the server-issued signed storage URL is rendered as an image; the alt
  * text and the alias come from other people and stay escaped.
  */
-function imageLines(images: any[] | undefined): string {
+function imageLines(images: ImageView[] | undefined): string {
   const shown = (images ?? []).filter((image) => typeof image.url === "string" && image.url);
   if (!shown.length) return "";
   return `\n\n${shown
     .map(
       (image) =>
-        `![Bild](${encodeURI(String(image.url))})\n_${sanitizeUgcLabel(image.alias)}_${
+        `![Bild](${encodeURI(String(image.url))})\n_${sanitizeUgcLabel(image.alias ?? "")}_${
           image.alt_text ? `\n${sanitizeUgcText(image.alt_text, 200)}` : ""
         }`,
     )
@@ -1194,7 +1195,7 @@ function imageLines(images: any[] | undefined): string {
 }
 
 /** Report confirmations never echo the reported content. */
-function reportSummary(result: any): string {
+function reportSummary(result: SummaryResult): string {
   return result.already_reported
     ? "Diese Meldung liegt bereits vor und wird geprüft."
     : `Meldung eingegangen (Status: ${result.status}). Ein Mensch prüft sie. Inhalte werden dadurch nicht automatisch entfernt.`;
@@ -1374,7 +1375,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     handler: publicRoomHandler,
     summary: (result) => {
       if (result.reported) return reportSummary(result);
-      const room = result.room ?? {};
+      const room: RoomView = result.room ?? {};
       const head = room.room_name
         ? `## ${room.room_name}\n${room.followers ?? 0} followers · ${room.people_here_now ?? 0} people here now`
         : String(result.message ?? "Fertig.");
@@ -1445,8 +1446,8 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     summary: (result) => {
       if (result.reported) return reportSummary(result);
       if (result.blocks) {
-        const list = (result.blocks)
-          .map((entry) => `- @${entry.handle} (${sanitizeUgcLabel(entry.display_name)})`)
+        const list = result.blocks
+          .map((entry: LabelledEntry) => `- @${entry.handle} (${sanitizeUgcLabel(entry.display_name ?? "")})`)
           .join("\n");
         return list || "Du blockierst niemanden.";
       }
@@ -1498,20 +1499,20 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     handler: followersHandler,
     summary: (result) => {
       if (result.notifications) {
-        const list = (result.notifications)
-          .map((entry) => `- ${sanitizeUgcText(entry.message, 300)}`)
+        const list = result.notifications
+          .map((entry: LabelledEntry) => `- ${sanitizeUgcText(entry.message ?? "", 300)}`)
           .join("\n");
         return list || "Keine neuen Meldungen.";
       }
-      if (result.followers) {
-        const list = (result.followers)
-          .map((entry) => `- ${sanitizeUgcLabel(entry.alias)}`)
+      if (Array.isArray(result.followers)) {
+        const list = result.followers
+          .map((entry: LabelledEntry) => `- ${sanitizeUgcLabel(entry.alias ?? "")}`)
           .join("\n");
         return `${result.total ?? 0} Follower\n${list}`;
       }
       if (result.rooms) {
-        const list = (result.rooms)
-          .map((room) => `- @${sanitizeUgcLabel(room.handle)} (${room.followers} followers)`)
+        const list = result.rooms
+          .map((room: LabelledEntry) => `- @${sanitizeUgcLabel(room.handle ?? "")} (${room.followers ?? 0} followers)`)
           .join("\n");
         return list || "Du folgst noch keinem Raum.";
       }
@@ -1629,26 +1630,26 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     summary: (result) => {
       if (result.reported) return reportSummary(result);
       if (result.communities) {
-        const list = (result.communities)
+        const list = result.communities
           .map(
-            (entry) =>
-              `- **${sanitizeUgcLabel(entry.title)}** (${sanitizeUgcLabel(entry.slug ?? entry.id)}) · ${entry.members} Mitglieder`,
+            (entry: LabelledEntry) =>
+              `- **${sanitizeUgcLabel(entry.title ?? "")}** (${sanitizeUgcLabel(entry.slug ?? entry.id ?? "")}) · ${entry.members ?? 0} Mitglieder`,
           )
           .join("\n");
         return list || "Noch keine Communities.";
       }
       if (result.organizations) {
-        const list = (result.organizations)
+        const list = result.organizations
           .map(
-            (entry) =>
-              `- **${sanitizeUgcLabel(entry.name)}** (${sanitizeUgcLabel(entry.slug ?? entry.id)})`,
+            (entry: LabelledEntry) =>
+              `- **${sanitizeUgcLabel(entry.name ?? "")}** (${sanitizeUgcLabel(entry.slug ?? entry.id ?? "")})`,
           )
           .join("\n");
         return list || "Noch keine Organisationen.";
       }
       if (result.members) {
-        return (result.members)
-          .map((entry) => `- ${sanitizeUgcLabel(entry.alias)} · ${entry.role}`)
+        return result.members
+          .map((entry: LabelledEntry) => `- ${sanitizeUgcLabel(entry.alias ?? "")} · ${entry.role ?? ""}`)
           .join("\n");
       }
       if (result.messages) {
