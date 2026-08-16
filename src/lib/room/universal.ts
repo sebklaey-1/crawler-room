@@ -303,7 +303,8 @@ export async function sendUniversalMessage(
         duplicate: true,
         message: {
           id: await encodeMessageId(existing.id),
-          alias: membership.alias,
+          alias: await universalSelfLabel(db, subjectHash, membership.alias),
+
           text: existing.body,
           created_at: existing.created_at,
           is_self: true,
