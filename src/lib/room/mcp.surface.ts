@@ -1664,11 +1664,11 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       }
       if (result.community) {
         const community = result.community;
-        return `## ${sanitizeUgcLabel(community.title)}\n${sanitizeUgcText(community.description, 500)}\n\n${community.members} Mitglieder · ${community.people_here_now} gerade hier`;
+        return `## ${sanitizeUgcLabel(community.title ?? "")}\n${sanitizeUgcText(community.description ?? "", 500)}\n\n${community.members ?? 0} Mitglieder · ${community.people_here_now ?? 0} gerade hier`;
       }
       if (result.organization) {
         const org = result.organization;
-        return `## ${sanitizeUgcLabel(org.name)}\n${sanitizeUgcText(org.description, 500)}`;
+        return `## ${sanitizeUgcLabel(org.name ?? "")}\n${sanitizeUgcText(org.description ?? "", 500)}`;
       }
       return String(result.message ?? "Fertig.");
     },

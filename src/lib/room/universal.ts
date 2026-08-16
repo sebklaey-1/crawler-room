@@ -110,7 +110,7 @@ export async function universalFeed(
     });
   }
 
-  const nextCursor = hasMore && page.length ? String(page[0].id) : null;
+  const nextCursor = hasMore && page.length ? String(page[0]?.id ?? "") : null;
 
   const [trending, activeRooms, events, placements] = await Promise.all([
     trendingTopics(db),
@@ -155,14 +155,15 @@ export async function trendingTopics(db: Db, limit = 6) {
   const counts = new Map<string, { slug: string; display_name: string; count: number }>();
   for (const row of (data ?? [])) {
     const topic = embedded<EmbeddedShapes["topics"]>(row.topics);
-    if (!topic || topic.slug === "universal") continue;
-    const entry = counts.get(topic.slug) ?? {
-      slug: topic.slug,
-      display_name: topic.display_name,
+    const slug = topic?.slug;
+    if (!slug || slug === "universal") continue;
+    const entry = counts.get(slug) ?? {
+      slug,
+      display_name: topic.display_name ?? slug,
       count: 0,
     };
     entry.count += 1;
-    counts.set(topic.slug, entry);
+    counts.set(slug, entry);
   }
   return [...counts.values()].sort((a, b) => b.count - a.count).slice(0, limit);
 }

@@ -66,6 +66,8 @@ export interface LabelledEntry {
   role?: string;
   members?: number;
   followers?: number;
+  description?: string | null;
+  people_here_now?: number;
 }
 
 export interface DailyPoint {
@@ -86,6 +88,7 @@ export interface SummaryResult {
   receipt?: string;
   room?: RoomView;
   community?: LabelledEntry;
+  organization?: LabelledEntry;
   profile?: ProfileView;
   tabs?: { messages?: MessageView[]; images?: ImageView[] };
   messages?: MessageView[];

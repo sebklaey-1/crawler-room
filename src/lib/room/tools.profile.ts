@@ -2,6 +2,7 @@
  * MCP handlers for the social profile: view, edit, images, likes, analytics.
  * Ownership is always the pseudonymous subject from `_meta` — never an input.
  */
+import { payloadOf } from "./dbtypes";
 import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { imageConfig, IMAGE_RETENTION, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
@@ -119,7 +120,7 @@ export async function handleGetProfile(input: unknown, meta: McpMeta) {
   const db = await getDb();
   await touchPresence(db, identity.subjectHash);
 
-  const requested = (input)?.username;
+  const requested = payloadOf<{ username?: unknown }>(input).username;
   let profile: ProfileRow;
   let redirectedFrom: string | null = null;
 
@@ -181,7 +182,16 @@ export async function handleUpdateProfile(input: unknown, meta: McpMeta) {
   const db = await getDb();
   await touchPresence(db, identity.subjectHash);
 
-  const patch = (input ?? {});
+  const patch = payloadOf<{
+    display_name?: string;
+    bio?: string | null;
+    location?: string | null;
+    external_url?: string | null;
+    profile_visibility?: string;
+    show_online_status?: boolean;
+    show_follower_count?: boolean;
+    show_likes?: boolean;
+  }>(input);
   const profile = await updateProfile(db, identity.subjectHash, {
     display_name: patch.display_name,
     bio: patch.bio,
@@ -203,7 +213,7 @@ export async function handleUpdateProfile(input: unknown, meta: McpMeta) {
 export async function handleChangeHandle(input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
-  const desired = (input)?.handle;
+  const desired = payloadOf<{ handle?: string }>(input).handle;
 
   try {
     const result = await changeHandle(db, identity.subjectHash, desired);
@@ -214,7 +224,7 @@ export async function handleChangeHandle(input: unknown, meta: McpMeta) {
         : `Du nutzt bereits @${result.handle}.`,
     };
   } catch (error) {
-    if ((error)?.code === "ALIAS_TAKEN") {
+    if ((error as { code?: string } | null)?.code === "ALIAS_TAKEN") {
       const suggestions = await suggestHandles(db, String(desired ?? ""), identity.subjectHash);
       throw roomError(
         "ALIAS_TAKEN",
@@ -231,7 +241,7 @@ export async function handleChangeHandle(input: unknown, meta: McpMeta) {
 export async function handleSetProfileImage(input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
-  const payload = (input ?? {});
+  const payload = payloadOf<{ kind?: string; remove?: boolean; image_url?: string | null }>(input);
   const kind = payload.kind === "banner" ? "banner" : "avatar";
 
   await enforceRateLimit(db, identity.subjectHash, "profile_image", WINDOWS.join(10));
