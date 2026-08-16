@@ -1,32 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import pluginDialog from "@/assets/room-mcp-plugin-dialog.png.asset.json";
 
-const MCP_URL = "https://zinga-room.lovable.app/api/public/mcp";
-
-const INSTALL_STEPS = [
-  {
-    title: "Turn on developer mode",
-    body: "In ChatGPT open Settings → Apps & Connectors → Advanced settings and enable developer mode. Custom MCP connectors only appear once it is on.",
-  },
-  {
-    title: "Create a new plugin",
-    body: "Go to Settings → Apps & Connectors → Create and choose a custom connector (MCP server).",
-  },
-  {
-    title: "Fill in the details",
-    body: "Name: Room · Description: Talk with people · Connection: Server URL · Authentication: no authentication.",
-  },
-  {
-    title: "Paste the MCP link",
-    body: "Use the server URL below, confirm the security notice and press Create.",
-  },
-  {
-    title: "Start talking",
-    body: "Back in a chat, type “@room AI” — the connector answers directly inside ChatGPT.",
-  },
-];
 
 export const Route = createFileRoute("/")({
   head: () => ({
