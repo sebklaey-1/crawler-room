@@ -6,11 +6,11 @@ issues, stores or forwards credentials.
 
 | Value                         | Setting                                                               |
 | ----------------------------- | --------------------------------------------------------------------- |
-| App domain                    | `https://zinga-room.lovable.app`                                      |
-| Canonical MCP resource        | `https://zinga-room.lovable.app/api/public/mcp`                       |
-| Protected resource metadata   | `https://zinga-room.lovable.app/.well-known/oauth-protected-resource` |
+| App domain (canonical)        | `https://crawler.today`                                      |
+| Canonical MCP resource        | `https://crawler.today/api/public/mcp`                       |
+| Protected resource metadata   | `https://crawler.today/.well-known/oauth-protected-resource` |
 | Authorization server (issuer) | `${SUPABASE_URL}/auth/v1`                                             |
-| Consent page                  | `https://zinga-room.lovable.app/oauth/consent`                        |
+| Consent page                  | `https://crawler.today/oauth/consent`                        |
 | Scopes                        | `openid`, `profile` (no `email`)                                      |
 
 Clients discover the authorization server through the protected-resource
@@ -22,7 +22,7 @@ The app does **not** proxy or mirror those documents.
 
 | Name                                                | Scope  | Purpose                                                                                                                                                               |
 | --------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ROOM_MCP_RESOURCE`                                 | server | Canonical https resource identifier, exactly `https://zinga-room.lovable.app/api/public/mcp`. Mandatory in production; the value never derives from a request header. |
+| `ROOM_MCP_RESOURCE`                                 | server | Canonical https resource identifier, exactly `https://crawler.today/api/public/mcp`. Mandatory in production; the value never derives from a request header. |
 | `SUPABASE_URL`                                      | server | Used to build the issuer `${SUPABASE_URL}/auth/v1`.                                                                                                                   |
 | `SUPABASE_PUBLISHABLE_KEY` (or `SUPABASE_ANON_KEY`) | server | Used by the non-persisting verification client.                                                                                                                       |
 | `SUBJECT_HASH_SECRET`                               | server | HMAC key for pseudonymous subjects.                                                                                                                                   |
@@ -35,7 +35,7 @@ The app does **not** proxy or mirror those documents.
    - Authorization path: `/oauth/consent`
      (`/.lovable/oauth/consent` stays available as a redirect alias)
    - Dynamic client registration: enabled
-   - Site URL: `https://zinga-room.lovable.app`
+   - Site URL: `https://crawler.today`
 3. **Custom Access Token Hook** — Authentication → Hooks → _Custom Access Token_:
    select the Postgres function `public.custom_access_token_hook` and enable it.
    **This step cannot be automated and must be done in the backend settings.**
@@ -57,7 +57,7 @@ public.custom_access_token_hook(event jsonb) returns jsonb
 It only touches tokens that carry a non-empty `claims.client_id`, i.e. tokens
 issued through the OAuth server to a registered client. For those it sets:
 
-- `aud` → `https://zinga-room.lovable.app/api/public/mcp`
+- `aud` → `https://crawler.today/api/public/mcp`
 - `room_resource` → the same value
 - `room_scopes` → `["openid","profile"]`
 
