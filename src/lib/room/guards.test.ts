@@ -1,9 +1,10 @@
-import { publicGetOrganization, publicListOrganizations } from "./communities";
 import { describe, expect, it } from "vitest";
 
 import { fakeDb } from "@/test/fake-db";
 import {
   canManage,
+  publicGetOrganization,
+  publicListOrganizations,
   removeOrgMember,
   slugify,
   updateCommunity,
@@ -13,6 +14,7 @@ import { followRoom, unfollowRoom, type PersonalRoom } from "./personal";
 import { addLike } from "./profile";
 import { publicRoomView } from "./tools.personal";
 import { publicProfileView } from "./tools.profile";
+import { isPublicAction } from "./mcp.surface";
 import { validateMessage } from "./validation";
 import { profileCard, analyticsCard } from "./mcp.render";
 
