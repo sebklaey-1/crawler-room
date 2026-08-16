@@ -349,8 +349,9 @@ const REPORT_OUTPUT_KEYS = [
 const REPORT_OUTPUT_PROPERTIES: Json = {
   reported: { type: "boolean" },
   already_reported: { type: "boolean" },
-  status: { type: "string", enum: ["received", "reviewing", "actioned", "dismissed"] },
-  receipt: { type: "string" },
+  status: { type: "string", enum: [...REPORT_STATUSES] },
+  receipt: { type: "string", description: "Opaque Quittung ohne interne Kennungen." },
+  message: { type: "string" },
 };
 
 const REPORT_DESCRIPTION =
