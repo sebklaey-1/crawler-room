@@ -78,10 +78,35 @@ function rpcError(id: unknown, code: number, message: string) {
   return { jsonrpc: "2.0", id, error: { code, message } };
 }
 
-function logEvent(event: Record<string, unknown>) {
-  // Structured logs, never message content and never tokens.
+/**
+ * Structured operational log. Only tool name, action, result code, duration
+ * and a non-reversible random request id. Never arguments, message bodies,
+ * URLs, tokens, subject hashes or user identifiers.
+ */
+function logEvent(event: {
+  tool: string;
+  action?: string | undefined;
+  ok: boolean;
+  code?: string;
+  ms: number;
+  requestId: string;
+}) {
   console.log(JSON.stringify({ service: SERVICE_NAME, ...event }));
 }
+
+/** Random, non-reversible correlation id — derived from nothing about the caller. */
+function newRequestId(): string {
+  return crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+}
+
+/** Only the literal action discriminator is log-safe; anything else is dropped. */
+function safeAction(params: any, tool: SurfaceTool): string | undefined {
+  const value = params?.arguments?.action;
+  if (typeof value !== "string") return undefined;
+  const allowed = ((tool.inputSchema as any)?.properties?.action?.enum ?? []) as string[];
+  return allowed.includes(value) ? value : undefined;
+}
+
 
 /** Builds the `_meta` a handler sees: client data minus `room/*`, plus auth. */
 async function buildMeta(params: any, context: RequestContext): Promise<McpMeta> {
