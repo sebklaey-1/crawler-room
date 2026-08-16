@@ -192,7 +192,8 @@ export function validateRpcMessage(message: unknown): { code: number; message: s
   if ("id" in entry) {
     const id = entry["id"];
     const ok = typeof id === "string" || typeof id === "number" || id === null;
-    if (!ok) return { code: -32600, message: "Invalid Request: id must be a string, number or null" };
+    if (!ok)
+      return { code: -32600, message: "Invalid Request: id must be a string, number or null" };
   }
   return null;
 }
@@ -462,9 +463,7 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
     if (batch.challenge) return unauthorized(origin, "invalid_token");
     if (!batch.responses.length) return emptyResponse(202);
     const extra = batch.authRequired ? { "WWW-Authenticate": challengeHeader(origin) } : {};
-    return sse
-      ? sseResponse(batch.responses, extra)
-      : jsonResponse(batch.responses, 200, extra);
+    return sse ? sseResponse(batch.responses, extra) : jsonResponse(batch.responses, 200, extra);
   }
 
   const context = makeContext();

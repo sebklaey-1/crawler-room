@@ -3,7 +3,7 @@
  * The browser never talks to this module; every call runs inside a request
  * handler with the service role key.
  */
-import { IMAGE_BUCKET } from "./config";
+import { IMAGE_BUCKET, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import type { Db, MembershipContext } from "./store";
 
@@ -97,6 +97,7 @@ export async function listApprovedImages(
     .select(COLUMNS)
     .eq("room_id", roomId)
     .eq("moderation_status", "approved")
+    .gte("created_at", retentionCutoffIso())
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(limit);
@@ -116,6 +117,7 @@ export async function listOwnUnpublishedImages(
     .eq("room_id", roomId)
     .eq("sender_membership_id", membershipId)
     .in("moderation_status", ["pending", "rejected", "failed"])
+    .gte("created_at", retentionCutoffIso())
     .order("created_at", { ascending: true });
   if (error) throw roomError("INTERNAL_ERROR");
   return (data ?? []) as unknown as ImageRow[];
@@ -143,7 +145,15 @@ export async function removeStorageObjects(db: Db, paths: string[]) {
   if (!cleaned.length) return;
   // Originals plus any derived thumbnail variant.
   const all = cleaned.flatMap((path) => [path, path.replace(/(\.[a-z0-9]+)?$/i, "_thumb$1")]);
-  await db.storage.from(IMAGE_BUCKET).remove(all);
+  const { error } = await db.storage.from(IMAGE_BUCKET).remove(all);
+  if (error) {
+    // Documented retry path: the row is already gone, `sweepImages` and the
+    // maintenance job re-run `remove()` for the same deterministic paths,
+    // and the bucket is private, so an orphan is never readable.
+    console.warn(
+      JSON.stringify({ service: "room-mcp", op: "storage_remove_failed", count: all.length }),
+    );
+  }
 }
 
 export async function signedUrl(db: Db, path: string, ttlSeconds: number): Promise<string | null> {
@@ -154,18 +164,42 @@ export async function signedUrl(db: Db, path: string, ttlSeconds: number): Promi
 
 /* ------------------------------ retention ------------------------------- */
 
-/** Keeps only the newest 7 text messages of a room. */
+/** Hard 24h cap plus the newest-7 limit for a room's text messages. */
 export async function enforceTextRetention(db: Db, roomId: string) {
   const { error } = await db.rpc("enforce_text_retention", { p_room_id: roomId });
   if (error) throw roomError("INTERNAL_ERROR");
 }
 
-/** Keeps only the newest 3 approved images of a room, deleting files as well. */
+/**
+ * Deletes expired (older than 24 hours) and excess images of a room and
+ * removes the matching objects from the private bucket. Storage errors are
+ * surfaced, never silently swallowed.
+ */
 export async function enforceImageRetention(db: Db, roomId: string) {
   const { data, error } = await db.rpc("enforce_image_retention", { p_room_id: roomId });
   if (error) throw roomError("INTERNAL_ERROR");
   const paths = ((data ?? []) as Array<{ storage_path: string }>).map((row) => row.storage_path);
   await removeStorageObjects(db, paths);
+  return paths;
+}
+
+/**
+ * Opportunistic per-room retention. Runs on every write path so the hard
+ * 24 hour cap is enforced even when the maintenance job has not run yet.
+ * Never throws: a write must not fail because a cleanup failed, and the
+ * read filters keep expired content invisible in the meantime.
+ */
+export async function enforceRoomRetention(db: Db, roomId: string): Promise<void> {
+  try {
+    await enforceTextRetention(db, roomId);
+  } catch {
+    // retried by the next write and by the maintenance job
+  }
+  try {
+    await enforceImageRetention(db, roomId);
+  } catch {
+    // storage removal is idempotent; a failed path is retried by sweepImages
+  }
 }
 
 /** Fallback sweep: dead uploads, orphaned files and both per-room limits. */

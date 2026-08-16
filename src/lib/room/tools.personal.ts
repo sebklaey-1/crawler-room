@@ -5,7 +5,13 @@
 import { z } from "zod";
 
 import { generateAlias, sanitizeAlias } from "./alias";
-import { config, imageConfig, IMAGE_RETENTION } from "./config";
+import {
+  config,
+  imageConfig,
+  IMAGE_RETENTION,
+  retentionCutoffIso,
+  retentionDeadlineIso,
+} from "./config";
 import { roomError } from "./errors";
 import { resolveIdentity, type McpMeta } from "./identity";
 import { encodeMessageId } from "./ids";
@@ -55,6 +61,7 @@ async function roomMessages(db: Db, room: PersonalRoom, selfMembershipId: string
     .from("messages")
     .select("id, body, created_at, membership_id, memberships(alias)")
     .eq("room_id", room.roomId)
+    .gte("created_at", retentionCutoffIso())
     .gt("expires_at", new Date().toISOString())
     .order("id", { ascending: false })
     .limit(limit);
@@ -252,9 +259,7 @@ export async function handleSendRoomMessage(input: unknown, meta: McpMeta) {
     membership_id: membership.membershipId,
     body,
     created_at: now.toISOString(),
-    expires_at: new Date(
-      now.getTime() + settings.messageRetentionHours * 3600 * 1000,
-    ).toISOString(),
+    expires_at: retentionDeadlineIso(now),
   });
   if (error) throw roomError("INTERNAL_ERROR");
 

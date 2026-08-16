@@ -38,9 +38,7 @@ export const Route = createFileRoute("/api/public/data-deletion")({
           if (!hash) return fail(401, "sign_in_required");
 
           const { getDb } = await import("@/lib/room/store");
-          const { submitDeletionRequest, cleanupSupportData } = await import(
-            "@/lib/room/support"
-          );
+          const { submitDeletionRequest, cleanupSupportData } = await import("@/lib/room/support");
           const db = await getDb();
           const result = await submitDeletionRequest(
             db,

@@ -101,7 +101,6 @@ export function resourceMetadataUrl(requestOrigin?: string): string {
   return `${new URL(canonicalResource(requestOrigin)).origin}/.well-known/oauth-protected-resource`;
 }
 
-
 let verifyClient: SupabaseClient | null = null;
 
 /** Server-side, non-persisting Supabase client used only for verification. */

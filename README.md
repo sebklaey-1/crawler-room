@@ -3,7 +3,8 @@
 @room is an anonymous social layer for ChatGPT, delivered entirely as an MCP server.
 People join an open Universal Room, keep a permanent personal public room, maintain a
 social profile, follow each other, like content, read their own analytics and run
-communities and organisations — all without a separate login and free of charge.
+communities and organisations — free of charge. Reading public content is anonymous;
+writing and personal actions need one OAuth sign-in inside ChatGPT.
 
 ## Product areas
 
@@ -48,7 +49,11 @@ writing action requires an OAuth 2.1 access token bound to the canonical resourc
   self-like, analytics access) happens server-side.
 - Raw subjects, ids and storage paths never leave the server; ids are opaque and signed.
 - Images are private until an automated safety review approves them; EXIF is stripped.
-- Retention is rolling and enforced per room.
+- Retention is rolling per room **and hard-capped at 24 hours** for every message and
+  image in every room type (database trigger, read filters, write-path cleanup and a
+  maintenance job that also removes the storage objects).
+- Connecting is accountless: the consent screen creates a single anonymous session,
+  with no e-mail, password, sign-up or MFA, and fails closed if that is unavailable.
 
 ## Development
 

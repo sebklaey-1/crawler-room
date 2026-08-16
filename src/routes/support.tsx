@@ -89,10 +89,10 @@ function SupportPage() {
       <main className="mx-auto max-w-3xl px-6 py-14">
         <h1 className="text-3xl font-semibold tracking-tight">Support and abuse reports</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Use this form to report abuse in a room, ask for help, or send a privacy request
-          (access, correction, deletion). You do not need an account to write to us. Reports are
-          reviewed by a person when capacity allows — there is no automatic review and no promised
-          response deadline.
+          Use this form to report abuse in a room, ask for help, or send a privacy request (access,
+          correction, deletion). You do not need an account to write to us. Reports are reviewed by
+          a person when capacity allows — there is no automatic review and no promised response
+          deadline.
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
           If someone is in immediate danger, contact your local emergency services first. To delete
@@ -108,9 +108,9 @@ function SupportPage() {
             <h2 className="text-lg font-semibold">Received</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Your case reference is{" "}
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono">{reference}</code>. Keep
-              it if you want to refer to this case later. Confirming receipt is not a decision
-              about the case.
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono">{reference}</code>. Keep it
+              if you want to refer to this case later. Confirming receipt is not a decision about
+              the case.
             </p>
             <Button className="mt-4" variant="outline" onClick={() => setReference(null)}>
               Send another message

@@ -7,7 +7,7 @@
  * No prices, plans, billing, ads or campaigns are involved.
  */
 import { generateAlias } from "./alias";
-import { config } from "./config";
+import { config, retentionCutoffIso, retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
 import { encodeMessageId, encodeRoomId } from "./ids";
 import { normalizeHandleInput } from "./personal";
@@ -37,7 +37,6 @@ export function fromDbRole(role: string | null | undefined): OrgRole | null {
   if (role === "organization_admin" || role === "moderator" || role === "admin") return "admin";
   return "member";
 }
-
 
 export function slugify(raw: string): string {
   const slug = String(raw ?? "")
@@ -87,7 +86,10 @@ export async function ensureAccount(db: Db, subjectHash: string): Promise<string
   if (error) throw roomError("INTERNAL_ERROR");
 
   const linked = identity
-    ? await db.from("anonymous_identities").update({ account_id: id }).eq("subject_hash", subjectHash)
+    ? await db
+        .from("anonymous_identities")
+        .update({ account_id: id })
+        .eq("subject_hash", subjectHash)
     : await db.from("anonymous_identities").insert({ subject_hash: subjectHash, account_id: id });
 
   if ((linked as any)?.error) {
@@ -108,7 +110,6 @@ export async function accountIdFor(db: Db, subjectHash: string): Promise<string 
   if (error) throw roomError("INTERNAL_ERROR");
   return ((data as any)?.account_id as string | null) ?? null;
 }
-
 
 async function aliasFor(db: Db, subjectHash: string): Promise<string> {
   return (await getCustomAlias(db, subjectHash)) ?? generateAlias(`${subjectHash}:member`);
@@ -161,7 +162,6 @@ export async function orgRoleOf(
   return fromDbRole((data as any)?.role as string | undefined);
 }
 
-
 function serializeOrg(row: any, role: OrgRole | null) {
   return {
     id: row.id as string,
@@ -199,15 +199,12 @@ export async function createOrganization(
 
   // The owner is defined by `organizations.owner_account_id`; the membership
   // row must use a role the database constraint allows.
-  const { error: memberError } = await db
-    .from("organization_members")
-    .insert({
-      organization_id: (data as any).id,
-      account_id: accountId,
-      role: toDbRole("admin"),
-    });
+  const { error: memberError } = await db.from("organization_members").insert({
+    organization_id: (data as any).id,
+    account_id: accountId,
+    role: toDbRole("admin"),
+  });
   if (memberError) throw roomError("INTERNAL_ERROR");
-
 
   return serializeOrg(data, "owner");
 }
@@ -369,12 +366,10 @@ export async function listOrgMembers(db: Db, subjectHash: string, reference: str
     organization: serializeOrg(org, role),
     members: ((data ?? []) as any[]).map((row) => ({
       alias: row.accounts?.display_alias ?? "Mitglied",
-      role:
-        row.account_id === org.owner_account_id ? "owner" : (fromDbRole(row.role) ?? "member"),
+      role: row.account_id === org.owner_account_id ? "owner" : (fromDbRole(row.role) ?? "member"),
       since: row.created_at as string,
       is_owner: row.account_id === org.owner_account_id,
     })),
-
   };
 }
 
@@ -427,7 +422,6 @@ export async function addOrgMember(
     alias: await aliasFor(db, targetSubject),
     organization: serializeOrg(org, myRole),
   };
-
 }
 
 export async function removeOrgMember(
@@ -458,7 +452,6 @@ export async function removeOrgMember(
     .eq("organization_id", org.id)
     .eq("account_id", targetAccount);
   if (deleteError) throw roomError("INTERNAL_ERROR");
-
 
   return {
     removed: true,
@@ -726,6 +719,7 @@ export async function readCommunity(db: Db, subjectHash: string, reference: unkn
     .from("messages")
     .select("id, body, created_at, membership_id, memberships(alias, subject_hash)")
     .eq("room_id", row.id)
+    .gte("created_at", retentionCutoffIso())
     .gt("expires_at", new Date().toISOString())
     .order("id", { ascending: false })
     .limit(Math.min(Math.max(limit, 1), 50));
@@ -773,13 +767,12 @@ export async function sendCommunityMessage(
     membership_id: membership.membershipId,
     body,
     created_at: now.toISOString(),
-    expires_at: new Date(
-      now.getTime() + settings.messageRetentionHours * 3600 * 1000,
-    ).toISOString(),
+    expires_at: retentionDeadlineIso(now),
   });
   if (error) throw roomError("INTERNAL_ERROR");
 
-  await db.rpc("enforce_text_retention", { p_room_id: row.id });
+  const { enforceRoomRetention } = await import("./imagestore");
+  await enforceRoomRetention(db, row.id);
   const read = await readCommunity(db, subjectHash, reference);
   return { sent: true, ...read };
 }

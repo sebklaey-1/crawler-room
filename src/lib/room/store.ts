@@ -4,6 +4,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
 
 export type Db = SupabaseClient<any, "public", any>;
@@ -212,7 +213,10 @@ export async function insertMessage(
   retentionHours: number,
 ): Promise<MessageRow> {
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + retentionHours * 3600 * 1000);
+  // Hard cap: never later than created_at + 24h, whatever the room says.
+  const expiresAt = new Date(
+    Math.min(now.getTime() + retentionHours * 3600 * 1000, Date.parse(retentionDeadlineIso(now))),
+  );
   const { data, error } = await db
     .from("messages")
     .insert({
@@ -228,8 +232,8 @@ export async function insertMessage(
   const row = data as any;
 
   // Rolling retention: a room keeps only its newest 7 text messages.
-  const { enforceTextRetention } = await import("./imagestore");
-  await enforceTextRetention(db, membership.roomId);
+  const { enforceRoomRetention } = await import("./imagestore");
+  await enforceRoomRetention(db, membership.roomId);
 
   return {
     id: row.id,

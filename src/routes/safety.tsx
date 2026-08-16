@@ -53,8 +53,8 @@ function SafetyPage() {
         <Section title="Minors">
           <p>
             @room is not directed to children under 13 and must not be used by them. Any content
-            that sexualises a minor, or attempts to contact, groom or solicit a minor, is
-            prohibited without exception and leads to immediate removal of access.
+            that sexualises a minor, or attempts to contact, groom or solicit a minor, is prohibited
+            without exception and leads to immediate removal of access.
           </p>
         </Section>
 
@@ -93,9 +93,9 @@ function SafetyPage() {
 
         <Section title="Images">
           <p>
-            Images are stored privately, stripped of EXIF and location data and published only
-            after an automated safety review. Rejected images are deleted together with their file.
-            A room keeps only its newest three approved images.
+            Images are stored privately, stripped of EXIF and location data and published only after
+            an automated safety review. Rejected images are deleted together with their file. A room
+            keeps only its newest three approved images.
           </p>
         </Section>
 
@@ -118,9 +118,7 @@ function SafetyPage() {
               immediate review of every report, and submitting a report does not guarantee a
               specific outcome.
             </li>
-            <li>
-              For anything that endangers someone right now, contact local authorities first.
-            </li>
+            <li>For anything that endangers someone right now, contact local authorities first.</li>
           </ul>
         </Section>
 

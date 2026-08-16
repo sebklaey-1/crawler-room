@@ -2,7 +2,7 @@
  * MCP handlers for the social profile: view, edit, images, likes, analytics.
  * Ownership is always the pseudonymous subject from `_meta` — never an input.
  */
-import { imageConfig, IMAGE_RETENTION } from "./config";
+import { imageConfig, IMAGE_RETENTION, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import { resolveIdentity, type McpMeta } from "./identity";
 import { decodeImageId, decodeMessageId, encodeImageId, encodeMessageId } from "./ids";
@@ -42,6 +42,7 @@ async function profileMessages(db: Db, profile: ProfileRow, viewerHash: string) 
     .from("messages")
     .select("id, body, created_at, memberships(alias, subject_hash)")
     .eq("room_id", profile.roomId)
+    .gte("created_at", retentionCutoffIso())
     .gt("expires_at", new Date().toISOString())
     .order("id", { ascending: false })
     .limit(20);
