@@ -223,7 +223,7 @@ async function handleRpc(message: any, context: RequestContext): Promise<Json | 
           name: SERVICE_NAME,
           title: "@room",
           version: SERVICE_VERSION,
-          websiteUrl: context.origin,
+          websiteUrl: PRODUCTION_ORIGIN,
         },
         instructions: INSTRUCTIONS,
       });
