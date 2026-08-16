@@ -1,17 +1,33 @@
 /**
  * Guard: a normal test run must never be able to reach a real database, even
  * when production-shaped Supabase credentials are present in the process.
+ *
+ * The inherited environment is captured before each test and restored exactly
+ * afterwards (including the "was undefined" case), so this file never weakens
+ * the credentials the rest of the standard run inherits from the runner.
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { __setTestDb, getDb } from "./store";
 import { fakeDb } from "@/test/fake-db";
 
+const GUARDED_ENV = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"] as const;
+
 describe("test-only database injection", () => {
+  let saved: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    saved = {};
+    for (const name of GUARDED_ENV) saved[name] = process.env[name];
+  });
+
   afterEach(() => {
     __setTestDb(null);
-    delete process.env["SUPABASE_URL"];
-    delete process.env["SUPABASE_SERVICE_ROLE_KEY"];
+    for (const name of GUARDED_ENV) {
+      const original = saved[name];
+      if (original === undefined) delete process.env[name];
+      else process.env[name] = original;
+    }
   });
 
   it("fails closed without an override, even with service credentials present", async () => {
@@ -31,5 +47,11 @@ describe("test-only database injection", () => {
     __setTestDb(fakeDb());
     __setTestDb(null);
     await expect(getDb()).rejects.toThrow(/__setTestDb/);
+  });
+
+  it("restores the inherited environment exactly", () => {
+    for (const name of GUARDED_ENV) {
+      expect(process.env[name]).toBe(saved[name]);
+    }
   });
 });
