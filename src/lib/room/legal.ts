@@ -10,6 +10,20 @@ export const LEGAL_LINKS = [
 export const PUBLISHER = "SEBKLAEY Agency — Sebastian Kläy";
 
 /**
+ * The publicly named party responsible for moderation and incident response.
+ * Canonical in source; `ROOM_MODERATION_OWNER` may repeat it, never change it.
+ * The operational moderator allowlist lives in `moderator_subjects` and is
+ * never mirrored into code, migrations or logs.
+ */
+export const MODERATION_OWNER = "SEBKLAEY Agency — Sebastian Kläy" as const;
+
+/** True when no conflicting moderation owner is configured for the build. */
+export function moderationOwnerEnvMatches(configured: string | undefined | null): boolean {
+  const value = typeof configured === "string" ? configured.trim() : "";
+  return value === "" || value === MODERATION_OWNER;
+}
+
+/**
  * The confirmed public support, privacy, deletion and abuse contact. This
  * address is published on the legal pages, so it is not a secret and lives in
  * source as the single source of truth.

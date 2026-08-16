@@ -913,6 +913,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      name_claims: {
+        Row: {
+          created_at: string;
+          kind: string;
+          normalized: string;
+          owner_subject_hash: string;
+        };
+        Insert: {
+          created_at?: string;
+          kind: string;
+          normalized: string;
+          owner_subject_hash: string;
+        };
+        Update: {
+          created_at?: string;
+          kind?: string;
+          normalized?: string;
+          owner_subject_hash?: string;
+        };
+        Relationships: [];
+      };
       notification_settings: {
         Row: {
           live_event: boolean;
@@ -1896,6 +1917,22 @@ export type Database = {
       };
     };
     Functions: {
+      change_personal_handle: {
+        Args: { p_handle: string; p_subject_hash: string };
+        Returns: Json;
+      };
+      claim_free_alias: {
+        Args: { p_base: string; p_owner: string };
+        Returns: string;
+      };
+      claim_free_handle: {
+        Args: { p_base: string; p_owner: string };
+        Returns: string;
+      };
+      claim_name: {
+        Args: { p_kind: string; p_owner: string; p_value: string };
+        Returns: string;
+      };
       cleanup_expired: { Args: never; Returns: Json };
       cleanup_support_requests: { Args: never; Returns: Json };
       custom_access_token_hook: { Args: { event: Json }; Returns: Json };
@@ -1913,7 +1950,12 @@ export type Database = {
       };
       enforce_text_retention: { Args: { p_room_id: string }; Returns: number };
       get_or_create_personal_room: {
-        Args: { p_handle: string; p_room_name: string; p_subject_hash: string };
+        Args: {
+          p_display_name?: string;
+          p_handle: string;
+          p_room_name: string;
+          p_subject_hash: string;
+        };
         Returns: Json;
       };
       join_topic_room: {
@@ -1924,11 +1966,25 @@ export type Database = {
         Args: { p_alias: string; p_subject_hash: string };
         Returns: Json;
       };
+      normalize_alias: { Args: { p_value: string }; Returns: string };
+      normalize_handle: { Args: { p_value: string }; Returns: string };
       purge_dead_images: {
         Args: never;
         Returns: {
           storage_path: string;
         }[];
+      };
+      set_display_name: {
+        Args: {
+          p_display_name: string;
+          p_room_name?: string;
+          p_subject_hash: string;
+        };
+        Returns: Json;
+      };
+      try_claim_name: {
+        Args: { p_kind: string; p_normalized: string; p_owner: string };
+        Returns: boolean;
       };
     };
     Enums: {

@@ -5,6 +5,7 @@
 import { embedded, type EmbeddedShapes } from "./dbtypes";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { aliasKey, MAX_ALIAS_LENGTH } from "./alias";
 import { retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
 
@@ -344,39 +345,62 @@ export async function getCustomAlias(db: Db, subjectHash: string): Promise<strin
   return (data?.custom_alias as string | null) ?? null;
 }
 
-/** Sets the display name everywhere: identity record + all active memberships. */
-/** True when another person already uses this display name (case-insensitive). */
+/**
+ * UX pre-check: true when another identity already holds this public user
+ * name. NFKC, case and trim variants are the same name. The claim registry in
+ * the database stays the authority and rejects colliding writes even in a race.
+ */
 export async function isAliasTaken(db: Db, subjectHash: string, alias: string): Promise<boolean> {
-  const { data } = await db
-    .from("anonymous_identities")
-    .select("subject_hash")
-    .ilike("custom_alias", alias.replace(/[%_]/g, "\\$&"))
-    .limit(5);
-  return (data ?? []).some((row) => row.subject_hash !== subjectHash);
+  const key = aliasKey(alias);
+  if (!key) return false;
+  const { data, error } = await db
+    .from("name_claims")
+    .select("owner_subject_hash")
+    .eq("kind", "alias")
+    .eq("normalized", key)
+    .maybeSingle();
+  if (error) throw roomError("INTERNAL_ERROR");
+  return Boolean(data) && data?.owner_subject_hash !== subjectHash;
 }
 
+/** Up to three free variants of a taken public user name. No IDs, no hashes. */
+export async function suggestAliases(
+  db: Db,
+  subjectHash: string,
+  alias: string,
+): Promise<string[]> {
+  const base = alias.normalize("NFKC").replace(/\s+/g, " ").trim();
+  const out: string[] = [];
+  for (let i = 2; i <= 12 && out.length < 3; i += 1) {
+    const suffix = ` ${i}`;
+    const candidate = `${base.slice(0, MAX_ALIAS_LENGTH - suffix.length).trim()}${suffix}`;
+    if (!aliasKey(candidate)) continue;
+    if (!(await isAliasTaken(db, subjectHash, candidate))) out.push(candidate);
+  }
+  return out;
+}
+
+/**
+ * Sets the chosen public user name atomically: identity record, personal room
+ * name, room title and every active membership alias move together. The handle
+ * is deliberately NOT touched — only `profile/change_handle` moves a handle.
+ */
 export async function setSubjectAlias(
   db: Db,
   subjectHash: string,
   alias: string,
 ): Promise<{ alias: string; roomsUpdated: number }> {
-  if (await isAliasTaken(db, subjectHash, alias)) throw roomError("ALIAS_TAKEN");
-
-  const { error } = await db
-    .from("anonymous_identities")
-    .update({ custom_alias: alias })
-    .eq("subject_hash", subjectHash);
-  // Unique index race: another person grabbed the same name a moment earlier.
-  if (error?.code === "23505") throw roomError("ALIAS_TAKEN");
-  if (error) throw roomError("INTERNAL_ERROR");
-
-  const { data, error: memberError } = await db
-    .from("memberships")
-    .update({ alias })
-    .eq("subject_hash", subjectHash)
-    .is("left_at", null)
-    .select("id");
-  if (memberError) throw roomError("INTERNAL_ERROR");
-
-  return { alias, roomsUpdated: (data ?? []).length };
+  const { personalRoomName, isClaimConflict } = await import("./personal");
+  const { data, error } = await db.rpc("set_display_name", {
+    p_subject_hash: subjectHash,
+    p_display_name: alias,
+    p_room_name: personalRoomName(alias),
+  });
+  if (error) {
+    if (isClaimConflict(error)) throw roomError("ALIAS_TAKEN");
+    throw roomError("INTERNAL_ERROR");
+  }
+  const result = data as { display_name?: string; rooms_updated?: number } | null;
+  if (!result?.display_name) throw roomError("INTERNAL_ERROR");
+  return { alias: result.display_name, roomsUpdated: result.rooms_updated ?? 0 };
 }

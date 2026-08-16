@@ -12,7 +12,11 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { supportEmailEnvMatches } from "../src/lib/room/legal";
+import {
+  MODERATION_OWNER,
+  moderationOwnerEnvMatches,
+  supportEmailEnvMatches,
+} from "../src/lib/room/legal";
 
 const ROOT = process.cwd();
 const CANONICAL_RESOURCE = "https://crawler.today/api/public/mcp";
@@ -120,10 +124,17 @@ function envSet(name: string): boolean {
   return Boolean(value && value.trim());
 }
 
+// The canonical resource lives in source (`PRODUCTION_MCP_RESOURCE`). An env
+// override is tolerated only when it carries the exact same URL.
+const configuredResource = (process.env["ROOM_MCP_RESOURCE"] ?? "").trim();
 check(
-  "ROOM_MCP_RESOURCE configured",
-  process.env["ROOM_MCP_RESOURCE"]?.trim() === CANONICAL_RESOURCE,
-  process.env["ROOM_MCP_RESOURCE"] ? "set" : "missing",
+  "MCP resource canonical",
+  configuredResource === "" || configuredResource === CANONICAL_RESOURCE,
+  configuredResource === ""
+    ? "source of truth in src/lib/room/auth.ts"
+    : configuredResource === CANONICAL_RESOURCE
+      ? "env matches canonical resource"
+      : `env ROOM_MCP_RESOURCE «${configuredResource}» conflicts with ${CANONICAL_RESOURCE}`,
 );
 for (const secret of ["SUBJECT_HASH_SECRET", "MESSAGE_ID_SECRET"]) {
   check(`${secret} configured`, envSet(secret), envSet(secret) ? "set" : "missing");
@@ -144,15 +155,18 @@ check(
       : `env VITE_PUBLIC_SUPPORT_EMAIL «${configuredSupport}» conflicts with info@crawler.today`,
 );
 
-// Moderation staffing: a named responsible person plus at least one configured
-// moderator subject hash in `moderator_subjects`. Confirmed operationally by
-// setting ROOM_MODERATION_OWNER; the allowlist itself is never read from here.
+// The publicly named moderation owner is canonical in source. An env override
+// is tolerated only when it repeats the exact same name. The operational
+// moderator allowlist (`moderator_subjects`) is verified by release:check:submit.
+const configuredOwner = (process.env["ROOM_MODERATION_OWNER"] ?? "").trim();
 check(
-  "moderation staffing confirmed (ROOM_MODERATION_OWNER)",
-  envSet("ROOM_MODERATION_OWNER"),
-  envSet("ROOM_MODERATION_OWNER")
-    ? "named responsible person recorded"
-    : "missing — manual release blocker: name a moderator and add their subject hash to moderator_subjects",
+  `public moderation owner canonical (${MODERATION_OWNER})`,
+  moderationOwnerEnvMatches(configuredOwner),
+  configuredOwner === ""
+    ? "source of truth in src/lib/room/legal.ts"
+    : moderationOwnerEnvMatches(configuredOwner)
+      ? "env matches canonical owner"
+      : `env ROOM_MODERATION_OWNER «${configuredOwner}» conflicts with ${MODERATION_OWNER}`,
 );
 
 /* ------------------------------- 7. branding -------------------------------- */
@@ -176,7 +190,7 @@ for (const file of BRANDED_FILES) {
 /* --------------------------------- 8. scripts -------------------------------- */
 
 const pkg = JSON.parse(read("package.json") || "{}") as { scripts?: Record<string, string> };
-for (const script of ["test", "build", "typecheck", "release:check"]) {
+for (const script of ["test", "build", "typecheck", "release:check", "release:check:submit"]) {
   check(`package script «${script}»`, Boolean(pkg.scripts?.[script]), "defined");
 }
 

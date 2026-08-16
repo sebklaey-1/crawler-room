@@ -61,6 +61,16 @@ the domain:
 
 ## Remaining manual blockers
 
+Run `bun run release:check:submit` to see the current state of this list. That
+script reports **only** external/manual items and never prints a secret value.
+`bun run release:check` covers everything verifiable from the repository and
+must be 100 % green (exit 0) on its own.
+
+The named public moderation owner (`SEBKLAEY Agency — Sebastian Kläy`) is
+canonical in `src/lib/room/legal.ts`. The real moderator subject hash is
+configured in `moderator_subjects` only and never appears in code, migrations
+or logs.
+
 2. OpenAI domain verification for `crawler.today`.
 3. ChatGPT OAuth callback URL in the Supabase redirect allow list.
 4. Custom access token hook enabled in production.

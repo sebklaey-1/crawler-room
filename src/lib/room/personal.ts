@@ -28,7 +28,26 @@ export interface PersonalRoom {
 
 /* --------------------------------- handles -------------------------------- */
 
-/** Turns any display name into a URL/mention-safe handle. */
+/**
+ * Handles are one single global namespace (`user_rooms.handle` plus every old
+ * handle kept in `handle_redirects`). The canonical form is lowercase ASCII
+ * `[a-z0-9_]{3,30}`; case and surrounding whitespace never create a second
+ * name. The database is the authority — see `public.normalize_handle`.
+ */
+export const HANDLE_PATTERN = /^[a-z0-9_]{3,30}$/;
+
+/** Canonical form of a handle, or null when the input is not a valid handle. */
+export function canonicalHandle(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const value = raw.normalize("NFKC").trim().replace(/^@+/, "").toLowerCase();
+  return HANDLE_PATTERN.test(value) ? value : null;
+}
+
+/**
+ * Derives a *base* handle from an arbitrary display name. Only used to seed
+ * automatic first-time assignment and suggestions — an explicitly chosen
+ * handle is never silently slugified.
+ */
 export function slugifyHandle(alias: string): string {
   const base = alias
     .normalize("NFKD")
@@ -36,27 +55,27 @@ export function slugifyHandle(alias: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "")
-    .slice(0, 24);
-  return base || "member";
+    .slice(0, 30);
+  return base.length >= 3 ? base : "member";
 }
 
-/** Strips a leading "@" and normalises a handle the user typed. */
+/** Strips a leading "@" and normalises a handle the user typed; never slugifies. */
 export function normalizeHandleInput(raw: unknown): string {
-  if (typeof raw !== "string" || !raw.trim()) throw roomError("INVALID_INPUT");
-  return slugifyHandle(raw.trim().replace(/^@+/, ""));
+  const handle = canonicalHandle(raw);
+  if (!handle) {
+    throw roomError(
+      "INVALID_INPUT",
+      "Handles bestehen aus 3–30 Zeichen: Kleinbuchstaben, Zahlen und Unterstriche, keine Leerzeichen.",
+    );
+  }
+  return handle;
 }
 
-async function uniqueHandle(db: Db, subjectHash: string, desired: string): Promise<string> {
-  for (let attempt = 0; attempt < 25; attempt += 1) {
-    const candidate = attempt === 0 ? desired : `${desired}${attempt + 1}`;
-    const { data } = await db
-      .from("user_rooms")
-      .select("owner_subject_hash")
-      .eq("handle", candidate)
-      .maybeSingle();
-    if (!data || data.owner_subject_hash === subjectHash) return candidate;
-  }
-  return `${desired}_${subjectHash.slice(0, 6)}`;
+/** True when a Postgres error signals a lost handle/alias claim race. */
+export function isClaimConflict(error: unknown): boolean {
+  const value = error as { code?: string; message?: string } | null;
+  if (!value) return false;
+  return value.code === "23505" || /ALIAS_TAKEN/.test(value.message ?? "");
 }
 
 /* ------------------------------ personal room ----------------------------- */
@@ -66,15 +85,22 @@ export function personalRoomName(alias: string): string {
   return /s$/i.test(trimmed) ? `${trimmed}' Room` : `${trimmed}'s Room`;
 }
 
-/** Idempotent: returns the person's permanent room, creating it on first use. */
+/**
+ * Idempotent: returns the person's permanent room, creating it on first use.
+ *
+ * Handle and public user name are claimed transactionally inside
+ * `get_or_create_personal_room`. Two people starting from the same base name
+ * at the same time therefore end up with two different valid names.
+ */
 export async function ensurePersonalRoom(db: Db, subjectHash: string): Promise<PersonalRoom> {
-  const alias = (await getCustomAlias(db, subjectHash)) ?? generateAlias(`${subjectHash}:personal`);
-  const handle = await uniqueHandle(db, subjectHash, slugifyHandle(alias));
+  const stored = await getCustomAlias(db, subjectHash);
+  const seed = stored ?? generateAlias(`${subjectHash}:personal`);
 
   const { data, error } = await db.rpc("get_or_create_personal_room", {
     p_subject_hash: subjectHash,
-    p_handle: handle,
-    p_room_name: personalRoomName(alias),
+    p_handle: slugifyHandle(seed),
+    p_room_name: personalRoomName(seed),
+    p_display_name: seed,
   });
   if (error) throw roomError("ROOM_UNAVAILABLE");
   const row = data as {
@@ -84,11 +110,14 @@ export async function ensurePersonalRoom(db: Db, subjectHash: string): Promise<P
     description?: string | null;
     created_at?: string;
   } | null;
-  if (!row?.room_id) throw roomError("ROOM_UNAVAILABLE");
+  if (!row?.room_id || !row.handle) throw roomError("ROOM_UNAVAILABLE");
+
+  // The database may have resolved a collision, so re-read the effective name.
+  const alias = stored ?? (await getCustomAlias(db, subjectHash)) ?? seed;
 
   return {
     roomId: row.room_id,
-    handle: row.handle ?? handle,
+    handle: row.handle,
     roomName: row.room_name ?? personalRoomName(alias),
     description: row.description ?? null,
     ownerSubjectHash: subjectHash,
@@ -97,23 +126,34 @@ export async function ensurePersonalRoom(db: Db, subjectHash: string): Promise<P
   };
 }
 
-/** Keeps handle and room name in sync after a display-name change. */
+/**
+ * Keeps the room name in sync after a display-name change.
+ * The handle is deliberately left untouched: only `profile/change_handle`
+ * moves a handle, so existing @mentions and links stay valid.
+ */
 export async function syncPersonalRoomName(db: Db, subjectHash: string, alias: string) {
-  const { data } = await db
+  const { data, error } = await db
     .from("user_rooms")
-    .select("id, handle, room_name")
+    .select("id, room_id, handle")
     .eq("owner_subject_hash", subjectHash)
     .maybeSingle();
+  if (error) throw roomError("INTERNAL_ERROR");
   if (!data) return null;
 
-  const handle = await uniqueHandle(db, subjectHash, slugifyHandle(alias));
   const roomName = personalRoomName(alias);
-  await db.from("user_rooms").update({ handle, room_name: roomName }).eq("id", data.id);
-  await db
+  const { error: updateError } = await db
+    .from("user_rooms")
+    .update({ room_name: roomName })
+    .eq("id", data.id);
+  if (updateError) throw roomError("INTERNAL_ERROR");
+
+  const { error: roomsError } = await db
     .from("rooms")
     .update({ title: roomName })
-    .eq("id", (data as { room_id?: string | null }).room_id ?? undefined);
-  return { handle, roomName };
+    .eq("id", data.room_id);
+  if (roomsError) throw roomError("INTERNAL_ERROR");
+
+  return { handle: data.handle, roomName };
 }
 
 export async function findRoomByHandle(db: Db, handle: string): Promise<PersonalRoom | null> {
