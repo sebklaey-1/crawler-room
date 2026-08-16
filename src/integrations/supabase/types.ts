@@ -1134,6 +1134,42 @@ export type Database = {
           },
         ]
       }
+      privacy_requests: {
+        Row: {
+          auth_user_hash: string
+          created_at: string
+          expires_at: string
+          id: string
+          note: string | null
+          reference: string
+          request_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          auth_user_hash: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          reference: string
+          request_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          auth_user_hash?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          reference?: string
+          request_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profile_blocks: {
         Row: {
           blocked_subject_hash: string
@@ -1507,6 +1543,54 @@ export type Database = {
           },
         ]
       }
+      support_requests: {
+        Row: {
+          body: string
+          category: string
+          contact: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          public_target: string | null
+          reference: string
+          requester_hash: string | null
+          requester_hash_expires_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          category: string
+          contact?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          public_target?: string | null
+          reference: string
+          requester_hash?: string | null
+          requester_hash_expires_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          contact?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          public_target?: string | null
+          reference?: string
+          requester_hash?: string | null
+          requester_hash_expires_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       topic_aliases: {
         Row: {
           created_at: string
@@ -1727,6 +1811,7 @@ export type Database = {
     }
     Functions: {
       cleanup_expired: { Args: never; Returns: Json }
+      cleanup_support_requests: { Args: never; Returns: Json }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       enforce_all_retention: {
         Args: never

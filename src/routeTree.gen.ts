@@ -10,11 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DataDeletionRouteImport } from './routes/data-deletion'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as SafetyRouteImport } from './routes/safety'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes/[.]well-known.oauth-protected-resource'
+import { Route as DotwellKnownOpenaiAppsChallengeRouteImport } from './routes/[.]well-known.openai-apps-challenge'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as ApiPublicDataDeletionRouteImport } from './routes/api.public.data-deletion'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
+import { Route as ApiPublicSupportRouteImport } from './routes/api.public.support'
 import { Route as ApiPublicAdminCleanupRouteImport } from './routes/api.public.admin.cleanup'
 import { Route as ApiPublicRoomUploadRouteImport } from './routes/api.public.room.upload'
 
@@ -23,10 +31,41 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DataDeletionRoute = DataDeletionRouteImport.update({
+  id: '/data-deletion',
+  path: '/data-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SafetyRoute = SafetyRouteImport.update({
+  id: '/safety',
+  path: '/safety',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DotwellKnownOauthProtectedResourceRoute =
   DotwellKnownOauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
     path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotwellKnownOpenaiAppsChallengeRoute =
+  DotwellKnownOpenaiAppsChallengeRouteImport.update({
+    id: '/.well-known/openai-apps-challenge',
+    path: '/.well-known/openai-apps-challenge',
     getParentRoute: () => rootRouteImport,
   } as any)
 const OauthConsentRoute = OauthConsentRouteImport.update({
@@ -39,6 +78,11 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDataDeletionRoute = ApiPublicDataDeletionRouteImport.update({
+  id: '/api/public/data-deletion',
+  path: '/api/public/data-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   id: '/api/public/health',
   path: '/api/public/health',
@@ -47,6 +91,11 @@ const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
 const ApiPublicMcpRoute = ApiPublicMcpRouteImport.update({
   id: '/api/public/mcp',
   path: '/api/public/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSupportRoute = ApiPublicSupportRouteImport.update({
+  id: '/api/public/support',
+  path: '/api/public/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAdminCleanupRoute = ApiPublicAdminCleanupRouteImport.update({
@@ -62,32 +111,56 @@ const ApiPublicRoomUploadRoute = ApiPublicRoomUploadRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/data-deletion': typeof DataDeletionRoute
+  '/privacy': typeof PrivacyRoute
+  '/safety': typeof SafetyRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
+  '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/data-deletion': typeof DataDeletionRoute
+  '/privacy': typeof PrivacyRoute
+  '/safety': typeof SafetyRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
+  '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/data-deletion': typeof DataDeletionRoute
+  '/privacy': typeof PrivacyRoute
+  '/safety': typeof SafetyRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRoute
+  '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
+  '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
 }
@@ -95,42 +168,74 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/data-deletion'
+    | '/privacy'
+    | '/safety'
+    | '/support'
+    | '/terms'
     | '/.well-known/oauth-protected-resource'
+    | '/.well-known/openai-apps-challenge'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
+    | '/api/public/support'
     | '/api/public/admin/cleanup'
     | '/api/public/room/upload'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/data-deletion'
+    | '/privacy'
+    | '/safety'
+    | '/support'
+    | '/terms'
     | '/.well-known/oauth-protected-resource'
+    | '/.well-known/openai-apps-challenge'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
+    | '/api/public/support'
     | '/api/public/admin/cleanup'
     | '/api/public/room/upload'
   id:
     | '__root__'
     | '/'
+    | '/data-deletion'
+    | '/privacy'
+    | '/safety'
+    | '/support'
+    | '/terms'
     | '/.well-known/oauth-protected-resource'
+    | '/.well-known/openai-apps-challenge'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
+    | '/api/public/support'
     | '/api/public/admin/cleanup'
     | '/api/public/room/upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DataDeletionRoute: typeof DataDeletionRoute
+  PrivacyRoute: typeof PrivacyRoute
+  SafetyRoute: typeof SafetyRoute
+  SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
   DotwellKnownOauthProtectedResourceRoute: typeof DotwellKnownOauthProtectedResourceRoute
+  DotwellKnownOpenaiAppsChallengeRoute: typeof DotwellKnownOpenaiAppsChallengeRoute
   OauthConsentRoute: typeof OauthConsentRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  ApiPublicDataDeletionRoute: typeof ApiPublicDataDeletionRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
+  ApiPublicSupportRoute: typeof ApiPublicSupportRoute
   ApiPublicAdminCleanupRoute: typeof ApiPublicAdminCleanupRoute
   ApiPublicRoomUploadRoute: typeof ApiPublicRoomUploadRoute
 }
@@ -144,11 +249,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/data-deletion': {
+      id: '/data-deletion'
+      path: '/data-deletion'
+      fullPath: '/data-deletion'
+      preLoaderRoute: typeof DataDeletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/safety': {
+      id: '/safety'
+      path: '/safety'
+      fullPath: '/safety'
+      preLoaderRoute: typeof SafetyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
       path: '/.well-known/oauth-protected-resource'
       fullPath: '/.well-known/oauth-protected-resource'
       preLoaderRoute: typeof DotwellKnownOauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/openai-apps-challenge': {
+      id: '/.well-known/openai-apps-challenge'
+      path: '/.well-known/openai-apps-challenge'
+      fullPath: '/.well-known/openai-apps-challenge'
+      preLoaderRoute: typeof DotwellKnownOpenaiAppsChallengeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oauth/consent': {
@@ -165,6 +312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/data-deletion': {
+      id: '/api/public/data-deletion'
+      path: '/api/public/data-deletion'
+      fullPath: '/api/public/data-deletion'
+      preLoaderRoute: typeof ApiPublicDataDeletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/health': {
       id: '/api/public/health'
       path: '/api/public/health'
@@ -177,6 +331,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/mcp'
       fullPath: '/api/public/mcp'
       preLoaderRoute: typeof ApiPublicMcpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/support': {
+      id: '/api/public/support'
+      path: '/api/public/support'
+      fullPath: '/api/public/support'
+      preLoaderRoute: typeof ApiPublicSupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/admin/cleanup': {
@@ -198,12 +359,20 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DataDeletionRoute: DataDeletionRoute,
+  PrivacyRoute: PrivacyRoute,
+  SafetyRoute: SafetyRoute,
+  SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
   DotwellKnownOauthProtectedResourceRoute:
     DotwellKnownOauthProtectedResourceRoute,
+  DotwellKnownOpenaiAppsChallengeRoute: DotwellKnownOpenaiAppsChallengeRoute,
   OauthConsentRoute: OauthConsentRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  ApiPublicDataDeletionRoute: ApiPublicDataDeletionRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
+  ApiPublicSupportRoute: ApiPublicSupportRoute,
   ApiPublicAdminCleanupRoute: ApiPublicAdminCleanupRoute,
   ApiPublicRoomUploadRoute: ApiPublicRoomUploadRoute,
 }

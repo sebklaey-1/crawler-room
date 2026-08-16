@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { LEGAL_LINKS } from "@/lib/room/legal";
 
 /**
  * OAuth 2.1 consent screen for the @room MCP server.
@@ -264,6 +265,17 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
               Verbindung abbrechen
             </Button>
           </div>
+          <nav aria-label="Legal and support" className="flex flex-wrap gap-x-4 gap-y-2 pt-2">
+            {LEGAL_LINKS.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-xs text-muted-foreground underline underline-offset-4"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
         </section>
       ) : null}
     </main>
