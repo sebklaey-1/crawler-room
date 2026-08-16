@@ -396,24 +396,28 @@ export async function addOrgMember(
 
   const targetSubject = await subjectHashForHandle(db, username);
   const targetAccount = await ensureAccount(db, targetSubject);
+  // Ownership is never granted through a membership row.
   const safeRole: OrgRole = role === "owner" ? "admin" : role;
+  const dbRole = toDbRole(safeRole);
 
-  const { data: existing } = await db
+  const { data: existing, error: readError } = await db
     .from("organization_members")
     .select("id")
     .eq("organization_id", org.id)
     .eq("account_id", targetAccount)
     .maybeSingle();
+  if (readError) throw roomError("INTERNAL_ERROR");
 
   if (existing) {
-    await db
+    const { error } = await db
       .from("organization_members")
-      .update({ role: safeRole })
+      .update({ role: dbRole })
       .eq("id", (existing as any).id);
+    if (error) throw roomError("INTERNAL_ERROR");
   } else {
     const { error } = await db
       .from("organization_members")
-      .insert({ organization_id: org.id, account_id: targetAccount, role: safeRole });
+      .insert({ organization_id: org.id, account_id: targetAccount, role: dbRole });
     if (error) throw roomError("INTERNAL_ERROR");
   }
 
@@ -423,6 +427,7 @@ export async function addOrgMember(
     alias: await aliasFor(db, targetSubject),
     organization: serializeOrg(org, myRole),
   };
+
 }
 
 export async function removeOrgMember(
