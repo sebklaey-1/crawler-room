@@ -22,7 +22,13 @@ import {
   slugifyHandle,
   type PersonalRoom,
 } from "./personal";
-import { countOnline, getCustomAlias, PRESENCE_WINDOW_SECONDS, type Db } from "./store";
+import {
+  countOnline,
+  getCustomAlias,
+  PRESENCE_WINDOW_SECONDS,
+  setSubjectAlias,
+  type Db,
+} from "./store";
 
 export const BIO_MAX = 280;
 export const LOCATION_MAX = 60;
@@ -298,7 +304,7 @@ export async function updateProfile(db: Db, subjectHash: string, patch: ProfileP
   if (typeof patch.display_name === "string") {
     const clean = sanitizeAlias(patch.display_name);
     if (!clean) throw roomError("INVALID_INPUT");
-    await setDisplayName(db, subjectHash, clean);
+    await setSubjectAlias(db, subjectHash, clean);
   }
   if (typeof patch.bio === "string") {
     update["description"] = patch.bio.trim().slice(0, BIO_MAX) || null;
