@@ -7,7 +7,7 @@
  * No prices, plans, billing, ads or campaigns are involved.
  */
 import { generateAlias } from "./alias";
-import { config, retentionCutoffIso } from "./config";
+import { config, retentionCutoffIso, retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
 import { encodeMessageId, encodeRoomId } from "./ids";
 import { normalizeHandleInput } from "./personal";
@@ -774,9 +774,7 @@ export async function sendCommunityMessage(
     membership_id: membership.membershipId,
     body,
     created_at: now.toISOString(),
-    expires_at: new Date(
-      now.getTime() + settings.messageRetentionHours * 3600 * 1000,
-    ).toISOString(),
+    expires_at: retentionDeadlineIso(now),
   });
   if (error) throw roomError("INTERNAL_ERROR");
 
