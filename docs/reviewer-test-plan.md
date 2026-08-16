@@ -39,7 +39,22 @@ the normal ChatGPT connector flow; the consent screen creates the session.
 | N4  | Unknown action, e.g. `likes` action `delete`                             | `INVALID_INPUT` from schema validation, no side effect                                                                                                  |
 | N5  | Unexpected extra field, e.g. `universal_room { action: "read", foo: 1 }` | `INVALID_INPUT` (schemas are strict)                                                                                                                    |
 | N6  | Request body larger than 256 KiB                                         | HTTP 413, no partial processing                                                                                                                         |
-| N7  | Token issued for another resource                                        | `INVALID_TOKEN` with a fresh challenge; identity is never derived from input                                                                            |
+| N7  | `universal_room` `report` without a token                                | `AUTH_REQUIRED`; nothing is stored                                                                                                                      |
+| N8  | `public_room` `report` with a message id from a different room           | `NOT_FOUND`; cross-room and invented targets are refused                                                                                                |
+| N9  | `profile` `block` on your own handle                                     | `INVALID_INPUT`/`FORBIDDEN`; `list_blocks` unchanged and free of subject hashes                                                                        |
+| N10 | Same `report` twice for the same target                                  | second call returns `already_reported: true` with the same status; no duplicate case                                                                    |
+| N11 | Many reports in a row                                                    | `RATE_LIMITED` with `Retry-After`; no internal details                                                                                                  |
+| N12 | Token issued for another resource                                        | `INVALID_TOKEN` with a fresh challenge; identity is never derived from input                                                                            |
+
+## Safety flow (reversible, test data only)
+
+1. Post a throwaway message with `universal_room` `send`.
+2. Report it with `universal_room` `report`, reason `spam` — expect
+   `{ reported: true, status: "received", receipt: "…" }` and no identifiers.
+3. Report it again — expect `already_reported: true`.
+4. Confirm the message is still readable: a report removes nothing automatically.
+5. `profile` `block` a second test handle, then `profile` `list_blocks` (handles only), then
+   `profile` `unblock` to restore the original state.
 
 ## Content safety spot check
 
