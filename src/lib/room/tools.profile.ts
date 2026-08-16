@@ -2,7 +2,7 @@
  * MCP handlers for the social profile: view, edit, images, likes, analytics.
  * Ownership is always the pseudonymous subject from `_meta` — never an input.
  */
-import { payloadOf } from "./dbtypes";
+import { embedded, payloadOf, type EmbeddedShapes } from "./dbtypes";
 import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { imageConfig, IMAGE_RETENTION, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
@@ -194,10 +194,13 @@ export async function handleUpdateProfile(input: unknown, meta: McpMeta) {
   }>(input);
   const profile = await updateProfile(db, identity.subjectHash, {
     display_name: patch.display_name,
-    bio: patch.bio,
-    location: patch.location,
-    external_url: patch.external_url,
-    profile_visibility: patch.profile_visibility,
+    bio: patch.bio ?? undefined,
+    location: patch.location ?? undefined,
+    external_url: patch.external_url ?? undefined,
+    profile_visibility:
+      patch.profile_visibility === "private" || patch.profile_visibility === "public"
+        ? patch.profile_visibility
+        : undefined,
     show_online_status: patch.show_online_status,
     show_follower_count: patch.show_follower_count,
     show_likes: patch.show_likes,
@@ -293,8 +296,9 @@ async function resolveLikeTarget(
     if (!data) throw roomError("MESSAGE_NOT_FOUND");
     return {
       targetId: String(id),
-      ownerSubjectHash: (data).memberships?.subject_hash ?? "",
-      roomId: (data).room_id,
+      ownerSubjectHash:
+        embedded<EmbeddedShapes["memberships"]>(data.memberships)?.subject_hash ?? "",
+      roomId: data.room_id,
     };
   }
 
@@ -308,8 +312,9 @@ async function resolveLikeTarget(
   if (!data) throw roomError("IMAGE_NOT_FOUND");
   return {
     targetId: String(id),
-    ownerSubjectHash: (data).memberships?.subject_hash ?? "",
-    roomId: (data).room_id,
+    ownerSubjectHash:
+      embedded<EmbeddedShapes["memberships"]>(data.memberships)?.subject_hash ?? "",
+    roomId: data.room_id,
   };
 }
 
@@ -323,7 +328,7 @@ export async function handleLikeContent(input: unknown, meta: McpMeta) {
   const db = await getDb();
   await touchPresence(db, identity.subjectHash);
 
-  const payload = (input ?? {});
+  const payload = payloadOf<{ target_type?: string; target_id?: string; username?: string }>(input);
   const targetType = likeType(payload.target_type);
   await enforceRateLimit(db, identity.subjectHash, "like", WINDOWS.message(20, 200));
 
@@ -347,7 +352,7 @@ export async function handleLikeContent(input: unknown, meta: McpMeta) {
 export async function handleUnlikeContent(input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
-  const payload = (input ?? {});
+  const payload = payloadOf<{ target_type?: string; target_id?: string; username?: string }>(input);
   const targetType = likeType(payload.target_type);
   const target = await resolveLikeTarget(db, targetType, payload.target_id ?? payload.username);
   const result = await removeLike(db, identity.subjectHash, targetType, target.targetId);
@@ -366,7 +371,7 @@ export async function handleProfileAnalytics(input: unknown, meta: McpMeta) {
   const db = await getDb();
   const profile = await getOwnProfile(db, identity.subjectHash);
 
-  const requested = Number((input)?.range_days ?? 30);
+  const requested = Number(payloadOf<{ range_days?: number }>(input).range_days ?? 30);
   const days: 7 | 30 | 90 = requested === 7 ? 7 : requested === 90 ? 90 : 30;
 
   const stats = await profileAnalytics(db, profile, days);
@@ -387,7 +392,7 @@ export async function handleProfileAnalytics(input: unknown, meta: McpMeta) {
 export async function handleTrackProfileLink(input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
-  const found = await findProfileByHandle(db, String((input)?.username ?? ""));
+  const found = await findProfileByHandle(db, String(payloadOf<{ username?: string }>(input).username ?? ""));
   if (!found) throw roomError("NOT_FOUND", "Dieses Profil gibt es nicht.");
 
   await recordEvent(db, {
@@ -402,14 +407,14 @@ export async function handleTrackProfileLink(input: unknown, meta: McpMeta) {
 export async function handleBlockProfile(input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
-  const found = await findProfileByHandle(db, String((input)?.username ?? ""));
+  const found = await findProfileByHandle(db, String(payloadOf<{ username?: string }>(input).username ?? ""));
   if (!found) throw roomError("NOT_FOUND", "Dieses Profil gibt es nicht.");
 
   await blockPerson(
     db,
     identity.subjectHash,
     found.profile.ownerSubjectHash,
-    (input)?.reason,
+    payloadOf<{ reason?: string }>(input).reason,
   );
   return { handle: found.profile.handle, message: `@${found.profile.handle} ist blockiert.` };
 }
