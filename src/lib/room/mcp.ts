@@ -114,7 +114,7 @@ function safeAction(params: JsonRpcParams, tool: SurfaceTool): string | undefine
 
 /** Builds the `_meta` a handler sees: client data minus `room/*`, plus auth. */
 async function buildMeta(params: JsonRpcParams, context: RequestContext): Promise<McpMeta> {
-  const meta = sanitizeClientMeta((params?._meta ?? {}) as McpMeta);
+  const meta = sanitizeClientMeta((params?.["_meta"] ?? {}) as McpMeta);
   meta["room/origin"] = context.origin;
 
   // Only the pseudonymous subject reaches a handler — never the raw auth id.
@@ -130,7 +130,7 @@ async function buildMeta(params: JsonRpcParams, context: RequestContext): Promis
 }
 
 async function callTool(params: JsonRpcParams, context: RequestContext) {
-  const tool = TOOLS.find((entry) => entry.name === params?.name);
+  const tool = TOOLS.find((entry) => entry.name === params?.["name"]);
   if (!tool) {
     return {
       content: [{ type: "text", text: "Unbekanntes Tool." }],
@@ -144,7 +144,7 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
   const action = safeAction(params, tool);
   try {
     const meta = await buildMeta(params, context);
-    const result = (await tool.handler(params?.arguments ?? {}, meta)) as Record<string, unknown>;
+    const result = (await tool.handler(params?.["arguments"] ?? {}, meta)) as Record<string, unknown>;
 
     // `_content` carries MCP content blocks (e.g. an image) and never ships as data.
     const { _content, ...raw } = result as { _content?: unknown[] };
@@ -257,8 +257,8 @@ export function validateRpcMessage(message: unknown): { code: number; message: s
 async function handleRpc(message: Record<string, unknown>, context: RequestContext): Promise<Json | null> {
   const invalid = validateRpcMessage(message);
   if (invalid) {
-    const id =
-      typeof message?.id === "string" || typeof message?.id === "number" ? message.id : null;
+    const rawId = message?.["id"];
+    const id = typeof rawId === "string" || typeof rawId === "number" ? rawId : null;
     return rpcError(id, invalid.code, invalid.message);
   }
 
@@ -271,10 +271,11 @@ async function handleRpc(message: Record<string, unknown>, context: RequestConte
 
   switch (method) {
     case "initialize": {
-      const requested = params?.protocolVersion;
-      const version = SUPPORTED_PROTOCOL_VERSIONS.includes(requested)
-        ? requested
-        : PROTOCOL_VERSION;
+      const requested = params?.["protocolVersion"];
+      const version =
+        typeof requested === "string" && SUPPORTED_PROTOCOL_VERSIONS.includes(requested)
+          ? requested
+          : PROTOCOL_VERSION;
       return rpcResult(id ?? null, {
         protocolVersion: version,
         capabilities: { tools: { listChanged: false } },
@@ -402,7 +403,7 @@ async function runBatch(
       if (index >= entries.length) return;
       // A separate context per entry: one auth failure never contaminates another.
       const context = make();
-      results[index] = await handleRpc(entries[index], context);
+      results[index] = await handleRpc(entries[index] as Record<string, unknown>, context);
       if (context.authRequired) authRequired = true;
       if (context.challenge) challenge = true;
     }
@@ -527,7 +528,7 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
   }
 
   const context = makeContext();
-  const response = await handleRpc(payload, context);
+  const response = await handleRpc(payload as Record<string, unknown>, context);
   if (context.challenge) return unauthorized(origin, "invalid_token");
   if (!response) return emptyResponse(202);
 

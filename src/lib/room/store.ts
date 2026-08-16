@@ -77,21 +77,38 @@ export async function joinTopicRoom(
   });
   if (error) throw roomError("ROOM_UNAVAILABLE");
 
-  const result = data as Record<string, unknown> | null;
+  const result = data as {
+    error?: string;
+    membership_id?: string;
+    alias?: string;
+    joined_at?: string;
+    last_read_message_id?: number | null;
+    room_id?: string;
+    room_number?: number;
+    capacity?: number;
+    member_count?: number;
+    topic_slug?: string;
+    topic_display_name?: string;
+    joined_now?: boolean;
+  } | null;
   if (!result) throw roomError("ROOM_UNAVAILABLE");
-  if (result["error"] === "TOPIC_NOT_FOUND") throw roomError("TOPIC_NOT_FOUND");
+  if (result.error === "TOPIC_NOT_FOUND") throw roomError("TOPIC_NOT_FOUND");
+  if (!result.membership_id || !result.room_id) throw roomError("ROOM_UNAVAILABLE");
 
   return {
-    membershipId: result["membership_id"],
-    alias: result["alias"],
-    joinedAt: result["joined_at"],
-    lastReadMessageId: result["last_read_message_id"] ?? null,
-    roomId: result["room_id"],
-    roomNumber: result["room_number"],
-    capacity: result["capacity"],
-    memberCount: result["member_count"],
-    topic: { slug: result["topic_slug"], display_name: result["topic_display_name"] },
-    joinedNow: Boolean(result["joined_now"]),
+    membershipId: result.membership_id,
+    alias: result.alias ?? alias,
+    joinedAt: result.joined_at ?? new Date().toISOString(),
+    lastReadMessageId: result.last_read_message_id ?? null,
+    roomId: result.room_id,
+    roomNumber: result.room_number ?? 1,
+    capacity: result.capacity ?? 0,
+    memberCount: result.member_count ?? 0,
+    topic: {
+      slug: result.topic_slug ?? topicSlug,
+      display_name: result.topic_display_name ?? (result.topic_slug ?? topicSlug),
+    },
+    joinedNow: Boolean(result.joined_now),
   };
 }
 

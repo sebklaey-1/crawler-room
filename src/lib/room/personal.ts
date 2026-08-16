@@ -77,17 +77,23 @@ export async function ensurePersonalRoom(db: Db, subjectHash: string): Promise<P
     p_room_name: personalRoomName(alias),
   });
   if (error) throw roomError("ROOM_UNAVAILABLE");
-  const row = data as Record<string, unknown> | null;
-  if (!row?.["room_id"]) throw roomError("ROOM_UNAVAILABLE");
+  const row = data as {
+    room_id?: string;
+    handle?: string;
+    room_name?: string;
+    description?: string | null;
+    created_at?: string;
+  } | null;
+  if (!row?.room_id) throw roomError("ROOM_UNAVAILABLE");
 
   return {
-    roomId: row["room_id"],
-    handle: row["handle"],
-    roomName: row["room_name"],
-    description: row["description"] ?? null,
+    roomId: row.room_id,
+    handle: row.handle ?? handle,
+    roomName: row.room_name ?? personalRoomName(alias),
+    description: row.description ?? null,
     ownerSubjectHash: subjectHash,
     ownerAlias: alias,
-    createdAt: row["created_at"],
+    createdAt: row.created_at ?? new Date().toISOString(),
   };
 }
 
