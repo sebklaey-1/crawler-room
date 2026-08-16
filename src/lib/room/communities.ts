@@ -357,21 +357,24 @@ export async function listOrgMembers(db: Db, subjectHash: string, reference: str
   const accountId = await accountIdFor(db, subjectHash);
   const role = await orgRoleOf(db, org.id, accountId);
 
-  const { data } = await db
+  const { data, error } = await db
     .from("organization_members")
     .select("account_id, role, created_at, accounts(display_alias)")
     .eq("organization_id", org.id)
     .order("created_at", { ascending: true })
     .limit(200);
+  if (error) throw roomError("INTERNAL_ERROR");
 
   return {
     organization: serializeOrg(org, role),
     members: ((data ?? []) as any[]).map((row) => ({
       alias: row.accounts?.display_alias ?? "Mitglied",
-      role: row.account_id === org.owner_account_id ? "owner" : (row.role as string),
+      role:
+        row.account_id === org.owner_account_id ? "owner" : (fromDbRole(row.role) ?? "member"),
       since: row.created_at as string,
       is_owner: row.account_id === org.owner_account_id,
     })),
+
   };
 }
 
