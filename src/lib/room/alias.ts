@@ -1,6 +1,14 @@
 /**
- * Alias handling: sanitize user-provided aliases, generate friendly anonymous
- * names. Aliases are display-only and need not be globally unique.
+ * Alias handling: sanitize user-provided aliases and generate friendly
+ * anonymous names.
+ *
+ * Two different things are called "alias" here:
+ * - Automatically generated contextual aliases (`generateAlias`) are purely
+ *   display-oriented per context and are never registered globally.
+ * - Explicitly chosen public user names (display names) ARE globally unique:
+ *   uniqueness is enforced atomically by the database name registry
+ *   (`name_claims` / `normalize_alias`). `aliasKey` only mirrors that
+ *   normalisation for UX pre-checks; the database stays the authority.
  */
 
 export const MAX_ALIAS_LENGTH = 32;
