@@ -75,3 +75,18 @@ hashes. The health endpoint exposes only a status flag and the version.
   passes; retention caps and reporting reduce, but do not remove, this.
 - A compromised Supabase project would expose pseudonymous content; it would
   not reveal real-world identities.
+
+## Prompt injection through reported and quoted content
+
+Room messages, aliases, bios, community titles and alt texts are untrusted. Every summary escapes
+them (`src/lib/room/ugc.ts`): Markdown, HTML, code fences and Unicode control/bidi characters are
+neutralised, foreign text is quoted under an explicit untrusted-content banner, and only
+server-issued `https` storage URLs are rendered as active images. Report confirmations never echo
+the reported content. Regression tests live in `src/lib/room/phase3.test.ts`.
+
+## Abuse of the reporting function
+
+Reports are OAuth-only, target-resolved server-side (no invented or cross-room ids), idempotent
+per reporter/target, rate limited per reporter and per target, and never trigger an automatic
+takedown. Moderator actions are server-side only and gated by the hashed
+`moderator_subjects` allowlist.

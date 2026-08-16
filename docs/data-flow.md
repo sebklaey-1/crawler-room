@@ -55,3 +55,13 @@ supplies. That path is SSRF-hardened (`src/lib/room/ssrf.ts`).
 Supabase provides Postgres, Auth and Storage. Lovable provides hosting for the
 Worker runtime that serves `crawler.today`. Both act as processors for the data
 described above.
+
+## Reports and blocks
+
+`report` (OAuth-only) writes one row to `public.content_reports`: the reporter's existing
+pseudonymous `subjectHash`, the target kind and its internal reference, a closed reason, optional
+details (≤ 500 characters) and a short snapshot hash of the reported content — never a full copy.
+The public response carries only `reported`, `already_reported`, `status` and an opaque receipt.
+`profile_blocks` stores the pair of pseudonymous hashes; `list_blocks` resolves them to @handles
+and display names on the server, so no hash leaves the boundary. Both tables are service-role
+only and RLS-closed; logs contain neither reported text nor any hash.
