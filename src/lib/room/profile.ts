@@ -12,10 +12,13 @@ import { SafeFetchError, fetchImageSafely } from "./ssrf";
 import { sanitizeImage } from "./images";
 import { removeStorageObjects, signedUrl, uploadObject } from "./imagestore";
 import {
+  canonicalHandle,
   ensurePersonalRoom,
   followerCount,
+  isClaimConflict,
   isFollowing,
   liveCount,
+  personalRoomName,
   slugifyHandle,
   type PersonalRoom,
 } from "./personal";
