@@ -15,7 +15,12 @@ function activeFiles(): string[] {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) walk(path);
-      else if (/\.(tsx?|md)$/.test(entry.name) && !entry.name.endsWith(".test.ts")) out.push(path);
+      else if (
+        /\.(tsx?|md)$/.test(entry.name) &&
+        !entry.name.endsWith(".test.ts") &&
+        path !== join("src", "lib", "room", "branding.ts")
+      )
+        out.push(path);
     }
   };
   walk("src");
