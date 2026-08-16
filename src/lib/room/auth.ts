@@ -159,7 +159,9 @@ export async function resolveAuthSubject(
 
 /** Discovery document for RFC 9728 (OAuth 2.0 Protected Resource Metadata). */
 export function protectedResourceMetadata(origin: string) {
-  const issuer = process.env["SUPABASE_URL"] ?? "";
+  const base = (process.env["SUPABASE_URL"] ?? "").replace(/\/$/, "");
+  // Canonical OAuth issuer of the project's auth server (OpenID discovery).
+  const issuer = base ? `${base}/auth/v1` : "";
   return {
     resource: `${origin}/api/public/mcp`,
     authorization_servers: issuer ? [issuer] : [],
