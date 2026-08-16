@@ -45,15 +45,14 @@ async function moderatorConfigured(): Promise<{ ok: boolean; detail: string }> {
       .select("id", { count: "exact", head: true })
       .eq("active", true);
     if (error) return { ok: false, detail: `cannot verify — ${error.message}` };
+    // Never print a subject hash: the number of active moderators is enough.
     return {
       ok: (count ?? 0) > 0,
-      // Never print a subject hash: the number of active moderators is enough.
-      ok_detail: "",
       detail:
         (count ?? 0) > 0
           ? `${count} active moderator subject(s) on record`
           : "missing — add the real moderator subject hash to moderator_subjects (never in code)",
-    } as { ok: boolean; detail: string };
+    };
   } catch (error) {
     return { ok: false, detail: `cannot verify — ${(error as Error).message}` };
   }
