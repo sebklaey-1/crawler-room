@@ -667,7 +667,7 @@ async function likesHandler(input: unknown, meta: McpMeta): Promise<Json> {
 
 const analyticsInput = z
   .object({
-    action: z.literal("profile"),
+    action: z.enum(["profile"]),
     range_days: z.union([z.literal(7), z.literal(30), z.literal(90)]).optional(),
   })
   .strict();
