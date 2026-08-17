@@ -19,7 +19,7 @@ const REAL_TOOLS = [
   "communities",
 ];
 
-const ALIAS_TOOLS = ["my_room", "social", "notifications", "communities"];
+const ALIAS_TOOLS = ["my_room", "social", "notifications", "communities_organizations"];
 
 const ACTIVE_DOC_FILES = [
   "docs/openai-plugin-submission.md",

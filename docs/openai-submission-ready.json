@@ -166,8 +166,7 @@
           "scopes": [
             "openid",
             "profile",
-            "room:write",
-            "room:private"
+            "room:write"
           ]
         }
       ],
