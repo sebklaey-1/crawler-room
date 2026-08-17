@@ -130,15 +130,26 @@ export const PUBLIC_ACTIONS: Record<string, readonly string[]> = {
 };
 
 /**
- * MCP security schemes per tool. Only scopes that the authorization server
- * really issues are declared; authorisation itself is action-based on the server.
+ * MCP security schemes per tool. Only scopes the Crawler Room authorization
+ * server really issues are declared, and each tool advertises exactly the
+ * scopes its own actions can need — derived from the action matrix, so a new
+ * writing action can never hide behind a read-only scope.
  */
-export const OAUTH_SCOPES = ["openid", "profile"] as const;
+export const OAUTH_SCOPES = SUPPORTED_SCOPES;
+
+function toolScopes(tool: string): string[] {
+  const scopes = new Set<string>(BASE_SCOPES);
+  for (const [action, effect] of Object.entries(ACTION_MATRIX[tool] ?? {})) {
+    if ((PUBLIC_ACTIONS[tool] ?? []).includes(action)) continue;
+    scopes.add(effect.write ? "room:write" : "room:private");
+  }
+  return [...scopes];
+}
 
 export function securitySchemesFor(tool: string): Json[] {
   const schemes: Json[] = [];
   if ((PUBLIC_ACTIONS[tool] ?? []).length > 0) schemes.push({ type: "noauth" });
-  schemes.push({ type: "oauth2", scopes: [...OAUTH_SCOPES] });
+  schemes.push({ type: "oauth2", scopes: toolScopes(tool) });
   return schemes;
 }
 
