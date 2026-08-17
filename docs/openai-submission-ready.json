@@ -14,11 +14,22 @@
     "required_scopes": [
       "openid",
       "profile"
-    ]
+    ],
+    "token_verification": "Locally issued and locally verified (HS256, server-side signing secret, one accepted alg, constant-time comparison). No external identity provider and no auth hook.",
+    "issuer": "https://crawler.today"
   },
   "tools": [
     {
       "name": "universal_room",
+      "actions": [
+        "enter",
+        "read",
+        "send",
+        "report"
+      ],
+      "public_actions": [
+        "read"
+      ],
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": false,
@@ -42,6 +53,17 @@
     },
     {
       "name": "public_room",
+      "actions": [
+        "mine",
+        "open",
+        "update",
+        "leave",
+        "send",
+        "report"
+      ],
+      "public_actions": [
+        "open"
+      ],
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": true,
@@ -66,6 +88,19 @@
     },
     {
       "name": "profile",
+      "actions": [
+        "get",
+        "update",
+        "change_handle",
+        "open_link",
+        "block",
+        "unblock",
+        "list_blocks",
+        "report"
+      ],
+      "public_actions": [
+        "get"
+      ],
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": true,
@@ -86,10 +121,19 @@
           ]
         }
       ],
-      "rationale": "get is a public profile read (noauth); update/set_image/open_link change public data or contact an external URL; change_handle changes the current public identifier (the previous handle stays reserved for and redirects to the same owner and can never be claimed by anyone else) and block removes interaction — both destructive."
+      "rationale": "get is a public profile read (noauth); update/update/open_link change public data or contact an external URL; change_handle changes the current public identifier (the previous handle stays reserved for and redirects to the same owner and can never be claimed by anyone else) and block removes interaction — both destructive."
     },
     {
       "name": "followers_notifications",
+      "actions": [
+        "follow",
+        "unfollow",
+        "list_followers",
+        "list_following",
+        "list_notifications",
+        "update_settings"
+      ],
+      "public_actions": [],
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": true,
@@ -111,6 +155,11 @@
     },
     {
       "name": "likes",
+      "actions": [
+        "like",
+        "unlike"
+      ],
+      "public_actions": [],
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": true,
@@ -131,6 +180,10 @@
     },
     {
       "name": "analytics",
+      "actions": [
+        "profile"
+      ],
+      "public_actions": [],
       "annotations": {
         "readOnlyHint": true,
         "destructiveHint": false,
@@ -151,6 +204,22 @@
     },
     {
       "name": "communities",
+      "actions": [
+        "list",
+        "get",
+        "create",
+        "update",
+        "join",
+        "leave",
+        "read",
+        "send",
+        "report"
+      ],
+      "public_actions": [
+        "list",
+        "get",
+        "read"
+      ],
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": true,
@@ -177,7 +246,7 @@
     "What is currently being discussed in the Crawler Room Universal Room?",
     "Post a short hello in the Universal Room and show me what people said before.",
     "Open the public room of @satoshi and read the latest messages.",
-    "Set up my Crawler Room profile with a short bio and a location.",
+    "Set up my Crawler Room profile with a display name, a short bio and a link.",
     "Follow @satoshi and show me who I already follow.",
     "Show me the analytics of my Crawler Room profile for the last 30 days.",
     "List the public Crawler Room communities and open one of them.",
@@ -300,7 +369,7 @@
   "data_minimization": {
     "inputs": "Only task-specific fields. No conversation history, no transcripts, no free context blobs, no client identifiers. Enforced by src/lib/room/review.test.ts.",
     "responses": "Per-action output schemas reduce every result to declared fields; enforceOutputContract strips internal ids, subject hashes, storage paths and any telemetry.",
-    "retention": "Messages and images are deleted after 24 hours by a scheduled job; profiles and follows persist until the user deletes them.",
+    "retention": "Room messages and images are deleted after at most 24 hours by the scheduled maintenance job. Profiles, handles, follows, likes, blocks, community memberships and notification settings persist until the user requests deletion at https://crawler.today/data-deletion, which is a manually processed queue.",
     "never_requested_as_auth_or_required_input": [
       "passwords",
       "API keys",
@@ -341,5 +410,6 @@
     "terms": "https://crawler.today/terms",
     "safety": "https://crawler.today/safety",
     "data_deletion": "https://crawler.today/data-deletion"
-  }
+  },
+  "review_status": "code/review package ready; portal/external blockers outstanding"
 }

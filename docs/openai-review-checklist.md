@@ -12,6 +12,16 @@ actually does today.
 
 <!-- generated:tool-actions -->
 
+| Tool | Actions | Public (no token) |
+| ---- | ------- | ----------------- |
+| `universal_room` | `enter`, `read`, `send`, `report` | `read` |
+| `public_room` | `mine`, `open`, `update`, `leave`, `send`, `report` | `open` |
+| `profile` | `get`, `update`, `change_handle`, `open_link`, `block`, `unblock`, `list_blocks`, `report` | `get` |
+| `followers_notifications` | `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings` | — |
+| `likes` | `like`, `unlike` | — |
+| `analytics` | `profile` | — |
+| `communities` | `list`, `get`, `create`, `update`, `join`, `leave`, `read`, `send`, `report` | `list`, `get`, `read` |
+
 <!-- /generated:tool-actions -->
 
 Everything not listed as public requires a validated OAuth 2.1 bearer token.
@@ -20,6 +30,16 @@ Public reads are side-effect free.
 ## 2. Annotations (verified by tests)
 
 <!-- generated:tool-annotations -->
+
+| Tool | readOnlyHint | destructiveHint | openWorldHint | idempotentHint | Derivation |
+| ---- | ------------ | --------------- | ------------- | -------------- | ---------- |
+| `universal_room` | false | false | true | false | writes: `enter`, `send`, `report`; publicly visible: `send` |
+| `public_room` | false | true | true | false | writes: `update`, `leave`, `send`, `report`; publicly visible: `update`, `send`; removes state: `leave` |
+| `profile` | false | true | true | false | writes: `update`, `change_handle`, `open_link`, `block`, `unblock`, `report`; publicly visible: `update`, `change_handle`, `open_link`; removes state: `change_handle`, `block` |
+| `followers_notifications` | false | true | true | false | writes: `follow`, `unfollow`, `update_settings`; publicly visible: `follow`, `unfollow`; removes state: `unfollow` |
+| `likes` | false | true | true | false | writes: `like`, `unlike`; publicly visible: `like`, `unlike`; removes state: `unlike` |
+| `analytics` | true | false | false | true | read-only, repeatable |
+| `communities` | false | true | true | false | writes: `create`, `update`, `join`, `leave`, `send`, `report`; publicly visible: `create`, `update`, `join`, `leave`, `send`; removes state: `leave` |
 
 <!-- /generated:tool-annotations -->
 
