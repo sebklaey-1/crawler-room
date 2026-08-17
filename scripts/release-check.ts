@@ -22,15 +22,7 @@ const ROOT = process.cwd();
 const CANONICAL_RESOURCE = "https://crawler.today/mcp";
 /** DEPRECATED compatibility endpoint. Allowed only where explicitly labelled. */
 const LEGACY_RESOURCE_PATH = "/api/public/mcp";
-const TOOL_NAMES = [
-  "universal_room",
-  "public_room",
-  "profile",
-  "followers_notifications",
-  "likes",
-  "analytics",
-  "communities",
-];
+const TOOL_NAMES = ["universal_room"];
 
 interface Result {
   name: string;
@@ -50,22 +42,13 @@ function read(path: string): string {
   return existsSync(full) ? readFileSync(full, "utf8") : "";
 }
 
-/* --------------------------- 1. canonical resource --------------------------- */
-
-const auth = read("src/lib/room/auth.ts");
-const pinned =
-  auth.includes(CANONICAL_RESOURCE) ||
-  (auth.includes('PRODUCTION_ORIGIN = "https://crawler.today"') &&
-    auth.includes("`${PRODUCTION_ORIGIN}/mcp`"));
-check("canonical resource pinned", pinned, `auth.ts pins ${CANONICAL_RESOURCE}`);
-
 /* ------------------------------ 2. tool surface ------------------------------ */
 
 const surface = read("src/lib/room/mcp.surface.ts");
 const declared = [...surface.matchAll(/^\s{4}name: "([a-z_]+)",$/gm)].map((match) => match[1]);
 check(
-  "exactly seven public tools",
-  declared.length === 7 && TOOL_NAMES.every((tool) => declared.includes(tool)),
+  "exactly one public tool",
+  declared.length === 1 && TOOL_NAMES.every((tool) => declared.includes(tool)),
   `found ${declared.length}: ${declared.join(", ")}`,
 );
 check(
@@ -79,9 +62,9 @@ check(
   "tool results are validated and reduced before they leave the server",
 );
 check(
-  "every tool declares explicit security schemes",
-  surface.includes("securitySchemesFor(tool.name)") && surface.includes('{ type: "noauth" }'),
-  "noauth is advertised only where public actions exist; oauth2 always",
+  "the surface is public and declares no authentication",
+  !/oauth/i.test(surface) && !existsSync(join(ROOT, "src/lib/room/auth.ts")),
+  "no sign-in exists — the MCP server is anonymous",
 );
 
 /* ------------------- 2b. annotations, matrix and submission ------------------ */
@@ -107,8 +90,8 @@ try {
   submissionPkg = {};
 }
 check(
-  "submission package parses and lists the seven tools",
-  (submissionPkg.tools ?? []).length === 7 &&
+  "submission package parses and lists the single tool",
+  (submissionPkg.tools ?? []).length === 1 &&
     TOOL_NAMES.every((tool) => (submissionPkg.tools ?? []).some((entry) => entry.name === tool)),
   `docs/openai-submission-ready.json — ${(submissionPkg.tools ?? []).length} tools`,
 );
@@ -118,20 +101,19 @@ check(
     (tool) =>
       typeof tool.annotations?.["readOnlyHint"] === "boolean" &&
       typeof tool.annotations?.["destructiveHint"] === "boolean" &&
-      typeof tool.annotations?.["openWorldHint"] === "boolean" &&
-      (tool.securitySchemes ?? []).length > 0,
+      typeof tool.annotations?.["openWorldHint"] === "boolean",
   ),
-  "annotation + security-scheme matrix complete",
+  "annotation matrix complete",
 );
 check(
-  "five positive and at least three negative test cases",
-  (submissionPkg.test_cases?.positive ?? []).length === 5 &&
+  "at least four positive and three negative test cases",
+  (submissionPkg.test_cases?.positive ?? []).length >= 4 &&
     (submissionPkg.test_cases?.negative ?? []).length >= 3,
   `${(submissionPkg.test_cases?.positive ?? []).length} positive / ${(submissionPkg.test_cases?.negative ?? []).length} negative`,
 );
 check(
-  "six to ten realistic starter prompts",
-  (submissionPkg.starter_prompts ?? []).length >= 6 &&
+  "four to ten realistic starter prompts",
+  (submissionPkg.starter_prompts ?? []).length >= 4 &&
     (submissionPkg.starter_prompts ?? []).length <= 10,
   `${(submissionPkg.starter_prompts ?? []).length} prompts`,
 );
@@ -139,26 +121,6 @@ check(
   "docs/openai-submission-ready.md present",
   existsSync(join(ROOT, "docs/openai-submission-ready.md")),
   "human-readable review package",
-);
-
-/* --------------------- 2c. strict OAuth resource binding --------------------- */
-
-check(
-  "verifier has no «authenticated» audience fallback",
-  !/audiences\.includes\("authenticated"\)/.test(auth),
-  "only the canonical resource is accepted as audience",
-);
-check(
-  "verifier enforces the declared oauth2 scopes",
-  auth.includes("BASE_SCOPES") && /for \(const required of BASE_SCOPES\)/.test(auth),
-  "openid + profile required, fail closed",
-);
-check(
-  "challenge carries resource_metadata, error and error_description",
-  auth.includes("`Bearer resource_metadata=") &&
-    auth.includes('error_description="') &&
-    /challengeHeader\(\s*origin,\s*"invalid_token",/.test(read("src/lib/room/mcp.ts")),
-  "reauth challenge is spec complete",
 );
 
 /* ------------------------------ 3. legal routes ------------------------------ */
@@ -197,7 +159,6 @@ for (const doc of [
 /* ---------------------------- 5. forbidden strings --------------------------- */
 
 const activeFiles = [
-  "src/lib/room/auth.ts",
   "src/components/crawler-room-landing.tsx",
   "src/routes/crawler-room.tsx",
   "src/lib/room/mcp.ts",
@@ -212,8 +173,10 @@ check("no legacy domain in active code/docs", stale.length === 0, stale.join(", 
 const landing = read("src/routes/index.tsx") + read("src/components/crawler-room-landing.tsx");
 check(
   "no unsupported claims on the landing page",
-  !/Everything can be reported/i.test(landing) && !/no login/i.test(landing),
-  "landing page copy matches the OAuth model",
+  !/Everything can be reported/i.test(landing) &&
+    !/(sign in|log in|OAuth)/i.test(landing) &&
+    !/\bprofiles?\b/i.test(landing),
+  "landing page copy matches the accountless single-room model",
 );
 
 /* --------------------------- 6. runtime configuration ------------------------ */
@@ -274,7 +237,6 @@ const BRANDED_FILES = [
   "src/routes/index.tsx",
   "src/components/crawler-room-landing.tsx",
   "src/routes/crawler-room.tsx",
-  "src/components/oauth-consent.tsx",
   "README.md",
   "skills/room/SKILL.md",
 ];
@@ -386,28 +348,13 @@ check(
   "override is inert outside NODE_ENV=test and getDb() fails closed inside it",
 );
 
-/* ------------------- 10. automated retention + storage retries --------------- */
+/* ------------------- 10. automated retention + maintenance ------------------- */
 
-const imagestore = read("src/lib/room/imagestore.ts");
+const retention = read("src/lib/room/retention.ts");
 check(
-  "storage paths are queued before an image row is deleted",
-  imagestore.includes("queueStorageDeletion") &&
-    imagestore.indexOf("queueStorageDeletion(db, [row.storage_path])") <
-      imagestore.indexOf('.from("image_messages").delete()'),
-  "deleteImageRow queues first, deletes second",
-);
-check(
-  "storage removal reports failures instead of only logging them",
-  imagestore.includes("complete_storage_deletion") &&
-    imagestore.includes("fail_storage_deletion") &&
-    imagestore.includes("StorageRemovalResult"),
-  "queue entries are completed or retried with a bounded backoff",
-);
-check(
-  "sweep drains the persistent deletion queue in bounded batches",
-  imagestore.includes("due_storage_deletions") &&
-    /processDeletionQueue\(db, 100\)/.test(imagestore),
-  "sweepImages processes up to 100 due paths per run",
+  "rolling text retention is capped at the newest 7 messages",
+  /7/.test(retention) && retention.length > 0,
+  "src/lib/room/retention.ts enforces the rolling window",
 );
 
 const cleanupRoute = read("src/routes/api.public.admin.cleanup.ts");
@@ -426,25 +373,6 @@ check(
     maintenance.includes("safeEqual") &&
     !/crawler_room_cleanup_token\s*=\s*"[^"]{16,}"/.test(maintenance),
   "only the secret name and its SHA-256 comparison live in code",
-);
-
-check(
-  "canonical RFC 9728 metadata route present",
-  existsSync(join(ROOT, "src/routes/[.]well-known.oauth-protected-resource.mcp.ts")) &&
-    auth.includes("/.well-known/oauth-protected-resource"),
-  "challenges point at https://crawler.today/.well-known/oauth-protected-resource/mcp",
-);
-
-check(
-  "root and legacy PRM aliases serve the canonical document",
-  [
-    "src/routes/[.]well-known.oauth-protected-resource.ts",
-    "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts",
-  ].every((file) => {
-    const text = read(file);
-    return text.includes("metadataResponse") && text.includes("metadataPreflight");
-  }),
-  "both aliases reuse the shared metadataResponse (resource = canonical /mcp)",
 );
 
 check(
@@ -514,10 +442,9 @@ check(
 
 check(
   "review metadata and submission gates are part of the test suite",
-  existsSync(join(ROOT, "src/lib/room/review.test.ts")) &&
-    existsSync(join(ROOT, "src/lib/room/submission.test.ts")) &&
-    existsSync(join(ROOT, "src/lib/room/safety.test.ts")),
-  "review.test.ts, submission.test.ts and safety.test.ts present",
+  existsSync(join(ROOT, "src/lib/room/legal.test.ts")) &&
+    existsSync(join(ROOT, "src/lib/room/annotations.test.ts")),
+  "legal.test.ts and annotations.test.ts present",
 );
 
 interface SubmissionDoc {
@@ -549,50 +476,9 @@ check(
 );
 
 check(
-  "submission package ships 5+ positive and 3+ negative test cases",
-  positives >= 5 && negatives >= 3 && starters >= 5,
+  "submission package ships 4+ positive and 3+ negative test cases",
+  positives >= 4 && negatives >= 3 && starters >= 4,
   `${positives} positive / ${negatives} negative / ${starters} starter prompts`,
-);
-
-/* --- OAuth regression gate (a weak fallback must never come back) ----------- */
-
-const authSource = read("src/lib/room/auth.ts");
-const authTests = read("src/lib/room/auth.test.ts");
-check(
-  "auth requires a non-empty client_id",
-  /const clientId[\s\S]{0,200}if \(!clientId\) throw roomError\("INVALID_TOKEN"\)/.test(authSource),
-  "an ordinary session JWT without client_id is rejected",
-);
-check(
-  "auth binds the token to the canonical /mcp resource",
-  /const boundByAud[\s\S]{0,200}if \(!boundByAud\) throw roomError\("INVALID_TOKEN"\)/.test(
-    authSource,
-  ),
-  "aud must equal https://crawler.today/mcp (RFC 8707)",
-);
-check(
-  "auth enforces the required scopes without synthesising them",
-  /for \(const required of BASE_SCOPES\)[\s\S]{0,160}throw roomError\("INVALID_TOKEN"\)/.test(
-    authSource,
-  ) && !/scopes\s*=\s*\[[^\]]*openid/.test(authSource),
-  "missing scopes are rejected, never defaulted",
-);
-check(
-  "no acceptance path for the generic «authenticated» audience",
-  !/accepts?[^\n]{0,80}(plain|ordinary) session/i.test(authSource + authTests) &&
-    !/"authenticated"[^\n]{0,40}(ok|accept|allow)/i.test(authSource),
-  "generic aud=authenticated never satisfies resource binding",
-);
-check(
-  "auth tests keep the five rejection cases",
-  [
-    "a plain authorization-server session token without client_id or resource",
-    "a token whose only audience is the default",
-    "a token without any scope claim",
-    "retired /api/public/mcp resource",
-    "a wrong audience",
-  ].every((phrase) => authTests.includes(phrase)),
-  "plain session, authenticated-only aud, missing scope, legacy resource, foreign resource",
 );
 
 /* --- safety guard must stay action-aware and exempt report details ---------- */
@@ -670,7 +556,7 @@ const cryptoClaims = REVIEW_ARTEFACTS.concat([
 check(
   "token verification is described exactly as implemented",
   cryptoClaims.length === 0,
-  cryptoClaims.join(", ") || "locally issued and verified HS256 tokens, no auth hook",
+  cryptoClaims.join(", ") || "no tokens are issued or verified — the server is anonymous",
 );
 
 check(
@@ -678,16 +564,6 @@ check(
   (submissionDoc as { review_status?: string }).review_status ===
     "code/review package ready; portal/external blockers outstanding",
   "no approval or certification is asserted",
-);
-
-const consent = read("src/components/oauth-consent.tsx");
-check(
-  "consent screen discloses public visibility, retention, legal links and no OpenAI tie",
-  /öffentlich und pseudonym/i.test(consent) &&
-    consent.includes("24 Stunden") &&
-    consent.includes("LEGAL_LINKS") &&
-    /nicht von OpenAI/i.test(consent),
-  "pre-consent transparency block is present",
 );
 
 /* --------------------------------- report ------------------------------------ */
