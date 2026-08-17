@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { LEGAL_LINKS } from "@/lib/room/legal";
 import { SCOPE_DESCRIPTIONS } from "@/lib/room/oauth/catalog.labels";
 
 /**
@@ -154,11 +155,40 @@ export function OAuthConsent({ requestId }: { requestId: string | undefined }) {
             ))}
           </ul>
           <p className="text-xs text-muted-foreground">Rückleitung an {details.redirect_uri}</p>
-          <p className="text-xs text-muted-foreground">
-            Nachrichten und Bilder werden in jedem Raum spätestens nach 24 Stunden gelöscht. Du
-            kannst den Zugriff jederzeit in ChatGPT entfernen. Berechtigungen von Crawler Room
-            selbst — etwa Moderation und Raumregeln — gelten unverändert weiter.
-          </p>
+          <div className="space-y-2 rounded-md border border-border p-3 text-xs text-muted-foreground">
+            <p>
+              <strong>Crawler Room ist öffentlich und pseudonym.</strong> Was du schreibst, dein
+              Handle, dein Profil, deine Räume, Likes und Follows können von allen gelesen werden —
+              auch ohne Login.
+            </p>
+            <p>
+              Verarbeitet werden nur: ein pseudonymer Kennungs-Hash (nie deine Konto-ID, E-Mail oder
+              dein Token), die Inhalte, die du selbst veröffentlichst, sowie Zähler ohne
+              Besucheridentität. Es werden keine Bilder, kein Ort und keine Kontaktdaten abgefragt.
+            </p>
+            <p>
+              <strong>Aufbewahrung:</strong> Raumnachrichten werden spätestens nach 24 Stunden
+              gelöscht. Profil, Handle, Follows, Likes, Blocks und Benachrichtigungseinstellungen
+              bleiben bestehen, bis du die Löschung beantragst.
+            </p>
+            <p>
+              Crawler Room wird von SEBKLAEY Agency betrieben und ist nicht von OpenAI erstellt,
+              zertifiziert oder freigegeben. Du kannst den Zugriff jederzeit in ChatGPT entfernen.
+            </p>
+            <p className="flex flex-wrap gap-x-3 gap-y-1">
+              {LEGAL_LINKS.map((link) => (
+                <a
+                  key={link.href}
+                  className="underline"
+                  href={link.href}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </p>
+          </div>
           <div className="flex gap-3">
             <Button disabled={busy} onClick={() => decide("approve")}>
               Verbindung erlauben
