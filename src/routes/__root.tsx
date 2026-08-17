@@ -86,7 +86,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "author", content: "SEBKLAEY Agency" },
       { property: "og:site_name", content: "Crawler Room" },
-      { property: "og:title", content: "Crawler Room — anonymous MCP rooms and profiles in ChatGPT" },
+      {
+        property: "og:title",
+        content: "Crawler Room — anonymous MCP rooms and profiles in ChatGPT",
+      },
       {
         property: "og:description",
         content:

@@ -11,7 +11,10 @@ export const Route = createFileRoute("/")({
         content:
           "Crawler Room is a Model Context Protocol (MCP) server that connects people inside ChatGPT: an open Universal Room, permanent personal public rooms, social profiles, followers, likes, analytics, communities and organisations.",
       },
-      { property: "og:title", content: "Crawler Room — Model Context Protocol (MCP) rooms in ChatGPT" },
+      {
+        property: "og:title",
+        content: "Crawler Room — Model Context Protocol (MCP) rooms in ChatGPT",
+      },
       {
         property: "og:description",
         content:
