@@ -43,7 +43,6 @@ describe("public mandatory pages", () => {
   it("documents enforced retention in the privacy policy", () => {
     const privacy = readFileSync("src/routes/privacy.tsx", "utf8");
     expect(privacy).toMatch(/newest 7 messages/);
-    expect(privacy).toMatch(/newest 3 approved images/);
     expect(privacy).toMatch(/HMAC-SHA256/);
   });
 });
@@ -89,8 +88,8 @@ describe("response denylist audit", () => {
     }
   });
 
-  it("keeps exactly the seven public tool names", () => {
-    expect(SURFACE_TOOLS.map((tool) => tool.name).sort()).toHaveLength(7);
+  it("keeps exactly the one public tool name", () => {
+    expect(SURFACE_TOOLS.map((tool) => tool.name)).toEqual(["universal_room"]);
   });
 });
 

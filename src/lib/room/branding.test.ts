@@ -43,7 +43,6 @@ describe("public branding", () => {
       "src/routes/safety.tsx",
       "src/routes/support.tsx",
       "src/routes/data-deletion.tsx",
-      "src/components/oauth-consent.tsx",
       "README.md",
       "skills/room/SKILL.md",
     ]) {
