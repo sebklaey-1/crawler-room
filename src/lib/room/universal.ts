@@ -1,22 +1,25 @@
 /**
- * The Universal Room: one global, public starting space.
+ * The Universal Room: the one global, public space of Crawler Room.
  *
- * Scale rules:
+ * Rules:
+ * - every caller is pseudonymous; the pseudonym is derived server-side;
  * - cursor-based pagination, never a full history load;
- * - time-based retention instead of the small per-room limits;
+ * - time-based retention plus a rolling newest-messages window;
  * - aggregated, privacy-safe presence (never a list of online users);
  * - rate limiting, spam heuristics and idempotency keys on writes.
  */
-import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { generateAlias } from "./alias";
-import { config, retentionCutoffIso, retentionDeadlineIso } from "./config";
+import { config, retentionDeadlineIso } from "./config";
 import { roomError } from "./errors";
 import { encodeMessageId } from "./ids";
-import { selectPlacements, type PlacementCard } from "./ads";
-import { universalSettings } from "./plans";
 import { enforceRateLimit } from "./ratelimit";
-import { clampLimit, validateMessage } from "./validation";
-import { countOnline, PRESENCE_WINDOW_SECONDS, type Db } from "./store";
+import { enforceRoomRetention } from "./retention";
+import { validateMessage } from "./validation";
+import type { Db } from "./store";
+
+/** Write limits for the public room. */
+const RATE_PER_MINUTE = 10;
+const RATE_PER_HOUR = 120;
 
 export interface UniversalMembership {
   roomId: string;
@@ -30,9 +33,9 @@ export interface UniversalMembership {
 export async function enterUniversal(
   db: Db,
   subjectHash: string,
-  preferredAlias?: string | null,
 ): Promise<UniversalMembership & { joinedNow: boolean }> {
-  const alias = preferredAlias ?? generateAlias(subjectHash + ":universal");
+  // The pseudonym is deterministic per subject: nobody can pick or change it.
+  const alias = generateAlias(subjectHash + ":universal");
   const { data, error } = await db.rpc("join_universal_room", {
     p_subject_hash: subjectHash,
     p_alias: alias,
@@ -48,8 +51,7 @@ export async function enterUniversal(
     presence?: number;
     joined_now?: boolean;
   } | null;
-  if (!result || result.error || !result.room_id || !result.membership_id)
-    throw roomError("ROOM_UNAVAILABLE");
+  if (!result?.room_id || !result.membership_id) throw roomError("ROOM_UNAVAILABLE");
 
   return {
     roomId: result.room_id,
@@ -60,214 +62,6 @@ export async function enterUniversal(
     presence: Number(result.presence ?? 0),
     joinedNow: Boolean(result.joined_now),
   };
-}
-
-/* ------------------------- profile-based identity ------------------------- */
-
-/**
- * The Universal Room is profile-based public, not anonymous: a message is
- * shown under the author's personal room handle (`@satoshi`).
- *
- * SECURITY: the handle is resolved server-side from the pseudonymous subject
- * hash stored on the membership row. A handle supplied as tool input is never
- * trusted, so spoofing another profile is impossible.
- *
- * Fallback: subjects without a personal room (no handle) keep their generated
- * membership alias, so historical rows stay renderable and no data is touched.
- */
-export async function universalHandles(
-  db: Db,
-  subjectHashes: Array<string | null | undefined>,
-): Promise<Map<string, string>> {
-  const unique = [...new Set(subjectHashes.filter((value): value is string => Boolean(value)))];
-  const map = new Map<string, string>();
-  if (!unique.length) return map;
-
-  const { data } = await db
-    .from("user_rooms")
-    .select("owner_subject_hash, handle")
-    .in("owner_subject_hash", unique);
-
-  for (const row of (data ?? []) as Array<{ owner_subject_hash?: string; handle?: string }>) {
-    if (row.owner_subject_hash && row.handle) {
-      map.set(row.owner_subject_hash, `@${row.handle}`);
-    }
-  }
-  return map;
-}
-
-/** Visible sender label: profile handle when present, generated alias otherwise. */
-export function universalSender(
-  handle: string | null | undefined,
-  fallbackAlias: string | null | undefined,
-): string {
-  if (handle && handle.trim()) return handle.trim();
-  const alias = fallbackAlias?.trim();
-  return alias || "Unbekannt";
-}
-
-/** Handle of a single subject, or the given fallback alias. */
-export async function universalSelfLabel(
-  db: Db,
-  subjectHash: string,
-  fallbackAlias: string,
-): Promise<string> {
-  const map = await universalHandles(db, [subjectHash]);
-  return universalSender(map.get(subjectHash), fallbackAlias);
-}
-
-/** Never expose exact small numbers or a user list. */
-export function presenceLabel(count: number): { bucket: string; approximate: number } {
-  if (count <= 5) return { bucket: "einige Personen online", approximate: 5 };
-  if (count <= 25) return { bucket: "viele Personen online", approximate: 25 };
-  if (count <= 100) return { bucket: "sehr belebt", approximate: 100 };
-  return { bucket: "hunderte Personen online", approximate: Math.round(count / 100) * 100 };
-}
-
-export interface UniversalFeedOptions {
-  cursor?: string | null;
-  limit?: number;
-  topic?: string | null;
-}
-
-export async function universalFeed(
-  db: Db,
-  subjectHash: string,
-  membership: UniversalMembership,
-  options: UniversalFeedOptions,
-) {
-  const settings = await universalSettings(db);
-  const limit = clampLimit(
-    options.limit ?? settings.page_size,
-    settings.page_size,
-    1,
-    settings.max_page_size,
-  );
-
-  let query = db
-    .from("messages")
-    .select("id, body, created_at, membership_id, memberships(alias, subject_hash)")
-    .eq("room_id", membership.roomId)
-    .gte("created_at", retentionCutoffIso())
-    .gt("expires_at", new Date().toISOString())
-    .order("id", { ascending: false })
-    .limit(limit + 1);
-
-  const cursorId = options.cursor ? Number.parseInt(options.cursor, 10) : null;
-  if (cursorId && Number.isFinite(cursorId)) query = query.lt("id", cursorId);
-
-  const { data, error } = await query;
-  if (error) throw roomError("INTERNAL_ERROR");
-
-  const rows = data ?? [];
-  const hasMore = rows.length > limit;
-  const page = rows.slice(0, limit);
-
-  const handles = await universalHandles(
-    db,
-    page.map((row) => embedded<EmbeddedShapes["memberships"]>(row.memberships)?.subject_hash),
-  );
-
-  const messages = [];
-  for (const row of page.reverse()) {
-    const author = embedded<EmbeddedShapes["memberships"]>(row.memberships);
-    messages.push({
-      id: await encodeMessageId(row.id),
-      alias: universalSender(
-        author?.subject_hash ? handles.get(author.subject_hash) : null,
-        author?.alias,
-      ),
-      text: row.body as string,
-      created_at: row.created_at as string,
-      is_self: row.membership_id === membership.membershipId,
-    });
-  }
-
-  const nextCursor = hasMore && page.length ? String(page[0]?.id ?? "") : null;
-
-  const [trending, activeRooms, events, placements] = await Promise.all([
-    trendingTopics(db),
-    activePublicRooms(db),
-    upcomingEvents(db),
-    selectPlacements(db, subjectHash, { topic: options.topic ?? null }),
-  ]);
-
-  const presence = presenceLabel(membership.presence);
-  const onlineNow = await countOnline(db, membership.roomId);
-
-  return {
-    room: {
-      label: "Universal Room",
-      presence: presence.bucket,
-      approximate_online: presence.approximate,
-      online_now: onlineNow,
-      presence_window_seconds: PRESENCE_WINDOW_SECONDS,
-      presence_checked_at: new Date().toISOString(),
-    },
-    messages,
-    next_cursor: nextCursor,
-    has_more: hasMore,
-    trending_topics: trending,
-    active_rooms: activeRooms,
-    upcoming_events: events,
-    sponsored: placements as PlacementCard[],
-    notice:
-      "Der Universal Room ist öffentlich. Gesponserte Karten sind immer als Anzeige gekennzeichnet und du entscheidest selbst, ob du sie betrittst.",
-  };
-}
-
-export async function trendingTopics(db: Db, limit = 6) {
-  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { data } = await db
-    .from("memberships")
-    .select("topic_id, topics(slug, display_name)")
-    .is("left_at", null)
-    .gte("last_seen_at", since)
-    .limit(1000);
-
-  const counts = new Map<string, { slug: string; display_name: string; count: number }>();
-  for (const row of data ?? []) {
-    const topic = embedded<EmbeddedShapes["topics"]>(row.topics);
-    const slug = topic?.slug;
-    if (!slug || slug === "universal") continue;
-    const entry = counts.get(slug) ?? {
-      slug,
-      display_name: topic.display_name ?? slug,
-      count: 0,
-    };
-    entry.count += 1;
-    counts.set(slug, entry);
-  }
-  return [...counts.values()].sort((a, b) => b.count - a.count).slice(0, limit);
-}
-
-export async function activePublicRooms(db: Db, limit = 6) {
-  const { data } = await db
-    .from("rooms")
-    .select("id, title, description, kind, capacity, topics(display_name)")
-    .eq("visibility", "public")
-    .in("kind", ["private", "community"])
-    .is("archived_at", null)
-    .order("updated_at", { ascending: false })
-    .limit(limit);
-
-  return (data ?? []).map((room) => ({
-    title: room.title ?? embedded<EmbeddedShapes["topics"]>(room.topics)?.display_name ?? "Raum",
-    description: room.description ?? "",
-    capacity: room.capacity as number,
-  }));
-}
-
-export async function upcomingEvents(db: Db, limit = 5) {
-  const { data } = await db
-    .from("events")
-    .select("title, description, starts_at, status")
-    .eq("visibility", "public")
-    .in("status", ["scheduled", "live"])
-    .gte("starts_at", new Date(Date.now() - 3600 * 1000).toISOString())
-    .order("starts_at", { ascending: true })
-    .limit(limit);
-  return data ?? [];
 }
 
 /** Lightweight promotional-flood heuristic for the public space. */
@@ -287,7 +81,6 @@ export async function sendUniversalMessage(
   rawText: unknown,
   idempotencyKey?: string | null,
 ) {
-  const settings = await universalSettings(db);
   const cfg = config();
 
   if (idempotencyKey) {
@@ -302,25 +95,21 @@ export async function sendUniversalMessage(
         duplicate: true,
         message: {
           id: await encodeMessageId(existing.id),
-          alias: await universalSelfLabel(db, subjectHash, membership.alias),
-
+          alias: membership.alias,
           text: existing.body,
-          created_at: existing.created_at,
+          created_at: new Date(existing.created_at).toISOString(),
           is_self: true,
         },
       };
     }
   }
 
-  const text = validateMessage(rawText, {
-    maxLength: cfg.maxMessageLength,
-    maxLinks: 1,
-  });
+  const text = validateMessage(rawText, { maxLength: cfg.maxMessageLength, maxLinks: 1 });
   if (looksLikeSpam(text)) throw roomError("POLICY_VIOLATION");
 
   await enforceRateLimit(db, subjectHash, "message", [
-    { seconds: 60, max: settings.rate_per_minute },
-    { seconds: 3600, max: settings.rate_per_hour },
+    { seconds: 60, max: RATE_PER_MINUTE },
+    { seconds: 3600, max: RATE_PER_HOUR },
   ]);
 
   const now = new Date();
@@ -338,17 +127,15 @@ export async function sendUniversalMessage(
     .single();
   if (error || !data) throw roomError("INTERNAL_ERROR");
 
-  // Time-based retention keeps the public feed light.
-  const { enforceRoomRetention } = await import("./imagestore");
   await enforceRoomRetention(db, membership.roomId);
 
   return {
     duplicate: false,
     message: {
       id: await encodeMessageId(data.id),
-      alias: await universalSelfLabel(db, subjectHash, membership.alias),
+      alias: membership.alias,
       text: data.body,
-      created_at: data.created_at,
+      created_at: new Date(data.created_at).toISOString(),
       is_self: true,
     },
   };
