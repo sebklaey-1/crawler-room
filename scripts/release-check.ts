@@ -152,8 +152,9 @@ check(
 );
 check(
   "challenge carries resource_metadata, error and error_description",
-  read("src/lib/room/challenge.ts").includes("resource_metadata") &&
-    read("src/lib/room/mcp.ts").includes("error_description"),
+  auth.includes('`Bearer resource_metadata=') &&
+    auth.includes('error_description="') &&
+    /challengeHeader\(\s*origin,\s*"invalid_token",/.test(read("src/lib/room/mcp.ts")),
   "reauth challenge is spec complete",
 );
 
