@@ -459,6 +459,7 @@ check(
 
 const legacyAllowed = new Set([
   "src/routes/api.public.mcp.ts",
+  "src/routes/mcp.ts",
   "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts",
   "src/routes/[.]well-known.oauth-protected-resource.ts",
   "src/lib/room/resource-metadata.ts",
