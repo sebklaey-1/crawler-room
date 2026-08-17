@@ -143,6 +143,16 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
   const requestId = newRequestId();
   const action = safeAction(params, tool);
   try {
+    // Scope enforcement: a token may only do what the person consented to.
+    // Public read actions need no scope; private reads need `room:private`
+    // and every state change needs `room:write`.
+    if (context.auth && !context.testAuth) {
+      const needed = requiredScope(tool.name, (params?.["arguments"] as { action?: unknown })
+        ?.action);
+      if (needed && !context.auth.scopes.includes(needed)) {
+        throw roomError("INSUFFICIENT_SCOPE");
+      }
+    }
     const meta = await buildMeta(params, context);
     const result = (await tool.handler(params?.["arguments"] ?? {}, meta)) as Record<
       string,
