@@ -200,7 +200,9 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
       ms: Date.now() - started,
       requestId,
     });
-    const needsAuth = error.code === "AUTH_REQUIRED" || error.code === "INVALID_TOKEN";
+    const scopeMissing = error.code === "INSUFFICIENT_SCOPE";
+    const needsAuth =
+      error.code === "AUTH_REQUIRED" || error.code === "INVALID_TOKEN" || scopeMissing;
     return {
       content: [{ type: "text", text: error.message }],
       structuredContent: error.toPayload(),
@@ -210,10 +212,12 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
             _meta: {
               "mcp/www_authenticate": challengeHeader(
                 context.origin,
-                "invalid_token",
-                error.code === "INVALID_TOKEN"
-                  ? "The access token is invalid or expired."
-                  : "Sign in to Crawler Room to use this action.",
+                scopeMissing ? "insufficient_scope" : "invalid_token",
+                scopeMissing
+                  ? "The token does not carry the scope this action requires."
+                  : error.code === "INVALID_TOKEN"
+                    ? "The access token is invalid or expired."
+                    : "Sign in to Crawler Room to use this action.",
               ),
             },
           }
