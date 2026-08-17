@@ -173,7 +173,8 @@ check(
   existsSync(join(ROOT, "src/routes/crawler-room.tsx")) &&
     docRoute.includes('createFileRoute("/crawler-room")') &&
     docRoute.includes("CrawlerRoomLanding") &&
-    !/\bredirect\s*\(/.test(docRoute) && !/beforeLoad/.test(docRoute),
+    !/\bredirect\s*\(/.test(docRoute) &&
+    !/beforeLoad/.test(docRoute),
   "renders the landing page directly",
 );
 
