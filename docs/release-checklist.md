@@ -74,7 +74,8 @@ or logs.
 2. OpenAI domain verification for `crawler.today`.
 3. ChatGPT OAuth callback URL in the Supabase redirect allow list.
 4. Custom access token hook enabled in production.
-5. Decision recorded on anonymous sign-in for the consent screen.
+5. Anonymous sign-ins enabled in production — REQUIRED for the accountless
+   consent screen; a disabled setting blocks the release.
 6. Reviewer screenshots / screencast.
 7. App directory portal metadata.
 8. Moderation staffing: a named responsible person, at least one configured moderator subject
