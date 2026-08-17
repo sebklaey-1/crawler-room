@@ -39,7 +39,7 @@ const REMOVED = [
 
 async function rpc(method: string, params?: unknown) {
   const response = await handleMcpRequest(
-    new Request("http://localhost/api/public/mcp", {
+    new Request("http://localhost/mcp", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
