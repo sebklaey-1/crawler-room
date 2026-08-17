@@ -36,6 +36,7 @@ import { Route as ApiPublicAdminCleanupRouteImport } from './routes/api.public.a
 import { Route as ApiPublicOauthConsentRouteImport } from './routes/api.public.oauth.consent'
 import { Route as ApiPublicRoomUploadRouteImport } from './routes/api.public.room.upload'
 import { Route as DotwellKnownOauthProtectedResourceApiPublicMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.api.public.mcp'
+import { Route as ApiPublicRoomImageIdRouteImport } from './routes/api.public.room.image.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -177,6 +178,11 @@ const DotwellKnownOauthProtectedResourceApiPublicMcpRoute =
     path: '/api/public/mcp',
     getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
   } as any)
+const ApiPublicRoomImageIdRoute = ApiPublicRoomImageIdRouteImport.update({
+  id: '/api/public/room/image/$id',
+  path: '/api/public/room/image/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
   '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
+  '/api/public/room/image/$id': typeof ApiPublicRoomImageIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
   '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
+  '/api/public/room/image/$id': typeof ApiPublicRoomImageIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
   '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
+  '/api/public/room/image/$id': typeof ApiPublicRoomImageIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/consent'
     | '/api/public/room/upload'
     | '/.well-known/oauth-protected-resource/api/public/mcp'
+    | '/api/public/room/image/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/consent'
     | '/api/public/room/upload'
     | '/.well-known/oauth-protected-resource/api/public/mcp'
+    | '/api/public/room/image/$id'
   id:
     | '__root__'
     | '/'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/api/public/oauth/consent'
     | '/api/public/room/upload'
     | '/.well-known/oauth-protected-resource/api/public/mcp'
+    | '/api/public/room/image/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -382,6 +394,7 @@ export interface RootRouteChildren {
   ApiPublicAdminCleanupRoute: typeof ApiPublicAdminCleanupRoute
   ApiPublicOauthConsentRoute: typeof ApiPublicOauthConsentRoute
   ApiPublicRoomUploadRoute: typeof ApiPublicRoomUploadRoute
+  ApiPublicRoomImageIdRoute: typeof ApiPublicRoomImageIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -575,6 +588,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotwellKnownOauthProtectedResourceApiPublicMcpRouteImport
       parentRoute: typeof DotwellKnownOauthProtectedResourceRoute
     }
+    '/api/public/room/image/$id': {
+      id: '/api/public/room/image/$id'
+      path: '/api/public/room/image/$id'
+      fullPath: '/api/public/room/image/$id'
+      preLoaderRoute: typeof ApiPublicRoomImageIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -624,6 +644,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAdminCleanupRoute: ApiPublicAdminCleanupRoute,
   ApiPublicOauthConsentRoute: ApiPublicOauthConsentRoute,
   ApiPublicRoomUploadRoute: ApiPublicRoomUploadRoute,
+  ApiPublicRoomImageIdRoute: ApiPublicRoomImageIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

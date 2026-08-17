@@ -87,13 +87,13 @@ async function roomImages(db: Db, room: PersonalRoom) {
     db,
     rows.map((row) => row.sender_membership_id),
   );
-  const ttl = imageConfig().signedUrlTtlSeconds;
   return Promise.all(
     rows.map(async (row) => ({
       alias: aliases[row.sender_membership_id] ?? "Unbekannt",
       alt_text: row.alt_text ?? "",
       created_at: new Date(row.created_at).toISOString(),
-      url: (await signedUrl(db, row.storage_path, ttl)) ?? "",
+      // Stable public https URL so the assistant can render the image inline.
+      url: await publicImageUrl(row.id),
     })),
   );
 }
