@@ -487,6 +487,60 @@ check(
   strayLegacy.length ? `stray: ${strayLegacy.join(", ")}` : "only deprecation-labelled files",
 );
 
+/* --- general-audience UGC policy + review metadata gates --------------------- */
+
+const safety = read("src/lib/room/safety.ts");
+check(
+  "general-audience UGC policy matrix present",
+  [
+    "minor_sexualization",
+    "sexual_content",
+    "graphic_violence",
+    "hate_harassment",
+    "self_harm",
+    "illegal_goods",
+    "scam_credentials",
+    "doxxing",
+  ].every((category) => safety.includes(category)) && safety.includes("assertSafeUgc"),
+  "src/lib/room/safety.ts declares every blocked category",
+);
+
+check(
+  "UGC write guard wired into the single input choke point",
+  read("src/lib/room/mcp.surface.ts").includes("assertSafeUgcInput(result.data)"),
+  "every parsed tool input passes the fail-closed content guard",
+);
+
+check(
+  "review metadata and submission gates are part of the test suite",
+  existsSync(join(ROOT, "src/lib/room/review.test.ts")) &&
+    existsSync(join(ROOT, "src/lib/room/submission.test.ts")) &&
+    existsSync(join(ROOT, "src/lib/room/safety.test.ts")),
+  "review.test.ts, submission.test.ts and safety.test.ts present",
+);
+
+const submission = JSON.parse(read("docs/openai-submission-ready.json")) as Record<string, any>;
+check(
+  "submission package carries the 2026 listing fields",
+  Boolean(
+    submission["audience"] &&
+      submission["ugc_policy"] &&
+      submission["data_minimization"] &&
+      submission["release_notes"] &&
+      submission["availability"] &&
+      submission["attestations"],
+  ),
+  "audience, ugc_policy, data_minimization, release_notes, availability, attestations",
+);
+
+check(
+  "submission package ships 5+ positive and 3+ negative test cases",
+  (submission["test_cases"]?.positive?.length ?? 0) >= 5 &&
+    (submission["test_cases"]?.negative?.length ?? 0) >= 3 &&
+    (submission["starter_prompts"]?.length ?? 0) >= 5,
+  `${submission["test_cases"]?.positive?.length} positive / ${submission["test_cases"]?.negative?.length} negative / ${submission["starter_prompts"]?.length} starter prompts`,
+);
+
 /* --------------------------------- report ------------------------------------ */
 
 let failed = 0;
