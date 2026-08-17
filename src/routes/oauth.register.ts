@@ -43,7 +43,10 @@ export const Route = createFileRoute("/oauth/register")({
         try {
           const result = await registerClient(body);
           if (isOAuthFailure(result)) {
-            return json({ error: result.error, error_description: result.error_description }, result.status);
+            return json(
+              { error: result.error, error_description: result.error_description },
+              result.status,
+            );
           }
           return json(result, 201);
         } catch (error) {

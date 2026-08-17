@@ -48,7 +48,10 @@ export const Route = createFileRoute("/api/public/oauth/consent")({
           }
           return json(details);
         } catch (error) {
-          return json({ error: "server_error", error_description: toRoomError(error).message }, 500);
+          return json(
+            { error: "server_error", error_description: toRoomError(error).message },
+            500,
+          );
         }
       },
 
@@ -79,7 +82,10 @@ export const Route = createFileRoute("/api/public/oauth/consent")({
           }
           return json(result);
         } catch (error) {
-          return json({ error: "server_error", error_description: toRoomError(error).message }, 500);
+          return json(
+            { error: "server_error", error_description: toRoomError(error).message },
+            500,
+          );
         }
       },
     },

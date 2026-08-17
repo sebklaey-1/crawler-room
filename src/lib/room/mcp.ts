@@ -148,8 +148,10 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
     // Public read actions need no scope; private reads need `room:private`
     // and every state change needs `room:write`.
     if (context.auth && !context.testAuth) {
-      const needed = requiredScope(tool.name, (params?.["arguments"] as { action?: unknown })
-        ?.action);
+      const needed = requiredScope(
+        tool.name,
+        (params?.["arguments"] as { action?: unknown })?.action,
+      );
       if (needed && !context.auth.scopes.includes(needed)) {
         throw roomError("INSUFFICIENT_SCOPE");
       }

@@ -8,12 +8,7 @@ export const SCOPE_PRIVATE = "room:private";
 export const SCOPE_WRITE = "room:write";
 
 /** Every scope this authorization server is willing to issue. */
-export const SUPPORTED_SCOPES = [
-  SCOPE_OPENID,
-  SCOPE_PROFILE,
-  SCOPE_PRIVATE,
-  SCOPE_WRITE,
-] as const;
+export const SUPPORTED_SCOPES = [SCOPE_OPENID, SCOPE_PROFILE, SCOPE_PRIVATE, SCOPE_WRITE] as const;
 
 /** Scopes that must always be present in an MCP access token. */
 export const BASE_SCOPES = [SCOPE_OPENID, SCOPE_PROFILE] as const;
