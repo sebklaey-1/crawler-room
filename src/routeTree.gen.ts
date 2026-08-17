@@ -21,6 +21,7 @@ import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes
 import { Route as DotwellKnownOpenaiAppsChallengeRouteImport } from './routes/[.]well-known.openai-apps-challenge'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as DotwellKnownOauthProtectedResourceMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.mcp'
 import { Route as ApiPublicDataDeletionRouteImport } from './routes/api.public.data-deletion'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
@@ -91,6 +92,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownOauthProtectedResourceMcpRoute =
+  DotwellKnownOauthProtectedResourceMcpRouteImport.update({
+    id: '/mcp',
+    path: '/mcp',
+    getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
+  } as any)
 const ApiPublicDataDeletionRoute = ApiPublicDataDeletionRouteImport.update({
   id: '/api/public/data-deletion',
   path: '/api/public/data-deletion',
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
@@ -162,6 +170,7 @@ export interface FileRoutesByTo {
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
@@ -184,6 +193,7 @@ export interface FileRoutesById {
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/.well-known/openai-apps-challenge'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/.well-known/openai-apps-challenge'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
@@ -249,6 +261,7 @@ export interface FileRouteTypes {
     | '/.well-known/openai-apps-challenge'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
@@ -365,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource/mcp': {
+      id: '/.well-known/oauth-protected-resource/mcp'
+      path: '/mcp'
+      fullPath: '/.well-known/oauth-protected-resource/mcp'
+      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceMcpRouteImport
+      parentRoute: typeof DotwellKnownOauthProtectedResourceRoute
+    }
     '/api/public/data-deletion': {
       id: '/api/public/data-deletion'
       path: '/api/public/data-deletion'
@@ -418,11 +438,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface DotwellKnownOauthProtectedResourceRouteChildren {
+  DotwellKnownOauthProtectedResourceMcpRoute: typeof DotwellKnownOauthProtectedResourceMcpRoute
   DotwellKnownOauthProtectedResourceApiPublicMcpRoute: typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
 }
 
 const DotwellKnownOauthProtectedResourceRouteChildren: DotwellKnownOauthProtectedResourceRouteChildren =
   {
+    DotwellKnownOauthProtectedResourceMcpRoute:
+      DotwellKnownOauthProtectedResourceMcpRoute,
     DotwellKnownOauthProtectedResourceApiPublicMcpRoute:
       DotwellKnownOauthProtectedResourceApiPublicMcpRoute,
   }
