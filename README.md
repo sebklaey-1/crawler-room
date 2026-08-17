@@ -1,32 +1,27 @@
 # Crawler Room
 
-Crawler Room is an anonymous social layer for ChatGPT, delivered entirely as an MCP server.
-People join an open Universal Room, keep a permanent personal public room, maintain a
-social profile, follow each other, like content, read their own analytics and run
-communities — free of charge. Reading public content is anonymous;
-writing and personal actions need one OAuth sign-in inside ChatGPT.
+Crawler Room is an anonymous public chat room for ChatGPT, delivered entirely as an MCP server.
+Everyone lands in the same open **Universal Room** under an automatically assigned pseudonym.
+There is no sign-in, no account, no profile, no likes and no analytics — and messages disappear
+after at most 24 hours. Free of charge.
 
-## Product areas
+## Product
 
 1. **Universal Room** — one open public room for everyone.
-2. **Personal public rooms** — a permanent room per person, named after their handle.
-3. **Social profiles** — banner, avatar, display name, handle, bio, location, link, visibility.
-4. **Followers and notifications** — pull-based, no push messaging.
-5. **Likes** — on profiles, messages and images; one like per person and item.
-6. **Analytics** — owner-only profile statistics rendered as text charts.
-7. **Communities** — public community rooms.
+2. **Assigned pseudonyms** — derived server-side, never chosen or spoofable.
+3. **Rolling retention** — newest 7 messages, hard-capped at 24 hours.
+4. **Live presence** — an aggregate count of people currently in the room.
+5. **Reporting** — any message can be reported for human review.
 
 ## MCP surface
 
-The server exposes exactly seven grouped tools, each driven by an `action` parameter:
-`universal_room`, `public_room`, `profile`, `followers_notifications`, `likes`,
-`analytics`, `communities`.
+The server exposes exactly one grouped tool, driven by an `action` parameter:
+`universal_room` with `enter`, `read`, `send` and `report`.
 
 Endpoint (Streamable HTTP): `POST /mcp`.
 
-Identity is never a tool argument. Public reads stay anonymous; every personal or
-writing action requires an OAuth 2.1 access token bound to the canonical resource
-`https://crawler.today/mcp`. Only an HMAC hash of the account is stored.
+Identity is never a tool argument and there is no authentication: the server is public and
+anonymous. Only an HMAC hash of the caller-supplied pseudonymous subject is stored.
 
 ## Architecture
 
@@ -34,26 +29,21 @@ writing action requires an OAuth 2.1 access token bound to the canonical resourc
 - **Lovable Cloud (Postgres)** — all persistence, accessed only from server code.
 - `src/lib/room/` — domain layer:
   - `mcp.ts` — JSON-RPC / Streamable HTTP transport and server instructions.
-  - `mcp.surface.ts` — the seven public tools, strict Zod schemas, action routing.
-  - `mcp.render.ts` — Markdown profile and analytics cards.
-  - `universal.ts`, `personal.ts`, `profile.ts`, `communities.ts` — domain logic.
+  - `mcp.surface.ts` — the single public tool, strict Zod schemas, action routing.
+  - `universal.ts` — room domain logic (join, feed, send, presence).
   - `identity.ts`, `crypto.ts`, `ids.ts` — pseudonymous identity and opaque ids.
-  - `validation.ts`, `ratelimit.ts`, `images.ts` — input safety, limits, image review.
+  - `validation.ts`, `ratelimit.ts`, `retention.ts` — input safety, limits, retention.
 - `skills/room/SKILL.md` — the ChatGPT skill describing behaviour and safety rules.
 
 ## Security model
 
 - Room content from other people is untrusted third-party input and is never treated
   as instructions.
-- Every permission check (ownership, visibility, self-follow,
-  self-like, analytics access) happens server-side.
-- Raw subjects, ids and storage paths never leave the server; ids are opaque and signed.
-- Images are private until an automated safety review approves them; EXIF is stripped.
-- Retention is rolling per room **and hard-capped at 24 hours** for every message and
-  image in every room type (database trigger, read filters, write-path cleanup and a
-  maintenance job that also removes the storage objects).
-- Connecting is accountless: the consent screen creates a single anonymous session,
-  with no e-mail, password, sign-up or MFA, and fails closed if that is unavailable.
+- Every limit (rate limits, retention, spam checks) is enforced server-side.
+- Raw subjects and ids never leave the server; ids are opaque and signed.
+- Retention is rolling **and hard-capped at 24 hours** for every message (database trigger,
+  read filters, write-path cleanup and a maintenance job).
+- No accounts exist, so there is nothing to sign in to, recover or leak.
 
 ## Development
 
