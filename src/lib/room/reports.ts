@@ -17,7 +17,7 @@ import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { retentionCutoffIso } from "./config";
 import { sha256Hex } from "./crypto";
 import { roomError } from "./errors";
-import { decodeImageId, decodeMessageId, decodeOrgId, decodeRoomId } from "./ids";
+import { decodeImageId, decodeMessageId, decodeRoomId } from "./ids";
 import { findRoomByHandle, normalizeHandleInput } from "./personal";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import type { Db } from "./store";
@@ -40,6 +40,8 @@ export const REPORT_STATUSES = ["received", "reviewing", "actioned", "dismissed"
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 export type ReportTargetKind =
+  // "organization" stays in the union for historical rows stored before the
+  // organisation feature was removed from the public surface.
   "profile" | "room" | "message" | "image" | "community" | "organization";
 
 export const REPORT_DETAILS_MAX = 500;
