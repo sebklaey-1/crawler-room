@@ -64,14 +64,12 @@ export function bearerToken(request: Request): string | null {
 
 /* ------------------------------ configuration ----------------------------- */
 
-function supabaseBase(): string {
-  return (process.env["SUPABASE_URL"] ?? "").replace(/\/+$/, "");
-}
-
-/** Canonical OAuth issuer of this project's authorization server. */
-export function authIssuer(): string {
-  const base = supabaseBase();
-  return base ? `${base}/auth/v1` : "";
+/**
+ * Canonical OAuth issuer: Crawler Room itself. Derived from the canonical
+ * resource, so it can never be pointed at a foreign host by a request header.
+ */
+export function authIssuer(requestOrigin?: string): string {
+  return new URL(canonicalResource(requestOrigin)).origin;
 }
 
 /** The one and only production origin of Crawler Room. */
