@@ -87,7 +87,7 @@ footer of every public page.
 2. OpenAI domain verification for `crawler.today`.
 3. ChatGPT OAuth callback URL added to the Supabase redirect allowlist.
 4. Custom access token hook enabled in the auth settings.
-5. Decision recorded on anonymous sign-in for the consent screen.
+5. Anonymous sign-ins enabled in production — REQUIRED for the accountless consent screen.
 6. Reviewer screenshots / screencast.
 7. App directory portal metadata (name, icon, categories, descriptions).
 8. At least one real moderator subject hash configured in `moderator_subjects`, with a named
