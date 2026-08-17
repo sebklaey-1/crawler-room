@@ -77,7 +77,15 @@ export async function verifyToken(
   if (typeof payload.e !== "number" || payload.e * 1000 < Date.now()) return null;
   if (typeof payload.i !== "number" || typeof payload.s !== "string") return null;
 
-  return { purpose: payload.p, imageId: payload.i, subjectHash: payload.s, nonce: payload.n };
+  return {
+    purpose: payload.p,
+    imageId: payload.i,
+    subjectHash: payload.s,
+    nonce: payload.n,
+    ...(typeof payload.r === "string" ? { roomId: payload.r } : {}),
+    ...(typeof payload.k === "string" ? { kind: payload.k } : {}),
+  };
+
 }
 
 export function subjectFingerprint(subjectHash: string): string {
