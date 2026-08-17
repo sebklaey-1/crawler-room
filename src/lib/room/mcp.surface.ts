@@ -34,6 +34,7 @@ import {
   publicListOrganizations,
 } from "./communities";
 import { roomError } from "./errors";
+import { BASE_SCOPES, SUPPORTED_SCOPES } from "./oauth/catalog";
 import { inputSchemaFor } from "./schema";
 import { encodeMessageId } from "./ids";
 import { isAuthenticated, resolveIdentity, type McpMeta } from "./identity";
