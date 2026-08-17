@@ -70,6 +70,41 @@ export async function decodeImageId(external: unknown): Promise<number | null> {
   return Number.parseInt(rawId, 10);
 }
 
+/* --------------------------- profile image ids --------------------------- */
+
+const PROFILE_IMAGE_PREFIX = "pim_";
+
+async function profileImageSignature(roomId: string, kind: string): Promise<string> {
+  const secret = requireSecret("MESSAGE_ID_SECRET");
+  const digest = await hmacSha256Hex(secret, `profile-image:${roomId}:${kind}`);
+  return digest.slice(0, SIGNATURE_LENGTH);
+}
+
+/** Opaque, signed reference to the avatar or banner of one personal room. */
+export async function encodeProfileImageId(roomId: string, kind: string): Promise<string> {
+  const sig = await profileImageSignature(roomId, kind);
+  return PROFILE_IMAGE_PREFIX + base64UrlEncode(`${roomId}.${kind}.${sig}`);
+}
+
+export async function decodeProfileImageId(
+  external: unknown,
+): Promise<{ roomId: string; kind: "avatar" | "banner" } | null> {
+  if (typeof external !== "string" || !external.startsWith(PROFILE_IMAGE_PREFIX)) return null;
+  let decoded: string;
+  try {
+    decoded = base64UrlDecode(external.slice(PROFILE_IMAGE_PREFIX.length));
+  } catch {
+    return null;
+  }
+  const parts = decoded.split(".");
+  if (parts.length !== 3) return null;
+  const [roomId, kind, sig] = parts as [string, string, string];
+  if (!/^[0-9a-f-]{36}$/i.test(roomId)) return null;
+  if (kind !== "avatar" && kind !== "banner") return null;
+  if (!safeEqual(await profileImageSignature(roomId, kind), sig)) return null;
+  return { roomId, kind };
+}
+
 export function idKind(external: unknown): "message" | "image" | null {
   if (typeof external !== "string") return null;
   if (external.startsWith(PREFIX)) return "message";
