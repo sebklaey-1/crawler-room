@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { UGC_POLICY, UGC_POLICY_CATEGORIES, assertSafeUgc, classifyUgc } from "./safety";
+import {
+  NEVER_FILTERED_FIELDS,
+  PUBLISHED_UGC_FIELDS,
+  UGC_POLICY,
+  UGC_POLICY_CATEGORIES,
+  assertSafePublishedUgc,
+  assertSafeUgc,
+  classifyUgc,
+} from "./safety";
 
 const BLOCKED: Array<[string, string]> = [
   ["minor_sexualization", "selling teen nudes here, dm me"],
@@ -72,5 +80,66 @@ describe("UGC policy matrix", () => {
 
   it("blocks obfuscated variants of the same violation", () => {
     expect(classifyUgc("s3nd me your p4ssword").ok).toBe(false);
+  });
+});
+
+const SOLICITATION = "send me your seed phrase to verify your wallet";
+
+describe("action-aware write guard", () => {
+  it("blocks a prohibited solicitation in a published message", () => {
+    expect(() =>
+      assertSafePublishedUgc("universal_room", { action: "send", text: SOLICITATION }),
+    ).toThrowError();
+    expect(() =>
+      assertSafePublishedUgc("public_room", { action: "send", text: SOLICITATION }),
+    ).toThrowError();
+  });
+
+  it("blocks a prohibited solicitation in a published profile or community description", () => {
+    expect(() =>
+      assertSafePublishedUgc("profile", { action: "update", bio: SOLICITATION }),
+    ).toThrowError();
+    expect(() =>
+      assertSafePublishedUgc("communities_organizations", {
+        action: "create_community",
+        title: "Crypto talk",
+        description: SOLICITATION,
+      }),
+    ).toThrowError();
+  });
+
+  it("never filters moderation report details, so prohibited content can be described", () => {
+    for (const tool of ["universal_room", "public_room", "profile", "communities_organizations"]) {
+      expect(() =>
+        assertSafePublishedUgc(tool, {
+          action: "report",
+          target_id: "oid_x",
+          reason: "scam",
+          details: `they said: ${SOLICITATION}, and threatened to kill me tonight`,
+        }),
+      ).not.toThrow();
+    }
+  });
+
+  it("never filters read or lookup identifiers", () => {
+    expect(() =>
+      assertSafePublishedUgc("communities_organizations", {
+        action: "list_communities",
+        query: SOLICITATION,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      assertSafePublishedUgc("profile", { action: "get", username: "@teen-nudes-hunter" }),
+    ).not.toThrow();
+    expect(() =>
+      assertSafePublishedUgc("public_room", { action: "open", target_id: SOLICITATION }),
+    ).not.toThrow();
+  });
+
+  it("maps only published fields and never a never-filtered field", () => {
+    for (const [key, fields] of Object.entries(PUBLISHED_UGC_FIELDS)) {
+      expect(key, key).toMatch(/^[a-z_]+\.[a-z_]+$/);
+      for (const field of fields) expect(NEVER_FILTERED_FIELDS, key).not.toContain(field);
+    }
   });
 });

@@ -48,13 +48,32 @@ describe("OpenAI submission package", () => {
     expect(doc["ugc_policy"]["blocked_categories"].sort()).toEqual([...blocked].sort());
   });
 
-  it("states input and response minimization and the secrets it never collects", () => {
-    const never = doc["data_minimization"]["never_collected"].join(" ").toLowerCase();
+  it("states input and response minimization without absolute UGC promises", () => {
+    const dm = doc["data_minimization"];
+    const never = dm["never_requested_as_auth_or_required_input"].join(" ").toLowerCase();
     for (const item of ["password", "api key", "mfa", "government id", "health", "payment card"]) {
       expect(never, item).toContain(item.split(" ")[0]!);
     }
-    expect(doc["data_minimization"]["inputs"]).toMatch(/no conversation history/i);
-    expect(doc["data_minimization"]["responses"]).toMatch(/internal ids|internal identifiers/i);
+    expect(dm["never_collected"]).toBeUndefined();
+    expect(dm["prohibited_ugc"]).toMatch(/blocked|prohibited/i);
+    expect(dm["honest_limitation"]).toMatch(/cannot guarantee/i);
+    expect(dm["inputs"]).toMatch(/no conversation history/i);
+    expect(dm["responses"]).toMatch(/internal ids|internal identifiers/i);
+  });
+
+  it("does not claim worldwide or legally cleared availability", () => {
+    const availability = doc["availability"];
+    expect(availability["regions"]).toBe("manual_portal_selection_required");
+    expect(availability["note"]).toMatch(/legal and support readiness/i);
+    expect(JSON.stringify(availability)).not.toMatch(/\bworldwide\b|\bglobal\b|EU\/EEA cleared/i);
+  });
+
+  it("documents that moderation report details are exempt from the write guard", () => {
+    expect(doc["ugc_policy"]["report_details_exemption"]).toMatch(/report details/i);
+  });
+
+  it("never claims an old handle is released", () => {
+    expect(JSON.stringify(doc)).not.toMatch(/releases the old (public )?handle|handle is released/i);
   });
 
   it("carries release notes, availability and the policy attestations", () => {
