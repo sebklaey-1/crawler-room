@@ -242,23 +242,72 @@ export async function handleChangeHandle(input: unknown, meta: McpMeta) {
   }
 }
 
+/** Decodes a data URL or plain base64 payload into raw bytes. */
+function decodeImagePayload(value: string): Uint8Array | null {
+  const raw = value.trim().replace(/^data:[^,]*,/, "").replace(/\s+/g, "");
+  if (!raw) return null;
+  try {
+    const binary = atob(raw.replace(/-/g, "+").replace(/_/g, "/"));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    return bytes.length ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function handleSetProfileImage(input: unknown, meta: McpMeta) {
   const identity = await resolveIdentity(meta);
   const db = await getDb();
-  const payload = payloadOf<{ kind?: string; remove?: boolean; image_url?: string | null }>(input);
+  const payload = payloadOf<{
+    kind?: string;
+    remove?: boolean;
+    image_url?: string | null;
+    image_data?: string | null;
+  }>(input);
   const kind = payload.kind === "banner" ? "banner" : "avatar";
 
   await enforceRateLimit(db, identity.subjectHash, "profile_image", WINDOWS.join(10));
 
-  if (payload.remove === true || payload.image_url === null) {
+  if (payload.remove === true || (payload.image_url === null && !payload.image_data)) {
     const result = await removeProfileImage(db, identity.subjectHash, kind);
     return { ...result, message: kind === "banner" ? "Banner entfernt." : "Profilbild entfernt." };
   }
+
+  if (typeof payload.image_data === "string" && payload.image_data.trim()) {
+    const bytes = decodeImagePayload(payload.image_data);
+    if (!bytes) throw roomError("INVALID_INPUT", "Die Bilddaten konnten nicht gelesen werden.");
+    const result = await setProfileImageFromBytes(db, identity.subjectHash, kind, bytes);
+    return {
+      ...result,
+      message: kind === "banner" ? "Banner aktualisiert." : "Profilbild aktualisiert.",
+      display_instruction: "Zeige das neue Bild als Markdown ![](url) in der Antwort.",
+    };
+  }
+
   if (typeof payload.image_url !== "string" || !payload.image_url.trim()) {
-    throw roomError(
-      "INVALID_INPUT",
-      "Bitte gib eine Bild-Adresse (https) an oder setze remove: true.",
+    // No usable source: hand out a one-time upload link so the person can send
+    // a picture from their device or chat instead of a public URL.
+    const profile = await getOwnProfile(db, identity.subjectHash);
+    const token = await issueToken(
+      "profile_upload",
+      0,
+      identity.subjectHash,
+      30 * 60,
+      crypto.randomUUID(),
+      { roomId: profile.roomId, kind },
     );
+    return {
+      kind,
+      upload_url: `${PRODUCTION_ORIGIN}/upload/${token}`,
+      expires_in_seconds: 30 * 60,
+      message:
+        kind === "banner"
+          ? "Öffne diesen Link und lade dein Banner direkt hoch (30 Minuten gültig)."
+          : "Öffne diesen Link und lade dein Profilbild direkt hoch (30 Minuten gültig).",
+      display_instruction:
+        "Gib die upload_url als anklickbaren Link aus und erkläre, dass das Bild dort direkt hochgeladen wird. Eine öffentliche Bild-URL ist nicht nötig.",
+    };
   }
 
   const result = await setProfileImageFromUrl(db, identity.subjectHash, kind, payload.image_url);
@@ -268,6 +317,7 @@ export async function handleSetProfileImage(input: unknown, meta: McpMeta) {
     display_instruction: "Zeige das neue Bild als Markdown ![](url) in der Antwort.",
   };
 }
+
 
 /* ----------------------------------- likes --------------------------------- */
 
