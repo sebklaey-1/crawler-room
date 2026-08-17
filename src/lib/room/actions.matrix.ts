@@ -1,19 +1,9 @@
 /**
- * Canonical action / side-effect matrix of the seven public Crawler Room tools.
+ * Canonical action / side-effect matrix of the single public Crawler Room tool.
  *
- * This file is the single source of truth for the MCP tool annotations. Every
- * action of every tool is classified once:
- *
- * - `write`       — the action changes stored state (never side-effect free).
- * - `publicEffect` — the result becomes visible to other people (public post,
- *                    like, follow, public profile/room/community change) or an
- *                    external resource is contacted. Drives `openWorldHint`.
- * - `destructive` — the action removes, blocks or irreversibly replaces state.
- *
- * The annotations are derived, never hand-written, so a new action cannot
- * silently make a tool look read-only or non-destructive. Contract tests in
- * `annotations.test.ts` verify that the matrix covers exactly the actions the
- * input schemas accept.
+ * - `write`        — the action changes stored state.
+ * - `publicEffect` — the result becomes visible to other people.
+ * - `destructive`  — the action removes or irreversibly replaces state.
  */
 export interface ActionEffect {
   write: boolean;
@@ -24,8 +14,6 @@ export interface ActionEffect {
 const READ: ActionEffect = { write: false, publicEffect: false, destructive: false };
 const WRITE: ActionEffect = { write: true, publicEffect: false, destructive: false };
 const PUBLIC_WRITE: ActionEffect = { write: true, publicEffect: true, destructive: false };
-const DESTRUCTIVE: ActionEffect = { write: true, publicEffect: false, destructive: true };
-const PUBLIC_DESTRUCTIVE: ActionEffect = { write: true, publicEffect: true, destructive: true };
 
 export const ACTION_MATRIX: Record<string, Record<string, ActionEffect>> = {
   universal_room: {
@@ -37,61 +25,6 @@ export const ACTION_MATRIX: Record<string, Record<string, ActionEffect>> = {
     // A report is stored for moderation; nothing is deleted by one report.
     report: WRITE,
   },
-  public_room: {
-    mine: READ,
-    open: READ,
-    update: PUBLIC_WRITE,
-    // Leaving removes the membership.
-    leave: DESTRUCTIVE,
-    send: PUBLIC_WRITE,
-    report: WRITE,
-  },
-  profile: {
-    get: READ,
-    update: PUBLIC_WRITE,
-    // The current public identifier changes. The previous handle stays reserved
-    // for the same owner and redirects to them; it never becomes claimable by
-    // anyone else. Destructive only in the sense that the public name changes.
-    change_handle: PUBLIC_DESTRUCTIVE,
-    // Follows an external link target and counts the click.
-    open_link: PUBLIC_WRITE,
-    // Blocking removes the mutual interaction possibility.
-    block: DESTRUCTIVE,
-    unblock: WRITE,
-    list_blocks: READ,
-    report: WRITE,
-  },
-  followers_notifications: {
-    // Following is a publicly visible interaction with another person's room.
-    follow: PUBLIC_WRITE,
-    unfollow: PUBLIC_DESTRUCTIVE,
-    list_followers: READ,
-    list_following: READ,
-    list_notifications: READ,
-    update_settings: WRITE,
-  },
-  likes: {
-    // A like is publicly visible on the liked content.
-    like: PUBLIC_WRITE,
-    unlike: PUBLIC_DESTRUCTIVE,
-  },
-  analytics: {
-    profile: READ,
-  },
-  // Communities only. Organisations, organisation members and team roles are
-  // not part of the public MVP surface (see docs/organizations-deferred.md).
-  communities: {
-    list: READ,
-    get: READ,
-    create: PUBLIC_WRITE,
-    update: PUBLIC_WRITE,
-    join: PUBLIC_WRITE,
-    leave: PUBLIC_DESTRUCTIVE,
-    read: READ,
-    send: PUBLIC_WRITE,
-    report: WRITE,
-  },
-
 };
 
 export interface ToolAnnotations extends Record<string, unknown> {
@@ -110,7 +43,6 @@ export function annotationsFor(tool: string): ToolAnnotations {
     readOnlyHint: readOnly,
     destructiveHint: actions.some((effect) => effect.destructive),
     openWorldHint: actions.some((effect) => effect.publicEffect),
-    // Only a fully read-only tool may claim idempotency.
     idempotentHint: readOnly,
   };
 }
