@@ -17,8 +17,7 @@ export const Route = createFileRoute("/")({
       },
       {
         property: "og:description",
-        content:
-          "One open Universal Room inside ChatGPT — anonymous, pseudonymous and free.",
+        content: "One open Universal Room inside ChatGPT — anonymous, pseudonymous and free.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

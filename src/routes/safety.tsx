@@ -93,15 +93,13 @@ function SafetyPage() {
           </p>
         </Section>
 
-
         <Section title="How to protect yourself and report">
           <ul className="list-disc space-y-2 pl-5">
             <li>
               <strong>Report in chat:</strong> ask Crawler Room to report a message (for example
-              “Crawler Room report this message as
-              harassment”). You pick a fixed reason and may add up to 500 characters of context —
-              please do not add extra personal data there. You get back an opaque case reference
-              only.
+              “Crawler Room report this message as harassment”). You pick a fixed reason and may add
+              up to 500 characters of context — please do not add extra personal data there. You get
+              back an opaque case reference only.
             </li>
             <li>
               <strong>A report never removes anything automatically.</strong> Each case runs through{" "}
@@ -113,8 +111,8 @@ function SafetyPage() {
               <a className="underline" href="/support">
                 crawler.today/support
               </a>{" "}
-              with the category “abuse/safety report”. Describe what happened.
-              You will get an opaque case reference.
+              with the category “abuse/safety report”. Describe what happened. You will get an
+              opaque case reference.
             </li>
             <li>
               Reports are reviewed by a person. Review capacity is limited, so a report does not

@@ -66,7 +66,6 @@ export function profileCard(result: SummaryResult): string {
     }`,
   );
 
-
   return parts.join("\n\n");
 }
 

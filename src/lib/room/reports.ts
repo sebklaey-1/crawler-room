@@ -182,8 +182,6 @@ export async function resolveCommunityTarget(
     .trim()
     .replace(/^@/, "");
 
-
-
   if (!raw) throw roomError("INVALID_INPUT", "Bitte nenne die Community.");
   const decodedRoom = await decodeRoomId(raw);
   const base = db

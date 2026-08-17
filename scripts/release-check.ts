@@ -295,8 +295,8 @@ check(
   "database contract suite requires its own credentials and an explicit acknowledgement",
   contractFiles.length === 0 ||
     (contract.includes("ROOM_TEST_SUPABASE_URL") &&
-    contract.includes("ROOM_TEST_SUPABASE_SERVICE_ROLE_KEY") &&
-    contract.includes("ROOM_RUN_DB_CONTRACT_TESTS") &&
+      contract.includes("ROOM_TEST_SUPABASE_SERVICE_ROLE_KEY") &&
+      contract.includes("ROOM_RUN_DB_CONTRACT_TESTS") &&
       contract.includes("ROOM_DB_CONTRACT_WRITE_ACK") &&
       !/process\.env\["SUPABASE_SERVICE_ROLE_KEY"\]/.test(contract)),
   contractFiles.length === 0
@@ -535,9 +535,8 @@ check(
 /* --- generated review documentation must not be stale ---------------------- */
 
 {
-  const { applyGeneratedBlocks, blocksIn, GENERATED_DOCS } = await import(
-    "../src/lib/room/review.docs"
-  );
+  const { applyGeneratedBlocks, blocksIn, GENERATED_DOCS } =
+    await import("../src/lib/room/review.docs");
   const stale: string[] = [];
   for (const doc of GENERATED_DOCS) {
     const current = read(doc);
@@ -568,10 +567,9 @@ check(
   retired.join(", ") || "set_image / image_data / upload_url are gone",
 );
 
-const cryptoClaims = REVIEW_ARTEFACTS.concat([
-  "docs/threat-model.md",
-  "docs/data-flow.md",
-]).filter((doc) => /ES256|JWKS|getClaims/.test(read(doc)));
+const cryptoClaims = REVIEW_ARTEFACTS.concat(["docs/threat-model.md", "docs/data-flow.md"]).filter(
+  (doc) => /ES256|JWKS|getClaims/.test(read(doc)),
+);
 check(
   "token verification is described exactly as implemented",
   cryptoClaims.length === 0,

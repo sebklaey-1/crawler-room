@@ -120,12 +120,12 @@ export function CrawlerRoomLanding() {
             className="mb-8 h-24 w-24 rounded-3xl shadow-lg"
           />
           <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            Crawler Room is a Model Context Protocol (MCP) server with one open, anonymous
-            Universal Room inside ChatGPT.
+            Crawler Room is a Model Context Protocol (MCP) server with one open, anonymous Universal
+            Room inside ChatGPT.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            One public room, everyone anonymous under an assigned pseudonym, messages gone after
-            24 hours. No login, no profile, completely free.
+            One public room, everyone anonymous under an assigned pseudonym, messages gone after 24
+            hours. No login, no profile, completely free.
           </p>
           <div className="mt-8 rounded-xl border border-border bg-card p-5 font-mono text-sm text-card-foreground">
             <p className="text-muted-foreground">In ChatGPT:</p>

@@ -36,8 +36,7 @@ export const Route = createFileRoute("/api/public/admin/cleanup")({
         try {
           const { data, error } = await db.rpc("cleanup_expired");
           if (error) throw error;
-          const counters =
-            typeof data === "object" && data ? (data as Record<string, number>) : {};
+          const counters = typeof data === "object" && data ? (data as Record<string, number>) : {};
           await finishMaintenanceRun(db, runId, "ok", counters);
           return json({ ok: true, result: data ?? {} });
         } catch {
