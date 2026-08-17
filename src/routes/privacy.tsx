@@ -10,7 +10,7 @@ export const Route = createFileRoute("/privacy")({
       {
         name: "description",
         content:
-          "How Crawler Room processes pseudonymous room data: categories, purposes, recipients, retention, hashing, OAuth and your controls.",
+          "How Crawler Room processes pseudonymous room data: no accounts, no profiles, keyed hashes only, 24-hour retention and your controls.",
       },
       { property: "og:title", content: "Privacy Policy — Crawler Room" },
       {
@@ -59,62 +59,58 @@ function PrivacyPage() {
             <a className="underline" href="/data-deletion">
               crawler.today/data-deletion
             </a>{" "}
-            for a verified deletion request.
+            for the deletion overview.
+          </p>
+        </Section>
+
+        <Section title="No accounts and no profiles">
+          <p>
+            Crawler Room has no sign-in, no registration and no profiles. There is one public
+            Universal Room. Every caller is assigned a pseudonym derived on the server; nobody can
+            choose it, change it or claim someone else’s. No email address, no password, no name, no
+            location and no images are collected at any point.
           </p>
         </Section>
 
         <Section title="Categories of data we process">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong>Pseudonymous account identifier.</strong> When you sign in through the OAuth
-              flow, we verify your access token and derive a keyed hash (HMAC-SHA256 with a server
-              secret) from your account id. The raw account id and the raw access token are never
-              stored. There is no automatic linking of a legacy ChatGPT <code>openai/subject</code>{" "}
-              identity to an account.
+              <strong>Pseudonymous identifier.</strong> The MCP client (ChatGPT) passes a
+              pseudonymous subject with each request. We immediately derive a keyed hash
+              (HMAC-SHA256 with a server secret) from it. The raw value is never stored, and the
+              hash cannot be reversed into an account, an address or a person.
             </li>
             <li>
-              <strong>Profile data you choose to publish.</strong> Handle, display name, bio,
-              link, room name and description, privacy toggles. Profiles carry no images and no
-              location field. Anything you publish here is public.
+              <strong>Room content.</strong> The text messages you send into the Universal Room and
+              the pseudonym shown next to them. Room content is public and is removed after at most
+              24 hours.
             </li>
             <li>
-              <strong>Room content.</strong> Text messages you send into the Universal Room,
-              personal public rooms and community rooms, plus the alias shown next to them. Room
-              content is public and is removed after at most 24 hours by the maintenance job;
-              profiles, handles, follows, likes, blocks and notification settings persist until you
-              request deletion.
-            </li>
-            <li>
-              <strong>Social signals.</strong> Follows, likes, blocks, notifications and presence
-              timestamps (“last seen”) used to show who is currently in a room.
-            </li>
-            <li>
-              <strong>Community data.</strong> Community name, slug, description, website and
-              membership.
-            </li>
-            <li>
-              <strong>Counting-only analytics.</strong> Aggregate event counters per room (for
-              example views, follows, likes) with the room owner’s pseudonymous hash. No visitor
-              identity is shown to anyone.
+              <strong>Presence timestamps.</strong> A “last seen” timestamp per pseudonymous hash,
+              used only for the aggregate live count of people in the room.
             </li>
             <li>
               <strong>Abuse-protection events.</strong> Rate-limit records containing a pseudonymous
               hash and the action name — never message content.
             </li>
             <li>
+              <strong>Reports.</strong> The reporter’s pseudonymous hash, the reported message
+              reference, a reason, an optional short note and a tamper-evident hash of the reported
+              text.
+            </li>
+            <li>
               <strong>Support and privacy requests.</strong> Category, subject, message, an optional
-              contact you provide voluntarily, an optional public handle you reference, and — only
-              if present — a short-lived keyed hash derived from trusted request metadata for abuse
-              protection. No raw IP address is stored.
+              contact you provide voluntarily, and — only if present — a short-lived keyed hash
+              derived from trusted request metadata for abuse protection. No raw IP address is
+              stored.
             </li>
           </ul>
         </Section>
 
         <Section title="Purposes">
           <ul className="list-disc space-y-2 pl-5">
-            <li>Operating the rooms, profiles, follows, likes, communities and analytics.</li>
-            <li>Verifying that a write or management action really belongs to your account.</li>
-            <li>Preventing spam and abuse (rate limits, image safety review, blocks).</li>
+            <li>Operating the public Universal Room and its live presence count.</li>
+            <li>Preventing spam and abuse (rate limits, spam heuristics, moderation).</li>
             <li>Handling support, abuse reports and privacy requests.</li>
           </ul>
         </Section>
@@ -132,43 +128,30 @@ function PrivacyPage() {
             <li>
               <strong>Hosting and database.</strong> The application runs on the Lovable deployment
               platform (Cloudflare Workers runtime) and stores data in the project’s managed
-              Supabase Postgres database and its object storage bucket for images.
+              Supabase Postgres database.
             </li>
-            <li>
-              Other people using Crawler Room see everything you publish publicly (messages, images,
-              profile, community posts).
-            </li>
+            <li>Other people using Crawler Room see every message you publish in the room.</li>
           </ul>
         </Section>
 
         <Section title="Retention">
           <p className="mb-3">
-            No message and no image stays in Crawler Room longer than 24 hours, in every room type.
-            The database caps every expiry at creation time plus 24 hours, reads never return older
-            content, every write path deletes what has expired in that room, and a maintenance job
-            sweeps the rest including the stored files. The rolling limits below apply on top of
-            that, immediately when new content is written.
+            No message stays in Crawler Room longer than 24 hours. The database caps every expiry at
+            creation time plus 24 hours, reads never return older content, every write deletes what
+            has expired in the room, and a maintenance job sweeps the rest. The rolling limit below
+            applies on top of that, immediately when new content is written.
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong>Text messages:</strong> a room keeps only its newest 7 messages, applied on
+              <strong>Text messages:</strong> the room keeps only its newest 7 messages, applied on
               every new message, and every message is deleted at the latest 24 hours after it was
               written.
-            </li>
-            <li>
-              <strong>Images:</strong> a room keeps only its newest 3 approved images and every
-              image is deleted at the latest 24 hours after upload, together with its file in
-              storage. Rejected, failed or never-completed uploads are purged, and the underlying
-              files are removed from storage.
             </li>
             <li>
               <strong>Rate-limit events:</strong> deleted after 2 hours.
             </li>
             <li>
-              <strong>Notifications:</strong> deleted after 30 days.
-            </li>
-            <li>
-              <strong>Left memberships:</strong> alias and pseudonym are anonymised 7 days after
+              <strong>Presence and left memberships:</strong> pseudonyms are anonymised 7 days after
               leaving.
             </li>
             <li>
@@ -181,41 +164,40 @@ function PrivacyPage() {
               after they are completed or rejected.
             </li>
             <li>
-              <strong>Analytics counters:</strong> aggregate rows are kept while the room exists.
+              <strong>Reports:</strong> kept while the moderation case is open and for as long as
+              needed to prevent repeat abuse.
             </li>
           </ul>
         </Section>
 
-        <Section title="Hashing and tokens">
+        <Section title="Hashing and identifiers">
           <p>
-            Account identity is stored only as HMAC-SHA256 with a server-side secret. Public
-            message, image and room identifiers handed to ChatGPT are opaque signed references, not
-            database keys. Access tokens are verified against the authorization server and are never
-            logged, stored or returned in a tool result.
+            Identity is stored only as HMAC-SHA256 with a server-side secret. Public message
+            identifiers handed to ChatGPT are opaque signed references, not database keys. There are
+            no access tokens, because Crawler Room requires no sign-in.
           </p>
         </Section>
 
         <Section title="Logs and security data">
           <p>
             The server writes structured operational log lines containing the tool name, an outcome
-            flag, an error code and a duration. Message content, tokens, secrets and raw identifiers
-            are not written to logs. Hosting providers may keep short-lived infrastructure logs
-            outside our control.
+            flag, an error code and a duration. Message content, secrets and raw identifiers are not
+            written to logs. Hosting providers may keep short-lived infrastructure logs outside our
+            control.
           </p>
         </Section>
 
         <Section title="Your controls">
           <ul className="list-disc space-y-2 pl-5">
-            <li>Read publicly without signing in; only write and management actions need OAuth.</li>
-            <li>Edit or clear your profile fields, images, bio, link and privacy toggles.</li>
-            <li>Hide online status, follower counts or likes on your profile.</li>
-            <li>Block a profile so its content no longer reaches you.</li>
+            <li>Use Crawler Room without any account, sign-in or personal data.</li>
+            <li>Choose what you write — everything in the room is public.</li>
+            <li>Report any message for human moderation review directly in the chat.</li>
             <li>
               Request access, correction or deletion at{" "}
               <a className="underline" href="/support">
                 /support
               </a>{" "}
-              or, verified through your signed-in session, at{" "}
+              or read the overview at{" "}
               <a className="underline" href="/data-deletion">
                 /data-deletion
               </a>
@@ -224,7 +206,7 @@ function PrivacyPage() {
           </ul>
           <p>
             Public content you already posted may remain visible to others until it falls out of the
-            room retention window or is removed as part of a deletion request.
+            retention window.
           </p>
         </Section>
 
