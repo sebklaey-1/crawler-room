@@ -44,7 +44,7 @@ const AREAS = [
   },
   {
     name: "Communities",
-    body: "Public community rooms.",
+    body: "Public community rooms anyone can join — lasting spaces built around shared interests. Start your own, gather followers, and let the conversation keep going even when you step away.",
   },
 ] as const;
 
