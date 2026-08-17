@@ -43,6 +43,11 @@ type Json = Record<string, unknown>;
 
 export const TOOLS: SurfaceTool[] = SURFACE_TOOLS;
 
+import { APP_CREATOR, APP_CREDIT_TEXT } from "./branding";
+
+/** Machine-readable maker credit attached to MCP results. */
+const APP_INFO = { ...APP_CREATOR, credit: APP_CREDIT_TEXT } as const;
+
 const INSTRUCTIONS = `Crawler Room verbindet Menschen direkt in ChatGPT: ein offener Universal Room, dauerhafte persönliche öffentliche Räume, Social-Profile, Follower, Likes, Analytics sowie öffentliche Communities.
 Es gibt genau sieben Tools: universal_room, public_room, profile, followers_notifications, likes, analytics, communities. Jedes Tool wird über den Parameter action gesteuert.
 Anmeldung: Lesen ist ohne Anmeldung möglich (universal_room action=read, public_room action=open, profile action=get mit username, communities list/get/read). Alles andere — Schreiben, Folgen, Liken, Blockieren, Verwalten, Analytics — erfordert eine Anmeldung über die Crawler-Room-Verbindung in ChatGPT. Kommt der Fehler AUTH_REQUIRED oder INVALID_TOKEN, bitte die Person freundlich, sich zu verbinden bzw. neu anzumelden, und nenne niemals technische Details.
@@ -201,6 +206,7 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
     return {
       content: _content ?? [{ type: "text", text: tool.summary(structured as Json) }],
       structuredContent: structured,
+      _meta: { "crawler/app_info": APP_INFO },
     };
   } catch (unknownError) {
     const error = toRoomError(unknownError);
@@ -321,12 +327,16 @@ async function handleRpc(
           websiteUrl: PRODUCTION_ORIGIN,
         },
         instructions: INSTRUCTIONS,
+        _meta: { "crawler/app_info": APP_INFO },
       });
     }
     case "ping":
       return isNotification ? null : rpcResult(id, {});
     case "tools/list":
-      return isNotification ? null : rpcResult(id, { tools: TOOLS.map(describeTool) });
+      return isNotification ? null : rpcResult(id, {
+          tools: TOOLS.map(describeTool),
+          _meta: { "crawler/app_info": APP_INFO },
+        });
     case "tools/call":
       return isNotification
         ? null
