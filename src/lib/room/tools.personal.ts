@@ -81,23 +81,6 @@ async function roomMessages(db: Db, room: PersonalRoom, selfMembershipId: string
   );
 }
 
-async function roomImages(db: Db, room: PersonalRoom) {
-  const rows = await listApprovedImages(db, room.roomId, IMAGE_RETENTION);
-  const aliases = await aliasesFor(
-    db,
-    rows.map((row) => row.sender_membership_id),
-  );
-  return Promise.all(
-    rows.map(async (row) => ({
-      alias: aliases[row.sender_membership_id] ?? "Unbekannt",
-      alt_text: row.alt_text ?? "",
-      created_at: new Date(row.created_at).toISOString(),
-      // Stable public https URL so the assistant can render the image inline.
-      url: await publicImageUrl(row.id),
-    })),
-  );
-}
-
 async function counters(db: Db, room: PersonalRoom) {
   const followers = await followerCount(db, room.roomId);
   const here = await countOnline(db, room.roomId);
@@ -111,7 +94,7 @@ async function counters(db: Db, room: PersonalRoom) {
 }
 
 const DISPLAY_INSTRUCTION =
-  "Zeige zuerst Raumname und die Zeile «X followers · Y people here now», dann die Nachrichten mit Alias und alle Bilder als Markdown ![alt_text](url) in derselben Antwort. Übersetze dabei ALLE Nachrichtentexte, Beschreibungen und Alt-Texte in die Sprache der Person; Aliase, @handles, Raumnamen, Zahlen und URLs bleiben unverändert.";
+  "Zeige zuerst Raumname und die Zeile «X followers · Y people here now», dann die Nachrichten mit Alias in derselben Antwort. Bilder werden in Räumen nicht angezeigt. Übersetze dabei ALLE Nachrichtentexte und Beschreibungen in die Sprache der Person; Aliase, @handles, Raumnamen und Zahlen bleiben unverändert.";
 
 /* ------------------------------- own room -------------------------------- */
 
@@ -138,7 +121,6 @@ export async function handleMyRoom(_input: unknown, meta: McpMeta) {
     followers: await listFollowers(db, room.roomId),
     activity: await listNotifications(db, identity.subjectHash, { limit: 10 }),
     messages: await roomMessages(db, room, membership.membershipId),
-    images: await roomImages(db, room),
     notification_settings: await getNotificationSettings(db, identity.subjectHash),
     dashboard_message: `${stats.followers} followers in your room · ${stats.people_here_now} people currently in your room`,
     display_instruction: DISPLAY_INSTRUCTION,
@@ -224,7 +206,6 @@ export async function handleOpenRoom(input: unknown, meta: McpMeta) {
     joined_now: membership.joinedNow,
     people_here: await presentMembers(db, room.roomId),
     messages: await roomMessages(db, room, membership.membershipId),
-    images: await roomImages(db, room),
     display_instruction: DISPLAY_INSTRUCTION,
     notice: PERSONAL_NOTICE,
   };
@@ -309,7 +290,6 @@ export async function handleSendRoomMessage(input: unknown, meta: McpMeta) {
     },
     followers_notified: notified,
     recent_messages: await roomMessages(db, room, membership.membershipId),
-    images: await roomImages(db, room),
     display_instruction: DISPLAY_INSTRUCTION,
     notice: PERSONAL_NOTICE,
   };
@@ -458,7 +438,6 @@ export async function publicRoomView(db: Db, username: unknown) {
     joined_now: false,
     people_here: await presentMembers(db, room.roomId),
     messages: await roomMessages(db, room, ""),
-    images: await roomImages(db, room),
     display_instruction: DISPLAY_INSTRUCTION,
     notice: PERSONAL_NOTICE,
     sign_in_hint:
