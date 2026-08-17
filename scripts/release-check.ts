@@ -520,26 +520,37 @@ check(
   "review.test.ts, submission.test.ts and safety.test.ts present",
 );
 
-const submissionDoc = JSON.parse(read("docs/openai-submission-ready.json")) as Record<string, unknown>;
+interface SubmissionDoc {
+  audience?: unknown;
+  ugc_policy?: unknown;
+  data_minimization?: unknown;
+  release_notes?: unknown;
+  availability?: unknown;
+  attestations?: unknown;
+  starter_prompts?: unknown[];
+  test_cases?: { positive?: unknown[]; negative?: unknown[] };
+}
+const submissionDoc = JSON.parse(read("docs/openai-submission-ready.json")) as SubmissionDoc;
+const positives = submissionDoc.test_cases?.positive?.length ?? 0;
+const negatives = submissionDoc.test_cases?.negative?.length ?? 0;
+const starters = submissionDoc.starter_prompts?.length ?? 0;
 check(
   "submission package carries the 2026 listing fields",
   Boolean(
-    submissionDoc["audience"] &&
-    submissionDoc["ugc_policy"] &&
-    submissionDoc["data_minimization"] &&
-    submissionDoc["release_notes"] &&
-    submissionDoc["availability"] &&
-    submissionDoc["attestations"],
+    submissionDoc.audience &&
+    submissionDoc.ugc_policy &&
+    submissionDoc.data_minimization &&
+    submissionDoc.release_notes &&
+    submissionDoc.availability &&
+    submissionDoc.attestations,
   ),
   "audience, ugc_policy, data_minimization, release_notes, availability, attestations",
 );
 
 check(
   "submission package ships 5+ positive and 3+ negative test cases",
-  ((submissionDoc["test_cases"] as Record<string, unknown[]> | undefined)?.positive?.length ?? 0) >= 5 &&
-    ((submissionDoc["test_cases"] as Record<string, unknown[]> | undefined)?.negative?.length ?? 0) >= 3 &&
-    (submissionDoc["starter_prompts"]?.length ?? 0) >= 5,
-  `${submissionDoc["test_cases"]?.positive?.length} positive / ${submissionDoc["test_cases"]?.negative?.length} negative / ${submissionDoc["starter_prompts"]?.length} starter prompts`,
+  positives >= 5 && negatives >= 3 && starters >= 5,
+  `${positives} positive / ${negatives} negative / ${starters} starter prompts`,
 );
 
 /* --------------------------------- report ------------------------------------ */
