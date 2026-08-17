@@ -60,10 +60,12 @@ describe("public tool surface", () => {
       // scopes its own actions need — never a scope outside the catalogue.
       const scopes = oauth?.scopes ?? [];
       expect(scopes.slice(0, 2), tool.name).toEqual(["openid", "profile"]);
+      const allowedScopes: string[] = [...SUPPORTED_SCOPES];
       expect(
-        scopes.every((scope) => (SUPPORTED_SCOPES as readonly string[]).includes(scope)),
+        scopes.every((scope) => allowedScopes.includes(scope)),
         tool.name,
       ).toBe(true);
+
       expect(scopes, tool.name).toEqual(scopesForTool(tool.name));
     }
   });
