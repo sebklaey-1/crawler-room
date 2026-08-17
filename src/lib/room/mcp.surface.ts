@@ -9,6 +9,8 @@
  * polls in this surface.
  */
 import { embedded, type EmbeddedShapes } from "./dbtypes";
+import { ACTION_MATRIX, annotationsFor } from "./actions.matrix";
+
 import { retentionCutoffIso } from "./config";
 import { z } from "zod";
 
@@ -212,62 +214,16 @@ const IMAGE_ARRAY: Json = {
 };
 
 /**
- * Conservative, truthful MCP annotations — one set per tool.
- * `destructiveHint` is true whenever an action removes or irreversibly changes
- * state; `openWorldHint` is true whenever content becomes publicly visible to
- * other people or an external resource is contacted.
+ * Conservative, truthful MCP annotations — one set per tool, derived from the
+ * checked-in action/side-effect matrix in `actions.matrix.ts`. A single
+ * writing action makes `readOnlyHint` false, a single publicly visible action
+ * makes `openWorldHint` true, and a single removing/blocking action makes
+ * `destructiveHint` true. Nothing here is hand-tuned.
  */
-export const TOOL_ANNOTATIONS: Record<string, Json> = {
-  // Writes public messages that other people read.
-  universal_room: {
-    readOnlyHint: false,
-    destructiveHint: false,
-    openWorldHint: true,
-    idempotentHint: false,
-  },
-  // leave removes membership; send publishes to an open room.
-  public_room: {
-    readOnlyHint: false,
-    destructiveHint: true,
-    openWorldHint: true,
-    idempotentHint: false,
-  },
-  // block and set_image(remove) delete state; set_image fetches an external URL.
-  profile: {
-    readOnlyHint: false,
-    destructiveHint: true,
-    openWorldHint: true,
-    idempotentHint: false,
-  },
-  // unfollow and mark_read are irreversible; everything stays inside Crawler Room.
-  followers_notifications: {
-    readOnlyHint: false,
-    destructiveHint: true,
-    openWorldHint: false,
-    idempotentHint: false,
-  },
-  // unlike removes a like; no external systems involved.
-  likes: {
-    readOnlyHint: false,
-    destructiveHint: true,
-    openWorldHint: false,
-    idempotentHint: false,
-  },
-  // Owner-only statistics, side-effect free and repeatable.
-  analytics: {
-    readOnlyHint: true,
-    destructiveHint: false,
-    openWorldHint: false,
-    idempotentHint: true,
-  },
-  // leave_community and remove_member delete state; create/update/send publish publicly.
-  communities_organizations: {
-    readOnlyHint: false,
-    destructiveHint: true,
-    openWorldHint: true,
-    idempotentHint: false,
-  },
-};
+export const TOOL_ANNOTATIONS: Record<string, Json> = Object.fromEntries(
+  Object.keys(ACTION_MATRIX).map((tool) => [tool, annotationsFor(tool) as Json]),
+);
+
 
 function parse<T extends z.ZodTypeAny>(schema: T, input: unknown): z.infer<T> {
   const result = schema.safeParse(input ?? {});

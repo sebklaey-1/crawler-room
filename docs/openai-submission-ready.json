@@ -1,0 +1,179 @@
+{
+  "publisher": "SEBKLAEY Agency — Sebastian Kläy",
+  "product": "Crawler Room",
+  "mcp_endpoint": "https://crawler.today/api/public/mcp",
+  "protected_resource_metadata": "https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp",
+  "documentation": "https://crawler.today/crawler-room",
+  "support_email": "info@crawler.today",
+  "auth": {
+    "model": "OAuth 2.1 authorization code + PKCE S256, dynamic client registration",
+    "accountless": true,
+    "credentials_required_from_reviewer": false,
+    "resource_echo": "resource is sent in the authorization request and the token request",
+    "token_binding": "aud and/or room_resource equal https://crawler.today/api/public/mcp",
+    "required_scopes": ["openid", "profile"]
+  },
+  "tools": [
+    {
+      "name": "universal_room",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true,
+        "idempotentHint": false
+      },
+      "securitySchemes": [{ "type": "noauth" }, { "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "rationale": "read is public and side-effect free (noauth); enter/send/report write state and send publishes a publicly readable message (openWorld). Nothing is removed, so not destructive."
+    },
+    {
+      "name": "public_room",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": true,
+        "idempotentHint": false
+      },
+      "securitySchemes": [{ "type": "noauth" }, { "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "rationale": "open is a public read (noauth); update/send publish publicly; leave removes a membership, which is destructive."
+    },
+    {
+      "name": "profile",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": true,
+        "idempotentHint": false
+      },
+      "securitySchemes": [{ "type": "noauth" }, { "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "rationale": "get is a public profile read (noauth); update/set_image/open_link change public data or contact an external URL; change_handle releases the old public handle and block removes interaction — both destructive."
+    },
+    {
+      "name": "followers_notifications",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": true,
+        "idempotentHint": false
+      },
+      "securitySchemes": [{ "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "rationale": "Every action is personal, so oauth2 only. follow/unfollow are publicly visible interactions with another person's room (openWorld); unfollow removes the relation (destructive)."
+    },
+    {
+      "name": "likes",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": true,
+        "idempotentHint": false
+      },
+      "securitySchemes": [{ "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "rationale": "Likes are publicly visible on the liked content (openWorld) and unlike removes a like (destructive). Both actions require an identity, so oauth2 only."
+    },
+    {
+      "name": "analytics",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false,
+        "idempotentHint": true
+      },
+      "securitySchemes": [{ "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "rationale": "Owner-only aggregate statistics. Single action, side-effect free and repeatable, nothing leaves Crawler Room."
+    },
+    {
+      "name": "communities_organizations",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "openWorldHint": true,
+        "idempotentHint": false
+      },
+      "securitySchemes": [{ "type": "noauth" }, { "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "rationale": "Listing and reading communities/organizations is public (noauth); create/update/join/send publish publicly; leave_community and remove_member remove state (destructive)."
+    }
+  ],
+  "starter_prompts": [
+    "What is currently being discussed in the Crawler Room Universal Room?",
+    "Post a short hello in the Universal Room and show me what people said before.",
+    "Open the public room of @satoshi and read the latest messages.",
+    "Set up my Crawler Room profile with a short bio and a location.",
+    "Follow @satoshi and show me who I already follow.",
+    "Show me the analytics of my Crawler Room profile for the last 30 days.",
+    "List the public Crawler Room communities and open one of them.",
+    "Report the last message in my room as spam."
+  ],
+  "test_cases": {
+    "positive": [
+      {
+        "id": "p1-public-universal-read",
+        "prompt": "What is currently being discussed in the Crawler Room Universal Room?",
+        "expected": "universal_room action=read is called without a token",
+        "result_shape": "messages[] with handle, text, created_at; no internal ids or hashes",
+        "fixture": "none — public read, works before connecting"
+      },
+      {
+        "id": "p2-own-profile",
+        "prompt": "Show my Crawler Room profile and my personal room.",
+        "expected": "profile action=get for the authenticated subject, then public_room action=mine",
+        "result_shape": "profile card (handle, display name, bio, counters) plus the caller's room",
+        "fixture": "connected OAuth session (accountless, anonymous)"
+      },
+      {
+        "id": "p3-follow",
+        "prompt": "Follow @satoshi and list who I follow.",
+        "expected": "followers_notifications action=follow, then action=list_following",
+        "result_shape": "{ followed: true } and following[] of handles",
+        "fixture": "connected OAuth session; the public handle @satoshi exists"
+      },
+      {
+        "id": "p4-analytics",
+        "prompt": "Show the analytics of my profile for the last 30 days.",
+        "expected": "analytics action=profile with range_days=30",
+        "result_shape": "aggregate counters and daily series, owner-scoped only",
+        "fixture": "connected OAuth session"
+      },
+      {
+        "id": "p5-communities-read",
+        "prompt": "List the public Crawler Room communities and open the first one.",
+        "expected": "communities_organizations action=list_communities, then action=get_community",
+        "result_shape": "communities[] with slug, name, description; then one community detail",
+        "fixture": "none — public read"
+      }
+    ],
+    "negative": [
+      {
+        "id": "n1-duplicate-handle",
+        "prompt": "Change my handle to @satoshi.",
+        "expected": "profile action=change_handle is refused with a uniqueness error",
+        "error": "ALREADY_EXISTS — the handle is globally claimed in name_claims",
+        "why": "Handles are globally unique and race-safe; taking a used handle would hijack a public identity."
+      },
+      {
+        "id": "n2-unauthenticated-write",
+        "prompt": "Post a message in the Universal Room (without connecting).",
+        "expected": "universal_room action=send returns AUTH_REQUIRED",
+        "error": "HTTP 401 with WWW-Authenticate: Bearer resource_metadata=..., error=\"invalid_token\"",
+        "why": "Writes are never anonymous; the client must run the OAuth flow first."
+      },
+      {
+        "id": "n3-unbound-token",
+        "prompt": "Call a protected action with a copied Supabase web session token.",
+        "expected": "verifyAccessToken rejects the token",
+        "error": "INVALID_TOKEN — no client_id and no canonical resource binding",
+        "why": "Only tokens issued by the OAuth server for this resource may reach the MCP server."
+      },
+      {
+        "id": "n4-unsafe-moderation",
+        "prompt": "Delete every message of @satoshi because I reported one of them.",
+        "expected": "no tool deletes foreign content; report is stored for moderation only",
+        "error": "PERMISSION_DENIED / no destructive action offered",
+        "why": "A single report never deletes content; moderation is a human, owner-side process."
+      }
+    ]
+  },
+  "external_blockers": [
+    "Business/Developer identity verification in the OpenAI portal — not confirmed by us",
+    "Portal-side scan-tools result — must be run in the portal",
+    "Listing assets/screenshots if the portal requests them"
+  ]
+}

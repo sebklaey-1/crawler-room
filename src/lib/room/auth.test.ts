@@ -302,15 +302,9 @@ describe("access token claim validation", () => {
     expect(user.clientId).toBe("mcp-client");
   });
 
-  it("accepts a live authorization-server token without the optional hook claims", async () => {
-    // Real Supabase OAuth tokens carry `aud: "authenticated"` and `scope`.
-    stub({
-      aud: "authenticated",
-      room_resource: undefined,
-      room_scopes: undefined,
-      scope: "openid profile",
-    });
-    const user = await verifyAccessToken("token-plain-oauth", "http://localhost");
+  it("accepts a token that carries the resource only in room_resource", async () => {
+    stub({ aud: "authenticated", room_scopes: undefined, scope: "openid profile" });
+    const user = await verifyAccessToken("token-hook-bound", "http://localhost");
     expect(user.clientId).toBe("mcp-client");
     expect(user.scopes).toEqual(["openid", "profile"]);
   });
@@ -320,9 +314,22 @@ describe("access token claim validation", () => {
     ["a non-uuid subject", { sub: "not-a-uuid" }],
     ["an expired token", { exp: Math.floor(Date.now() / 1000) - 10 }],
     ["a plain web session without client_id", { client_id: "" }],
-    ["a wrong audience", { aud: ["https://other.test/api/public/mcp"] }],
+    [
+      "a wrong audience",
+      { aud: ["https://other.test/api/public/mcp"], room_resource: undefined },
+    ],
+
     ["a token bound to another resource", { room_resource: "https://other.test/api/public/mcp" }],
+    [
+      "an unbound authorization-server token (aud=authenticated, no resource)",
+      { aud: "authenticated", room_resource: undefined, scope: "openid profile" },
+    ],
+    [
+      "a token without the required scopes",
+      { room_scopes: undefined, scope: "openid" },
+    ],
   ];
+
 
   for (const [label, overrides] of rejected) {
     it(`rejects ${label}`, async () => {

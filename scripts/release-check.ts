@@ -76,6 +76,87 @@ check(
   read("src/lib/room/mcp.ts").includes("enforceOutputContract"),
   "tool results are validated and reduced before they leave the server",
 );
+check(
+  "every tool declares explicit security schemes",
+  surface.includes("securitySchemesFor(tool.name)") && surface.includes('{ type: "noauth" }'),
+  "noauth is advertised only where public actions exist; oauth2 always",
+);
+
+/* ------------------- 2b. annotations, matrix and submission ------------------ */
+
+const matrix = read("src/lib/room/actions.matrix.ts");
+check(
+  "annotations are derived from the checked-in action matrix",
+  matrix.includes("export const ACTION_MATRIX") &&
+    surface.includes("annotationsFor(tool)") &&
+    !/readOnlyHint: (true|false),\s*\n\s*destructiveHint/.test(surface),
+  "no hand-written hints in mcp.surface.ts",
+);
+
+const submission = read("docs/openai-submission-ready.json");
+let submissionPkg: {
+  tools?: Array<{ name: string; annotations: Record<string, boolean>; securitySchemes: unknown[] }>;
+  starter_prompts?: string[];
+  test_cases?: { positive?: unknown[]; negative?: unknown[] };
+} = {};
+try {
+  submissionPkg = JSON.parse(submission || "{}");
+} catch {
+  submissionPkg = {};
+}
+check(
+  "submission package parses and lists the seven tools",
+  (submissionPkg.tools ?? []).length === 7 &&
+    TOOL_NAMES.every((tool) => (submissionPkg.tools ?? []).some((entry) => entry.name === tool)),
+  `docs/openai-submission-ready.json — ${(submissionPkg.tools ?? []).length} tools`,
+);
+check(
+  "every documented tool carries all three hints plus a rationale",
+  (submissionPkg.tools ?? []).every(
+    (tool) =>
+      typeof tool.annotations?.["readOnlyHint"] === "boolean" &&
+      typeof tool.annotations?.["destructiveHint"] === "boolean" &&
+      typeof tool.annotations?.["openWorldHint"] === "boolean" &&
+      (tool.securitySchemes ?? []).length > 0,
+  ),
+  "annotation + security-scheme matrix complete",
+);
+check(
+  "five positive and at least three negative test cases",
+  (submissionPkg.test_cases?.positive ?? []).length === 5 &&
+    (submissionPkg.test_cases?.negative ?? []).length >= 3,
+  `${(submissionPkg.test_cases?.positive ?? []).length} positive / ${(submissionPkg.test_cases?.negative ?? []).length} negative`,
+);
+check(
+  "six to ten realistic starter prompts",
+  (submissionPkg.starter_prompts ?? []).length >= 6 && (submissionPkg.starter_prompts ?? []).length <= 10,
+  `${(submissionPkg.starter_prompts ?? []).length} prompts`,
+);
+check(
+  "docs/openai-submission-ready.md present",
+  existsSync(join(ROOT, "docs/openai-submission-ready.md")),
+  "human-readable review package",
+);
+
+/* --------------------- 2c. strict OAuth resource binding --------------------- */
+
+check(
+  "verifier has no «authenticated» audience fallback",
+  !/audiences\.includes\("authenticated"\)/.test(auth),
+  "only the canonical resource is accepted as audience",
+);
+check(
+  "verifier enforces the declared oauth2 scopes",
+  auth.includes("REQUIRED_SCOPES") && /for \(const required of REQUIRED_SCOPES\)/.test(auth),
+  "openid + profile required, fail closed",
+);
+check(
+  "challenge carries resource_metadata, error and error_description",
+  read("src/lib/room/challenge.ts").includes("resource_metadata") &&
+    read("src/lib/room/mcp.ts").includes("error_description"),
+  "reauth challenge is spec complete",
+);
+
 
 /* ------------------------------ 3. legal routes ------------------------------ */
 
