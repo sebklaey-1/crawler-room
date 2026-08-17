@@ -30,11 +30,6 @@ export function profileCard(result: SummaryResult): string {
   const parts: string[] = [];
 
   const handle = sanitizeUgcLabel(p.handle);
-  const banner = safeUrl(p.banner_image_url);
-  const avatar = safeUrl(p.profile_image_url);
-  if (banner) parts.push(`![Banner von @${handle}](${banner})`);
-  if (avatar) parts.push(`![Profilbild von @${handle}](${avatar})`);
-
   parts.push(`## ${sanitizeUgcLabel(p.display_name)}\n**@${handle}**`);
   if (p.bio) parts.push(`${UGC_BANNER}\n> ${sanitizeUgcText(p.bio, 500).replace(/\n/g, "\n> ")}`);
 
