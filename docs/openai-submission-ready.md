@@ -37,12 +37,12 @@ reviewer needs **no demo credentials**.
 ## Token binding
 
 An access token is accepted only when all of the following hold: signature
-verified against the project JWKS (ES256), issuer matches, `sub` is a UUID,
+verified with the authorization server's own signing key (HS256, one accepted
+`alg`), issuer matches, `sub` is present,
 `exp` in the future, `client_id` non-empty, the canonical resource appears in
 `aud` or `room_resource`, and the scopes `openid` and `profile` are present.
-The authorization server's default audience `authenticated` is **not** a
-resource and is rejected, so an ordinary web or anonymous session JWT can never
-call the MCP server. Failures answer with
+The generic audience `authenticated` is **not** a resource and is rejected, so an
+ordinary web or anonymous session JWT can never call the MCP server. Failures answer with
 `WWW-Authenticate: Bearer resource_metadata="…", error="invalid_token", error_description="…"`.
 
 ## Annotation matrix
@@ -50,27 +50,15 @@ call the MCP server. Failures answer with
 Derived from the checked-in action/side-effect matrix in
 `src/lib/room/actions.matrix.ts` — never hand-written.
 
-| Tool                        | readOnly | openWorld | destructive | Reason                                                                      |
-| --------------------------- | -------- | --------- | ----------- | --------------------------------------------------------------------------- |
-| `universal_room`            | false    | true      | false       | `send` publishes publicly; nothing is removed                               |
-| `public_room`               | false    | true      | true        | `update`/`send` publish publicly; `leave` removes a membership              |
-| `profile`                   | false    | true      | true        | public profile writes + external URL fetch; `change_handle`/`block` destroy |
-| `followers_notifications`   | false    | true      | true        | follow/unfollow are publicly visible; `unfollow` removes the relation       |
-| `likes`                     | false    | true      | true        | likes are publicly visible; `unlike` removes one                            |
-| `analytics`                 | true     | false     | false       | owner-only aggregate read, repeatable                                       |
-| `communities` | false    | true      | true        | public create/update/send; `leave` removes the caller's membership   |
+<!-- generated:tool-annotations -->
+
+<!-- /generated:tool-annotations -->
 
 ## Security scheme matrix
 
-| Tool                        | Schemes                               | Why                                        |
-| --------------------------- | ------------------------------------- | ------------------------------------------ |
-| `universal_room`            | `noauth` + `oauth2` (openid, profile) | `read` is public, everything else personal |
-| `public_room`               | `noauth` + `oauth2`                   | `open` is public                           |
-| `profile`                   | `noauth` + `oauth2`                   | `get` is a public profile read             |
-| `followers_notifications`   | `oauth2` only                         | every action is personal                   |
-| `likes`                     | `oauth2` only                         | requires an identity                       |
-| `analytics`                 | `oauth2` only                         | owner-scoped data                          |
-| `communities` | `noauth` + `oauth2`                   | listing/reading is public                  |
+<!-- generated:tool-scopes -->
+
+<!-- /generated:tool-scopes -->
 
 Every privileged action is additionally gated server-side against
 `PUBLIC_ACTIONS`; the declared schemes never replace that check.
@@ -94,7 +82,9 @@ queue with bounded retries. Escalation path: `info@crawler.today`.
 Stored: pseudonymous subject hashes (HMAC-SHA256, never the raw account UUID),
 self-chosen handles/display names, public room and profile content, likes,
 follows, aggregate analytics. Purpose: operating the public rooms. Retention:
-messages and images 24 hours; profiles and handles until the user deletes them.
+messages and images are deleted after at most 24 hours by the scheduled
+maintenance job; profiles, handles, follows, likes, blocks and notification
+settings persist until the user requests deletion at `/data-deletion`.
 User controls: change handle, edit or delete profile, leave rooms, block, data
 deletion. Public pages: `/privacy`, `/terms`, `/safety`, `/support`,
 `/data-deletion`.
