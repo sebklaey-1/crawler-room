@@ -11,11 +11,13 @@
  *   which validates the ES256 signature against the project's JWKS. No hand
  *   rolled or unverified JWT parsing decides authorisation.
  * - Beyond the signature every token must come from the OAuth 2.1 flow: it
- *   needs a non-empty `client_id`, so an ordinary web/app session JWT is never
- *   accepted. The audience must be this resource or the authorization
- *   server's default `authenticated`; a token bound to a *different*
- *   `room_resource` is rejected. The optional `custom_access_token_hook` may
- *   narrow `aud`/`room_resource`/`room_scopes`, but is not required.
+ *   needs a non-empty `client_id`, and it must be bound to *this* resource —
+ *   `aud` or `room_resource` must equal the canonical MCP resource. The
+ *   authorization server's default audience («authenticated») is not accepted,
+ *   so an ordinary web or anonymous session JWT is never valid here. The
+ *   resource binding is written by `public.custom_access_token_hook`.
+ *   The scopes declared in the tools' `oauth2` security scheme are required.
+
 
  * - Tokens are never logged, never returned to the model and never stored.
  * - The raw auth user id is never persisted: only
@@ -207,22 +209,28 @@ export async function verifyAccessToken(token: string, requestOrigin?: string): 
   const clientId = typeof claims["client_id"] === "string" ? claims["client_id"].trim() : "";
   if (!clientId) throw roomError("INVALID_TOKEN");
 
-  // Resource binding. The authorization server does not implement RFC 8707
-  // audience restriction: OAuth access tokens carry `aud: "authenticated"`.
-  // The optional `custom_access_token_hook` can narrow this to the canonical
-  // resource. Both shapes are accepted, but a token that names *another*
-  // resource is rejected.
+  // Strict resource binding (RFC 8707 / MCP): the token must name *this*
+  // resource. The canonical value is accepted from `aud` or from the
+  // `room_resource` claim written by `public.custom_access_token_hook`. There
+  // is no fallback: the authorization server's default audience
+  // («authenticated») is NOT a resource and is rejected, so an ordinary
+  // Supabase web or anonymous session JWT can never reach the MCP server.
   const audiences = claimList(claims["aud"]);
   const roomResource = typeof claims["room_resource"] === "string" ? claims["room_resource"] : "";
   if (roomResource && roomResource !== resource) throw roomError("INVALID_TOKEN");
-  if (!audiences.includes(resource) && !audiences.includes("authenticated")) {
+  if (!audiences.includes(resource) && roomResource !== resource) {
     throw roomError("INVALID_TOKEN");
   }
 
   // Granted scopes: hook claim first, otherwise the standard `scope` claim.
-  // Scope strings are informational here; every action is authorised by the
-  // domain layer against the pseudonymous subject, never by a scope value.
+  // Every scope declared in the tools' `oauth2` security scheme must be
+  // present; missing scopes fail closed with a reauth challenge. Actions are
+  // additionally authorised by the domain layer against the pseudonymous
+  // subject, never by a scope value alone.
   const scopes = claimList(claims["room_scopes"] ?? claims["scope"]);
+  for (const required of REQUIRED_SCOPES) {
+    if (!scopes.includes(required)) throw roomError("INVALID_TOKEN");
+  }
 
   const user: AuthUser = { userId: sub, issuer, clientId, scopes, expiresAt: exp };
 

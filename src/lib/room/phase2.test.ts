@@ -38,13 +38,13 @@ const EXPECTED_ANNOTATIONS: Record<
   followers_notifications: {
     readOnlyHint: false,
     destructiveHint: true,
-    openWorldHint: false,
+    openWorldHint: true,
     idempotentHint: false,
   },
   likes: {
     readOnlyHint: false,
     destructiveHint: true,
-    openWorldHint: false,
+    openWorldHint: true,
     idempotentHint: false,
   },
   analytics: {
