@@ -183,4 +183,3 @@ describe("public reads never write", () => {
     });
   });
 });
-});
