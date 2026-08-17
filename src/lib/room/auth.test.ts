@@ -21,6 +21,8 @@ import { handleMcpRequest } from "./mcp";
 import { __setTestDb } from "./store";
 import { fakeDb } from "@/test/fake-db";
 import { isPublicAction, PUBLIC_ACTIONS, SURFACE_TOOLS } from "./mcp.surface";
+import { SUPPORTED_SCOPES } from "./oauth/catalog";
+import { scopesForTool } from "./oauth/scopes";
 
 const URL_MCP = "http://localhost/mcp";
 
@@ -182,7 +184,9 @@ describe("test-only auth context", () => {
     }
     for (const name of ["followers_notifications", "likes", "analytics"]) {
       const tool = asRecord(tools.find((entry) => asRecord(entry)["name"] === name));
-      expect(tool["securitySchemes"]).toEqual([{ type: "oauth2", scopes: ["openid", "profile"] }]);
+      expect(tool["securitySchemes"]).toEqual([
+        { type: "oauth2", scopes: scopesForTool(name) },
+      ]);
     }
   });
 });
@@ -218,12 +222,13 @@ describe("token and identity handling", () => {
 });
 
 describe("protected resource discovery", () => {
-  it("points at the project authorization server", () => {
-    process.env["SUPABASE_URL"] ??= "https://example.supabase.co";
+  it("points at the self-hosted Crawler Room authorization server", () => {
     const metadata = protectedResourceMetadata("https://room.example");
     expect(metadata.resource).toBe("https://room.example/mcp");
-    expect(metadata.authorization_servers).toEqual([`${process.env["SUPABASE_URL"]}/auth/v1`]);
-    expect(metadata.scopes_supported).toEqual(["openid", "profile"]);
+    // The authorization server is the app itself — no external identity
+    // provider and no platform auth hook is involved any more.
+    expect(metadata.authorization_servers).toEqual(["https://room.example"]);
+    expect(metadata.scopes_supported).toEqual([...SUPPORTED_SCOPES]);
     expect(metadata.bearer_methods_supported).toEqual(["header"]);
   });
 
@@ -277,13 +282,12 @@ const RESOURCE = "http://localhost/mcp";
 
 function claims(overrides: Record<string, unknown> = {}) {
   return {
-    iss: `${process.env["SUPABASE_URL"]}/auth/v1`,
-    sub: "00000000-0000-4000-8000-0000000000aa",
+    iss: "http://localhost",
+    sub: "a".repeat(64),
     exp: Math.floor(Date.now() / 1000) + 600,
     client_id: "mcp-client",
     aud: [RESOURCE],
-    room_resource: RESOURCE,
-    room_scopes: ["openid", "profile"],
+    scope: "openid profile",
     ...overrides,
   };
 }
@@ -296,34 +300,29 @@ describe("access token claim validation", () => {
   afterEach(() => __setTestClaimsVerifier(null));
 
   it("accepts a fully resource-bound token", async () => {
-    process.env["SUPABASE_URL"] ??= "https://example.supabase.co";
     stub();
     const user = await verifyAccessToken("token-ok", "http://localhost");
-    expect(user.userId).toBe("00000000-0000-4000-8000-0000000000aa");
+    expect(user.userId).toBe("a".repeat(64));
     expect(user.clientId).toBe("mcp-client");
   });
 
-  it("accepts a token that carries the resource only in room_resource", async () => {
-    stub({ aud: "authenticated", room_scopes: undefined, scope: "openid profile" });
-    const user = await verifyAccessToken("token-hook-bound", "http://localhost");
+  it("accepts an elevated token and exposes its granted scopes", async () => {
+    stub({ scope: "openid profile room:write room:private" });
+    const user = await verifyAccessToken("token-elevated", "http://localhost");
     expect(user.clientId).toBe("mcp-client");
-    expect(user.scopes).toEqual(["openid", "profile"]);
+    expect(user.scopes).toEqual(["openid", "profile", "room:write", "room:private"]);
   });
 
   const rejected: Array<[string, Record<string, unknown>]> = [
     ["a foreign issuer", { iss: "https://evil.test/auth/v1" }],
-    ["a non-uuid subject", { sub: "not-a-uuid" }],
+    ["a subject that is not a pseudonymous digest", { sub: "not-a-digest" }],
     ["an expired token", { exp: Math.floor(Date.now() / 1000) - 10 }],
-    ["a wrong audience", { aud: ["https://other.test/mcp"], room_resource: undefined }],
-    ["a token bound to another resource", { room_resource: "https://other.test/mcp" }],
+    ["a wrong audience", { aud: ["https://other.test/mcp"] }],
     [
       "a token bound to the retired /api/public/mcp resource",
-      {
-        aud: ["http://localhost/api/public/mcp"],
-        room_resource: "http://localhost/api/public/mcp",
-      },
+      { aud: ["http://localhost/api/public/mcp"] },
     ],
-    ["a token without the required scopes", { room_scopes: undefined, scope: "openid" }],
+    ["a token without the required scopes", { scope: "openid" }],
     // No weak fallback: a plain session/anonymous JWT of the same
     // authorization server carries neither a client_id nor a resource claim.
     [

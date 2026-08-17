@@ -9,6 +9,8 @@ import { describe, expect, it } from "vitest";
 
 import { ACTION_MATRIX, annotationsFor } from "./actions.matrix";
 import { PUBLIC_ACTIONS, SURFACE_TOOLS, TOOL_ANNOTATIONS } from "./mcp.surface";
+import { SUPPORTED_SCOPES } from "./oauth/catalog";
+import { scopesForTool } from "./oauth/scopes";
 
 const EXPECTED_TOOLS = [
   "universal_room",
@@ -54,7 +56,12 @@ describe("public tool surface", () => {
         (PUBLIC_ACTIONS[tool.name] ?? []).length > 0,
       );
       const oauth = schemes.find((scheme) => scheme.type === "oauth2");
-      expect(oauth?.scopes, tool.name).toEqual(["openid", "profile"]);
+      // Every tool asks for the two base scopes plus exactly the elevated
+      // scopes its own actions need — never a scope outside the catalogue.
+      const scopes = oauth?.scopes ?? [];
+      expect(scopes.slice(0, 2), tool.name).toEqual(["openid", "profile"]);
+      expect(scopes.every((scope) => SUPPORTED_SCOPES.includes(scope)), tool.name).toBe(true);
+      expect(scopes, tool.name).toEqual(scopesForTool(tool.name));
     }
   });
 });
