@@ -539,6 +539,27 @@ export type Database = {
           },
         ]
       }
+      identity_anchors: {
+        Row: {
+          anchor_hash: string
+          created_at: string
+          last_seen_at: string
+          subject_hash: string
+        }
+        Insert: {
+          anchor_hash: string
+          created_at?: string
+          last_seen_at?: string
+          subject_hash: string
+        }
+        Update: {
+          anchor_hash?: string
+          created_at?: string
+          last_seen_at?: string
+          subject_hash?: string
+        }
+        Relationships: []
+      }
       image_messages: {
         Row: {
           alt_text: string | null

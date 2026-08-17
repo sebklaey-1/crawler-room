@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { resolveAnchoredSubject } from "@/lib/room/anchor";
 import { toRoomError } from "@/lib/room/errors";
 import { consentDetails, decideAuthorization, isOAuthFailure } from "@/lib/room/oauth/server";
 import { webSessionHash } from "@/lib/room/websession";
@@ -18,11 +19,14 @@ const CORS = {
   "access-control-allow-headers": "content-type, authorization",
 } as const;
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json", "cache-control": "no-store", ...CORS },
+function json(body: unknown, status = 200, setCookie?: string | null): Response {
+  const headers = new Headers({
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    ...CORS,
   });
+  if (setCookie) headers.append("set-cookie", setCookie);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 function sessionToken(request: Request): string | null {
@@ -64,8 +68,14 @@ export const Route = createFileRoute("/api/public/oauth/consent")({
         }
         const decision = body.decision === "approve" ? "approve" : "deny";
 
-        const subject = await webSessionHash(sessionToken(request));
-        if (!subject) {
+        // The durable anchor wins over the ephemeral browser session, so a new
+        // anonymous session never forks a second identity for the same person.
+        const sessionSubject = await webSessionHash(sessionToken(request));
+        const anchored = await resolveAnchoredSubject(
+          request.headers.get("cookie"),
+          sessionSubject,
+        );
+        if (!anchored) {
           return json(
             { error: "login_required", error_description: "Die Verbindung ist abgelaufen." },
             401,
@@ -73,14 +83,19 @@ export const Route = createFileRoute("/api/public/oauth/consent")({
         }
 
         try {
-          const result = await decideAuthorization(body.request_id, decision, subject);
+          const result = await decideAuthorization(
+            body.request_id,
+            decision,
+            anchored.subjectHash,
+          );
           if (isOAuthFailure(result)) {
             return json(
               { error: result.error, error_description: result.error_description },
               result.status,
+              anchored.setCookie,
             );
           }
-          return json(result);
+          return json(result, 200, anchored.setCookie);
         } catch (error) {
           return json(
             { error: "server_error", error_description: toRoomError(error).message },
