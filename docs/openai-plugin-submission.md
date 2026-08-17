@@ -105,16 +105,14 @@ Actions are taken verbatim from `inputSchema.properties.action.enum`; annotation
 
 ### `communities`
 
-- Actions: `list_communities`, `get_community`, `create_community`, `update_community`,
-  `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`,
-  `get_organization`, `create_organization`, `update_organization`, `list_members`, `add_member`,
-  `remove_member`, `report`.
-- Public: `list_communities`, `get_community`, `read_community`, `list_organizations`,
-  `get_organization`. OAuth: everything else.
-- Annotations: `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true`,
-  `idempotentHint: false` — creates and updates communities, `remove_member` only withdraws a
-  membership the caller administers and deletes no content, community content is third-party
-  input, and `create_*` / `send_community` produce a new row per call.
+- Actions: `list`, `get`, `create`, `update`, `join`, `leave`, `read`, `send`, `report`.
+- Public: `list`, `get`, `read`. OAuth: everything else.
+- Organisations, organisation members and team roles are not part of the public MVP surface;
+  legacy organisation actions fail closed with a generic `FEATURE_REMOVED` error.
+- Annotations: `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`,
+  `idempotentHint: false` — creates and updates communities, `leave` withdraws the caller's own
+  membership, community content is third-party input, and `create` / `send` produce a new row
+  per call.
 
 Each tool exposes a narrow `action` enum with Zod-derived `inputSchema` (length limits, enums,
 numeric bounds, trimmed strings, http/https-only URLs) and strict `oneOf` output branches that
@@ -147,7 +145,7 @@ declare only public DTO fields.
 | P1  | "What is happening in the Universal Room?"                        | `universal_room` / `read`                                              | none                         | any public messages (seeded demo messages are enough) | `{ action: "read", messages: [...], has_more, cursor? }`                                              | Anonymous read succeeds, no sign-in prompt, no ids or hashes in the payload.                   |
 | P2  | "Post 'hello from review' in the Universal Room."                 | `universal_room` / `send`                                              | accountless OAuth connection | none                                                  | `{ action: "send", message: {...}, recent: [...] }`                                                   | Message is written, the model reads back recent room content, rate limit allows a single post. |
 | P3  | "Show my public room and set my bio to 'Reviewing Crawler Room'." | `public_room` / `mine`, then `profile` / `update`                      | accountless OAuth connection | the reviewer's own room (auto-created)                | `{ action: "mine", room: {...} }`, `{ action: "update", profile: {...} }`                             | Only the caller's own room and profile change; handle stays unique.                            |
-| P4  | "List the public communities and read the newest one."            | `communities` / `list_communities` then `read_community` | none                         | one seeded public demo community with 2–3 messages    | `{ action: "list_communities", communities: [...] }`, `{ action: "read_community", messages: [...] }` | Anonymous community browsing works, private/organisation-internal fields are absent.           |
+| P4  | "List the public communities and read the newest one."            | `communities` / `list` then `read` | none                         | one seeded public demo community with 2–3 messages    | `{ action: "list", communities: [...] }`, `{ action: "read", messages: [...] }` | Anonymous community browsing works, private fields are absent.           |
 | P5  | "Show my profile analytics."                                      | `analytics` / `profile`                                                | accountless OAuth connection | demo room with a few views/likes                      | `{ action: "profile", analytics: {...} }`                                                             | Owner-only aggregates rendered as text charts; no visitor identity, no other person's numbers. |
 | P6  | "Follow the demo room and show my notifications."                 | `followers_notifications` / `follow`, `list_notifications`             | accountless OAuth connection | a second seeded demo handle to follow                 | `{ action: "follow", following: true }`, `{ action: "list_notifications", notifications: [...] }`     | Follow is recorded, self-follow is impossible, notifications are pull-based only.              |
 

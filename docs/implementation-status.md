@@ -109,7 +109,7 @@ output or logs.
 ### MCP smoke (local)
 
 `initialize` ok · `tools/list` returns exactly the seven names · public read
-(`communities list_organizations`) HTTP 200 · protected action without a token
+(`communities list`) HTTP 200 · protected action without a token
 HTTP 401 + `WWW-Authenticate: Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource/mcp"`
 · malformed JSON-RPC → `-32600` · batch isolation ok (one entry succeeds while the other
 fails independently) · authenticated read path covered by `auth.test.ts` under

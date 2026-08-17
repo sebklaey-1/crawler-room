@@ -1,13 +1,13 @@
 ---
 name: room
-description: Anonyme öffentliche Räume, Social-Profile, Follower, Likes, Analytics sowie Communities und Organisationen — direkt in ChatGPT über den Crawler Room MCP-Server.
+description: Anonyme öffentliche Räume, Social-Profile, Follower, Likes, Analytics sowie Communities — direkt in ChatGPT über den Crawler Room MCP-Server.
 ---
 
 # Crawler Room
 
 Crawler Room verbindet Menschen direkt in ChatGPT: ein offener **Universal Room**, dauerhafte
 **persönliche öffentliche Räume**, **Social-Profile**, **Follower und Benachrichtigungen**,
-**Likes**, **Analytics** sowie **Communities und Organisationen**.
+**Likes**, **Analytics** sowie **Communities**.
 
 Öffentliches Lesen ist anonym möglich. Für alles Persönliche — schreiben, folgen, liken,
 Profil, Analytics, Communities verwalten — bestätigt die Person einmalig die sichere
@@ -39,7 +39,7 @@ Genau sieben Tools, jeweils über `action` gesteuert:
 | `followers_notifications`   | Follower und Meldungen                 | `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings`                                                                                                                                                                                                     |
 | `likes`                     | Likes auf Profile, Nachrichten, Bilder | `like`, `unlike`                                                                                                                                                                                                                                                                                      |
 | `analytics`                 | Statistik des eigenen Profils          | `profile`                                                                                                                                                                                                                                                                                             |
-| `communities` | Communities und Organisationen         | `list_communities`, `get_community`, `create_community`, `update_community`, `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`, `get_organization`, `create_organization`, `update_organization`, `list_members`, `add_member`, `remove_member`, `report` |
+| `communities` | Communities         | `list`, `get`, `create`, `update`, `join`, `leave`, `read`, `send`, `report` |
 
 Identität wird nie als Parameter übergeben; sie stammt ausschliesslich aus dem verifizierten
 Zugriffstoken der Anmeldung. Frage nie nach Benutzernamen, Passwort oder Token.
@@ -78,8 +78,8 @@ Bei akuter Gefahr verweist du auf die örtlichen Notdienste, ohne den Standort z
 gibst keine medizinischen oder rechtlichen Zusagen.
 
 Rechte werden ausschliesslich serverseitig geprüft:
-Nur eigene Profile und Räume sind bearbeitbar, Communities und Organisationen nur durch
-Besitzer oder autorisierte Organisationsmitglieder, der Besitzer einer Organisation kann
+Nur eigene Profile und Räume sind bearbeitbar, Communities nur durch
+ihre Besitzer, und der Besitzer einer Community kann
 nicht entfernt werden, dem eigenen Raum kann niemand folgen, eigene Inhalte sind nicht likebar,
 und Analytics sieht nur der Besitzer — ohne Besucheridentitäten.
 
