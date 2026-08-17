@@ -48,6 +48,17 @@ async function rpc(method: string, params?: unknown) {
   return await response.json();
 }
 
+async function rpcAt(url: string, method: string, params?: unknown) {
+  const response = await handleMcpRequest(
+    new Request(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    }),
+  );
+  return await response.json();
+}
+
 async function callTool(name: string, args: unknown, meta?: Record<string, unknown>) {
   const body = await rpc("tools/call", { name, arguments: args, ...(meta ? { _meta: meta } : {}) });
   return body.result;
@@ -59,6 +70,14 @@ describe("MCP surface", () => {
     expect(body.result.serverInfo.title).toBe("Crawler Room");
     for (const name of EXPECTED) expect(body.result.instructions).toContain(name);
     expect(body.result.instructions).not.toMatch(/Kampagne|Sponsor|Abonnement|Bezahlung/);
+  });
+
+  it("serves the same seven tools on the deprecated compatibility route", async () => {
+    const body = await rpcAt("http://localhost/api/public/mcp", "tools/list");
+    const names = (asRecord(asRecord(body)["result"])["tools"] as unknown[]).map(
+      (entry) => asRecord(entry)["name"],
+    );
+    expect(names).toEqual(EXPECTED);
   });
 
   it("lists exactly the seven grouped tools", async () => {

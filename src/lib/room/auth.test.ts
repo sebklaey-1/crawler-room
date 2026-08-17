@@ -246,6 +246,7 @@ describe("protected resource discovery", () => {
       "https://zinga-room.lovable.app/mcp",
       "https://evil.test/mcp",
       "http://crawler.today/mcp",
+      "https://crawler.today/api/public/mcp",
     ]) {
       process.env["ROOM_MCP_RESOURCE"] = wrong;
       try {

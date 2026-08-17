@@ -73,7 +73,8 @@ describe("submission dossier", () => {
   });
 
   it("pins the canonical resource and claims no OpenAI relationship", () => {
-    expect(SUBMISSION).toContain("https://crawler.today/api/public/mcp");
+    expect(SUBMISSION).toContain("https://crawler.today/mcp");
+    expect(SUBMISSION).toContain("https://crawler.today/.well-known/oauth-protected-resource/mcp");
     expect(SUBMISSION).toMatch(/not affiliated with/i);
     expect(SUBMISSION).toMatch(/App Directory/);
     expect(SUBMISSION).not.toMatch(/partner(ship)? with OpenAI/i);
