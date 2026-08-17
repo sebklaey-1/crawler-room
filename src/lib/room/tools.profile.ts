@@ -24,6 +24,7 @@ import {
   recordEvent,
   removeLike,
   removeProfileImage,
+  setProfileImageFromBytes,
   setProfileImageFromUrl,
   suggestHandles,
   topContent,
@@ -32,6 +33,8 @@ import {
   type ProfileRow,
 } from "./profile";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
+import { issueToken } from "./tokens";
+import { PRODUCTION_ORIGIN } from "./auth";
 import { getDb, touchPresence, type Db } from "./store";
 
 export const PROFILE_DISPLAY_INSTRUCTION =
