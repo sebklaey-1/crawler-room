@@ -165,6 +165,19 @@ for (const route of ["privacy", "terms", "support", "safety", "data-deletion"]) 
   check(`/${route} page exists`, existsSync(join(ROOT, `src/routes/${route}.tsx`)), "route file");
 }
 
+// `resource_documentation` points at https://crawler.today/crawler-room, which
+// must be served by THIS project as a real page (200, no redirect).
+const docRoute = read("src/routes/crawler-room.tsx");
+check(
+  "/crawler-room documentation alias exists",
+  existsSync(join(ROOT, "src/routes/crawler-room.tsx")) &&
+    docRoute.includes('createFileRoute("/crawler-room")') &&
+    docRoute.includes("CrawlerRoomLanding") &&
+    !/redirect/i.test(docRoute),
+  "renders the landing page directly",
+);
+
+
 /* ------------------------------ 4. documentation ----------------------------- */
 
 for (const doc of [
