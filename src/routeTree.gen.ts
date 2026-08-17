@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CrawlerRoomRouteImport } from './routes/crawler-room'
 import { Route as DataDeletionRouteImport } from './routes/data-deletion'
+import { Route as InstallRouteImport } from './routes/install'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SafetyRouteImport } from './routes/safety'
@@ -49,6 +50,11 @@ const CrawlerRoomRoute = CrawlerRoomRouteImport.update({
 const DataDeletionRoute = DataDeletionRouteImport.update({
   id: '/data-deletion',
   path: '/data-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstallRoute = InstallRouteImport.update({
+  id: '/install',
+  path: '/install',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/crawler-room': typeof CrawlerRoomRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/install': typeof InstallRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/safety': typeof SafetyRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/crawler-room': typeof CrawlerRoomRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/install': typeof InstallRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/safety': typeof SafetyRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/crawler-room': typeof CrawlerRoomRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/install': typeof InstallRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/safety': typeof SafetyRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/'
     | '/crawler-room'
     | '/data-deletion'
+    | '/install'
     | '/mcp'
     | '/privacy'
     | '/safety'
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/'
     | '/crawler-room'
     | '/data-deletion'
+    | '/install'
     | '/mcp'
     | '/privacy'
     | '/safety'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/'
     | '/crawler-room'
     | '/data-deletion'
+    | '/install'
     | '/mcp'
     | '/privacy'
     | '/safety'
@@ -348,6 +360,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CrawlerRoomRoute: typeof CrawlerRoomRoute
   DataDeletionRoute: typeof DataDeletionRoute
+  InstallRoute: typeof InstallRoute
   McpRoute: typeof McpRoute
   PrivacyRoute: typeof PrivacyRoute
   SafetyRoute: typeof SafetyRoute
@@ -392,6 +405,13 @@ declare module '@tanstack/react-router' {
       path: '/data-deletion'
       fullPath: '/data-deletion'
       preLoaderRoute: typeof DataDeletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -580,6 +600,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CrawlerRoomRoute: CrawlerRoomRoute,
   DataDeletionRoute: DataDeletionRoute,
+  InstallRoute: InstallRoute,
   McpRoute: McpRoute,
   PrivacyRoute: PrivacyRoute,
   SafetyRoute: SafetyRoute,

@@ -18,6 +18,7 @@ export function LegalFooter({ note }: { note?: string }) {
           {note ? `${note} — ` : ""}Crawler Room is published by {PUBLISHER}. Not affiliated with,
           or endorsed by, OpenAI.
         </p>
+        <p className="text-xs">v1.0.0 Beta</p>
       </div>
     </footer>
   );

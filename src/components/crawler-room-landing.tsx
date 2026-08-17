@@ -7,6 +7,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 
+import { Link } from "@tanstack/react-router";
 import roomIcon from "@/assets/room-icon.png.asset.json";
 import { LegalFooter } from "@/components/legal-footer";
 
@@ -105,14 +106,22 @@ export function CrawlerRoomLanding() {
           />
           <span className="text-lg font-semibold tracking-tight">Crawler Room</span>
         </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
-          <span
-            className={`h-2 w-2 rounded-full ${
-              isLoading ? "bg-muted-foreground" : online ? "bg-chart-2" : "bg-destructive"
-            }`}
-            aria-hidden
-          />
-          {isLoading ? "Checking status" : online ? "Service online" : "Service disrupted"}
+        <span className="flex items-center gap-3">
+          <Link
+            to="/install"
+            className="inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-xs font-medium text-primary-foreground"
+          >
+            Install Beta
+          </Link>
+          <span className="hidden items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground sm:inline-flex">
+            <span
+              className={`h-2 w-2 rounded-full ${
+                isLoading ? "bg-muted-foreground" : online ? "bg-chart-2" : "bg-destructive"
+              }`}
+              aria-hidden
+            />
+            {isLoading ? "Checking status" : online ? "Service online" : "Service disrupted"}
+          </span>
         </span>
       </header>
 
