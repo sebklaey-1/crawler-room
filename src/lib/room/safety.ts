@@ -211,11 +211,9 @@ export const PUBLISHED_UGC_FIELDS: Record<string, readonly string[]> = {
   "public_room.update": ["room_name", "description"],
   "profile.update": ["display_name", "bio", "location"],
   "profile.change_handle": ["handle"],
-  "communities_organizations.send_community": ["text"],
-  "communities_organizations.create_community": ["title", "name", "description"],
-  "communities_organizations.update_community": ["title", "name", "description"],
-  "communities_organizations.create_organization": ["title", "name", "description"],
-  "communities_organizations.update_organization": ["title", "name", "description"],
+  "communities.send": ["text"],
+  "communities.create": ["title", "name", "description"],
+  "communities.update": ["title", "name", "description"],
 };
 
 /** All fields that can ever be published, used by the contract tests. */
