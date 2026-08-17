@@ -8,7 +8,7 @@
 import { requireSecret } from "./config";
 import { base64UrlDecode, base64UrlEncode, hmacSha256Hex, safeEqual } from "./crypto";
 
-export type TokenPurpose = "upload" | "review";
+export type TokenPurpose = "upload" | "review" | "profile_upload";
 
 interface Payload {
   p: TokenPurpose;
@@ -16,6 +16,9 @@ interface Payload {
   s: string;
   e: number;
   n: string;
+  /** Optional extra binding: personal room id and profile image kind. */
+  r?: string;
+  k?: string;
 }
 
 export interface TokenClaims {
@@ -23,7 +26,10 @@ export interface TokenClaims {
   imageId: number;
   subjectHash: string;
   nonce: string;
+  roomId?: string;
+  kind?: string;
 }
+
 
 async function sign(body: string): Promise<string> {
   return (await hmacSha256Hex(requireSecret("MESSAGE_ID_SECRET"), `token:${body}`)).slice(0, 32);
