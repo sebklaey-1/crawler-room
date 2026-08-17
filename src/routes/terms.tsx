@@ -49,8 +49,8 @@ function TermsPage() {
             Crawler Room is a general-audience product. You must be at least 13 years old. Crawler
             Room is not directed to children under 13 and must not be used by them. There is no
             mature or adult experience, and no traditional email and password account is required —
-            you sign in through the connected ChatGPT client. If local law requires a higher minimum age for using an online
-            social service, that age applies to you.
+            you sign in through the connected ChatGPT client. If local law requires a higher minimum
+            age for using an online social service, that age applies to you.
           </p>
         </Section>
 

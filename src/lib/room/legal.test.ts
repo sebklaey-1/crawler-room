@@ -149,7 +149,9 @@ describe("legal copy gates", () => {
     ] as const) {
       expect(text, `${name}: general audience`).toMatch(/general[- ]audience|general audience/i);
       expect(text, `${name}: under 13`).toMatch(/13/);
-      expect(text, `${name}: no account`).not.toMatch(/create an account with your email and password/i);
+      expect(text, `${name}: no account`).not.toMatch(
+        /create an account with your email and password/i,
+      );
     }
   });
 

@@ -74,7 +74,9 @@ describe("OpenAI submission package", () => {
   });
 
   it("never claims an old handle is released", () => {
-    expect(JSON.stringify(doc)).not.toMatch(/releases the old (public )?handle|handle is released/i);
+    expect(JSON.stringify(doc)).not.toMatch(
+      /releases the old (public )?handle|handle is released/i,
+    );
   });
 
   it("carries release notes, availability and the policy attestations", () => {
