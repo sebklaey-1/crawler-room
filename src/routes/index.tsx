@@ -5,13 +5,13 @@ import { CrawlerRoomLanding } from "@/components/crawler-room-landing";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Crawler Room — anonymous rooms, profiles and communities in ChatGPT" },
+      { title: "Crawler Room — Model Context Protocol (MCP) rooms in ChatGPT" },
       {
         name: "description",
         content:
-          "Crawler Room connects people inside ChatGPT: an open Universal Room, permanent personal public rooms, social profiles, followers, likes, analytics, communities and organisations.",
+          "Crawler Room is a Model Context Protocol (MCP) server that connects people inside ChatGPT: an open Universal Room, permanent personal public rooms, social profiles, followers, likes, analytics, communities and organisations.",
       },
-      { property: "og:title", content: "Crawler Room — anonymous rooms and profiles in ChatGPT" },
+      { property: "og:title", content: "Crawler Room — Model Context Protocol (MCP) rooms in ChatGPT" },
       {
         property: "og:description",
         content:
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:url", content: "https://crawler.today/" },
     ],
     links: [{ rel: "canonical", href: "https://crawler.today/" }],
   }),

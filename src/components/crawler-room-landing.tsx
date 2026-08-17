@@ -126,7 +126,7 @@ export function CrawlerRoomLanding() {
             className="mb-8 h-24 w-24 rounded-3xl shadow-lg"
           />
           <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            Crawler Room connects people through the Universal Room, personal rooms and profiles.
+            Crawler Room is a Model Context Protocol (MCP) server that connects people through the Universal Room, personal rooms and profiles.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
             An anonymous social layer that lives entirely inside ChatGPT: open rooms, your own

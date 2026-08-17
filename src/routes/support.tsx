@@ -24,7 +24,9 @@ export const Route = createFileRoute("/support")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://crawler.today/support" },
     ],
+    links: [{ rel: "canonical", href: "https://crawler.today/support" }],
   }),
   component: SupportPage,
 });
