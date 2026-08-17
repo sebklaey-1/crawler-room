@@ -327,19 +327,13 @@ describe("access token claim validation", () => {
     // authorization server carries neither a client_id nor a resource claim.
     [
       "a plain authorization-server session token without client_id or resource",
-      {
-        client_id: "",
-        aud: "authenticated",
-        room_resource: undefined,
-        scope: undefined,
-        room_scopes: undefined,
-      },
+      { client_id: "", aud: "authenticated", scope: undefined },
     ],
     [
       "a token whose only audience is the default «authenticated»",
-      { aud: "authenticated", room_resource: undefined },
+      { aud: "authenticated" },
     ],
-    ["a token without any scope claim", { room_scopes: undefined, scope: undefined }],
+    ["a token without any scope claim", { scope: undefined }],
   ];
 
   for (const [label, overrides] of rejected) {
