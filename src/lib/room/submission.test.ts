@@ -65,7 +65,8 @@ describe("OpenAI submission package", () => {
     const availability = doc["availability"];
     expect(availability["regions"]).toBe("manual_portal_selection_required");
     expect(availability["note"]).toMatch(/legal and support readiness/i);
-    expect(JSON.stringify(availability)).not.toMatch(/\bworldwide\b|\bglobal\b|EU\/EEA cleared/i);
+    expect(availability["regions"]).not.toMatch(/worldwide|global|eu|eea/i);
+    expect(availability["home_market_suggestion"]).toMatch(/suggestion only/i);
   });
 
   it("documents that moderation report details are exempt from the write guard", () => {

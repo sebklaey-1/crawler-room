@@ -227,7 +227,9 @@ function PrivacyPage() {
 
         <Section title="Children">
           <p>
-            Crawler Room is not directed to children under 13 and must not be used by them. See the{" "}
+            Crawler Room is a general-audience product with no mature or adult experience, and no
+            traditional email and password account is required. It is not directed to children under
+            13 and must not be used by them. See the{" "}
             <a className="underline" href="/terms">
               Terms
             </a>{" "}
