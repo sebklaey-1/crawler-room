@@ -1395,6 +1395,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         },
         total: { type: "integer" },
         url: { type: ["string", "null"] },
+        upload_url: { type: "string" },
         edit_hint: { type: ["string", "null"] },
         message: { type: "string" },
         display_instruction: { type: "string" },
