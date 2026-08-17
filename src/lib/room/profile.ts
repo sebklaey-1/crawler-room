@@ -11,6 +11,7 @@ import { roomError } from "./errors";
 import { SafeFetchError, fetchImageSafely } from "./ssrf";
 import { sanitizeImage } from "./images";
 import { removeStorageObjects, uploadObject } from "./imagestore";
+import { publicProfileImageUrl } from "./imageurl";
 import {
   canonicalHandle,
   ensurePersonalRoom,
