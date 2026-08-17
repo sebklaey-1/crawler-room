@@ -196,6 +196,8 @@ for (const doc of [
 
 const activeFiles = [
   "src/lib/room/auth.ts",
+  "src/components/crawler-room-landing.tsx",
+  "src/routes/crawler-room.tsx",
   "src/lib/room/mcp.ts",
   "src/lib/room/mcp.surface.ts",
   "src/routes/index.tsx",
@@ -205,7 +207,7 @@ const activeFiles = [
 const stale = activeFiles.filter((file) => /zinga[-.]?room/i.test(read(file)));
 check("no legacy domain in active code/docs", stale.length === 0, stale.join(", ") || "clean");
 
-const landing = read("src/routes/index.tsx");
+const landing = read("src/routes/index.tsx") + read("src/components/crawler-room-landing.tsx");
 check(
   "no unsupported claims on the landing page",
   !/Everything can be reported/i.test(landing) && !/no login/i.test(landing),
@@ -268,6 +270,8 @@ check(
 
 const BRANDED_FILES = [
   "src/routes/index.tsx",
+  "src/components/crawler-room-landing.tsx",
+  "src/routes/crawler-room.tsx",
   "src/components/oauth-consent.tsx",
   "README.md",
   "skills/room/SKILL.md",
