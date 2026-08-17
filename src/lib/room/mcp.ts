@@ -332,10 +332,12 @@ async function handleRpc(
     case "ping":
       return isNotification ? null : rpcResult(id, {});
     case "tools/list":
-      return isNotification ? null : rpcResult(id, {
-          tools: TOOLS.map(describeTool),
-          _meta: { "crawler/app_info": APP_INFO },
-        });
+      return isNotification
+        ? null
+        : rpcResult(id, {
+            tools: TOOLS.map(describeTool),
+            _meta: { "crawler/app_info": APP_INFO },
+          });
     case "tools/call":
       return isNotification
         ? null
