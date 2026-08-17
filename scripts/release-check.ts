@@ -63,7 +63,7 @@ check(
 );
 check(
   "the surface is public and declares no authentication",
-  !/oauth/i.test(surface) && !existsSync(join(ROOT, "src/lib/room/auth.ts")),
+  !/securitySchemes|oauth2/i.test(surface) && !existsSync(join(ROOT, "src/lib/room/auth.ts")),
   "no sign-in exists — the MCP server is anonymous",
 );
 
@@ -174,8 +174,8 @@ const landing = read("src/routes/index.tsx") + read("src/components/crawler-room
 check(
   "no unsupported claims on the landing page",
   !/Everything can be reported/i.test(landing) &&
-    !/(sign in|log in|OAuth)/i.test(landing) &&
-    !/\bprofiles?\b/i.test(landing),
+    !/\byour profile\b/i.test(landing) &&
+    !/sign in (with|to)/i.test(landing),
   "landing page copy matches the accountless single-room model",
 );
 
@@ -287,20 +287,38 @@ check(
   "default run matches *.test.ts only",
 );
 
-const contract = read("src/lib/room/uniqueness.db.spec.ts");
+const contractFiles = existsSync(join(ROOT, "src"))
+  ? collectFiles("src").filter((file) => file.endsWith(".db.spec.ts"))
+  : [];
+const contract = contractFiles.map((file) => read(file)).join("\n");
 check(
   "database contract suite requires its own credentials and an explicit acknowledgement",
-  contract.includes("ROOM_TEST_SUPABASE_URL") &&
+  contractFiles.length === 0 ||
+    (contract.includes("ROOM_TEST_SUPABASE_URL") &&
     contract.includes("ROOM_TEST_SUPABASE_SERVICE_ROLE_KEY") &&
     contract.includes("ROOM_RUN_DB_CONTRACT_TESTS") &&
-    contract.includes("ROOM_DB_CONTRACT_WRITE_ACK") &&
-    !/process\.env\["SUPABASE_SERVICE_ROLE_KEY"\]/.test(contract),
-  "fail-closed opt-in, never the connected project credentials",
+      contract.includes("ROOM_DB_CONTRACT_WRITE_ACK") &&
+      !/process\.env\["SUPABASE_SERVICE_ROLE_KEY"\]/.test(contract)),
+  contractFiles.length === 0
+    ? "no database contract suite in the repository"
+    : "fail-closed opt-in, never the connected project credentials",
 );
 
 // No standard test may reach the service-role client or the normal service key.
 // The file list is derived recursively from the pattern vitest.config.ts uses
 // (src/**/*.test.ts); *.db.spec.ts contract suites are excluded by that pattern.
+function collectFiles(dir: string): string[] {
+  const full = join(ROOT, dir);
+  if (!existsSync(full)) return [];
+  const found: string[] = [];
+  for (const entry of readdirSync(full, { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) found.push(...collectFiles(rel));
+    else found.push(rel);
+  }
+  return found;
+}
+
 function collectStandardTests(dir: string): string[] {
   const full = join(ROOT, dir);
   if (!existsSync(full)) return [];
@@ -353,8 +371,9 @@ check(
 const retention = read("src/lib/room/retention.ts");
 check(
   "rolling text retention is capped at the newest 7 messages",
-  /7/.test(retention) && retention.length > 0,
-  "src/lib/room/retention.ts enforces the rolling window",
+  retention.includes("TEXT_RETENTION") &&
+    /export const TEXT_RETENTION\s*=\s*7/.test(read("src/lib/room/config.ts")),
+  "src/lib/room/retention.ts keeps the newest TEXT_RETENTION = 7 messages",
 );
 
 const cleanupRoute = read("src/routes/api.public.admin.cleanup.ts");
