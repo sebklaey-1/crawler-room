@@ -84,7 +84,7 @@ import {
 } from "./reports";
 import { listBlocks, unblockPerson } from "./profile";
 import { quoteUgcLine, sanitizeUgcLabel, sanitizeUgcText, ugcBlock } from "./ugc";
-import { assertSafeUgcInput } from "./safety";
+import { assertSafePublishedUgc } from "./safety";
 import { findRoomByHandle, normalizeHandleInput } from "./personal";
 import { profileCard, analyticsCard } from "./mcp.render";
 import type { ImageView, LabelledEntry, MessageView, RoomView, SummaryResult } from "./viewtypes";
@@ -225,7 +225,7 @@ export const TOOL_ANNOTATIONS: Record<string, Json> = Object.fromEntries(
   Object.keys(ACTION_MATRIX).map((tool) => [tool, annotationsFor(tool) as Json]),
 );
 
-function parse<T extends z.ZodTypeAny>(schema: T, input: unknown): z.infer<T> {
+function parse<T extends z.ZodTypeAny>(schema: T, input: unknown, tool?: string): z.infer<T> {
   const result = schema.safeParse(input ?? {});
   if (!result.success) {
     throw roomError(
@@ -233,9 +233,10 @@ function parse<T extends z.ZodTypeAny>(schema: T, input: unknown): z.infer<T> {
       `Ungültige Angaben: ${result.error.issues[0]?.message ?? "unbekannt"}`,
     );
   }
-  // Fail closed on unambiguous policy violations before any storage or
-  // moderation path is reached (see safety.ts for the canonical matrix).
-  assertSafeUgcInput(result.data);
+  // Fail closed on unambiguous policy violations, but only for text that will
+  // actually be published (see safety.ts). Moderation report details, search
+  // queries and lookup identifiers are never filtered.
+  if (tool) assertSafePublishedUgc(tool, result.data);
   return result.data;
 }
 
@@ -431,7 +432,7 @@ async function anonymousUniversal(
 }
 
 async function universalHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  const data = parse(universalInput, input);
+  const data = parse(universalInput, input, "universal_room");
 
   // Authorisation is decided before any database connection is opened.
   if (!isAuthenticated(meta)) {
@@ -526,7 +527,7 @@ const publicRoomInput = z
   .strict();
 
 async function publicRoomHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  const data = parse(publicRoomInput, input);
+  const data = parse(publicRoomInput, input, "public_room");
 
   if (!isAuthenticated(meta)) {
     if (data.action !== "open") throw roomError("AUTH_REQUIRED");
@@ -635,7 +636,7 @@ const profileInput = z
   .strict();
 
 async function profileHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  const data = parse(profileInput, input);
+  const data = parse(profileInput, input, "profile");
 
   if (!isAuthenticated(meta)) {
     // Only the public view of a named profile is readable while signed out.
@@ -769,7 +770,7 @@ const followersInput = z
   .strict();
 
 async function followersHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  const data = parse(followersInput, input);
+  const data = parse(followersInput, input, "followers_notifications");
   requireAuth(meta);
 
   if (data.action === "follow" || data.action === "unfollow") {
@@ -858,7 +859,7 @@ const likesInput = z
   .strict();
 
 async function likesHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  const data = parse(likesInput, input);
+  const data = parse(likesInput, input, "likes");
   requireAuth(meta);
   const target =
     data.target_type === "profile"
@@ -883,7 +884,7 @@ const analyticsInput = z
   .strict();
 
 async function analyticsHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  const data = parse(analyticsInput, input);
+  const data = parse(analyticsInput, input, "analytics");
   requireAuth(meta);
   return tag(
     "profile",
@@ -943,7 +944,7 @@ const communitiesInput = z
   .strict();
 
 async function communitiesHandler(input: unknown, meta: McpMeta): Promise<Json> {
-  const data = parse(communitiesInput, input);
+  const data = parse(communitiesInput, input, "communities_organizations");
 
   // Signed-out callers may only read public community data — never write,
   // join, leave or manage anything. Authorisation is decided before any
