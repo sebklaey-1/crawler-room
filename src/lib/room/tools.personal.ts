@@ -8,7 +8,6 @@ import { z } from "zod";
 import { generateAlias, sanitizeAlias } from "./alias";
 import {
   config,
-  imageConfig,
   IMAGE_RETENTION,
   retentionCutoffIso,
   retentionDeadlineIso,
