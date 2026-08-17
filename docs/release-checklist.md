@@ -81,11 +81,11 @@ or logs.
 
 2. OpenAI domain verification for `crawler.today`.
 3. `ROOM_OAUTH_SIGNING_SECRET` set in production.
-5. Anonymous sign-ins enabled in production — REQUIRED for the accountless
+4. Anonymous sign-ins enabled in production — REQUIRED for the accountless
    consent screen; a disabled setting blocks the release.
-6. Reviewer screenshots / screencast.
-7. App directory portal metadata.
-8. Moderation staffing: a named responsible person, at least one configured moderator subject
+5. Reviewer screenshots / screencast.
+6. App directory portal metadata.
+7. Moderation staffing: a named responsible person, at least one configured moderator subject
    hash in `moderator_subjects`, a documented review rhythm and an escalation path.
 
 No statement in this repository claims that an OpenAI approval exists or is

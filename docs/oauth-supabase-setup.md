@@ -51,7 +51,7 @@ scope, never sent to the browser and never logged or printed by any script.
 4. **Token** — `/oauth/token` exchanges the single-use authorization code
    (stored only as a hash, redeemed race-safe) for a self-issued HS256 JWT with
    exactly `iss = https://crawler.today`, `aud = resource =
-   https://crawler.today/mcp`, `client_id`, `scope`, `sub`, `iat`, `exp`.
+https://crawler.today/mcp`, `client_id`, `scope`, `sub`, `iat`, `exp`.
    Refresh tokens are stored hashed and rotated on every use; reuse of a
    rotated token revokes the chain.
 

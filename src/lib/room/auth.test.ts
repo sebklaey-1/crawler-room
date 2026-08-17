@@ -184,9 +184,7 @@ describe("test-only auth context", () => {
     }
     for (const name of ["followers_notifications", "likes", "analytics"]) {
       const tool = asRecord(tools.find((entry) => asRecord(entry)["name"] === name));
-      expect(tool["securitySchemes"]).toEqual([
-        { type: "oauth2", scopes: scopesForTool(name) },
-      ]);
+      expect(tool["securitySchemes"]).toEqual([{ type: "oauth2", scopes: scopesForTool(name) }]);
     }
   });
 });
@@ -329,10 +327,7 @@ describe("access token claim validation", () => {
       "a plain authorization-server session token without client_id or resource",
       { client_id: "", aud: "authenticated", scope: undefined },
     ],
-    [
-      "a token whose only audience is the default «authenticated»",
-      { aud: "authenticated" },
-    ],
+    ["a token whose only audience is the default «authenticated»", { aud: "authenticated" }],
     ["a token without any scope claim", { scope: undefined }],
     [
       "a Supabase-issued session JWT (foreign issuer + default audience)",

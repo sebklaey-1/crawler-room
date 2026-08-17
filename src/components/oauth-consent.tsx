@@ -25,8 +25,7 @@ interface ConsentDetails {
 export const ANONYMOUS_UNAVAILABLE =
   "Die anonyme Verbindung ist momentan nicht möglich. Bitte versuche es später erneut — es wird kein Konto und keine E-Mail-Adresse angelegt.";
 
-const EXPIRED =
-  "Diese Anfrage ist abgelaufen. Bitte starte die Verbindung in ChatGPT noch einmal.";
+const EXPIRED = "Diese Anfrage ist abgelaufen. Bitte starte die Verbindung in ChatGPT noch einmal.";
 
 export function OAuthConsent({ requestId }: { requestId: string | undefined }) {
   const [connected, setConnected] = useState<boolean | null>(null);
@@ -149,7 +148,9 @@ export function OAuthConsent({ requestId }: { requestId: string | undefined }) {
           </p>
           <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
             {scopes.map((scope) => (
-              <li key={scope}>{SCOPE_DESCRIPTIONS[scope] ?? `Zusätzliche Berechtigung: ${scope}`}</li>
+              <li key={scope}>
+                {SCOPE_DESCRIPTIONS[scope] ?? `Zusätzliche Berechtigung: ${scope}`}
+              </li>
             ))}
           </ul>
           <p className="text-xs text-muted-foreground">Rückleitung an {details.redirect_uri}</p>

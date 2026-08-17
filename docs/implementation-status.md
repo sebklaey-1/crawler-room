@@ -131,10 +131,10 @@ No production writes, reports, blocks or data-rights requests were created.
 2. Moderator identity/role: at least one real subject hash in `moderator_subjects`, a named
    responsible person, review rhythm and escalation path (`ROOM_MODERATION_OWNER`).
 3. `ROOM_OAUTH_SIGNING_SECRET` set in the production environment.
-5. Anonymous sign-ins enabled in production — REQUIRED for the accountless consent screen.
-6. OpenAI domain and developer verification for `crawler.today`.
-7. Reviewer assets: screenshots / screencast and the walked-through test run.
-8. App directory portal metadata.
+4. Anonymous sign-ins enabled in production — REQUIRED for the accountless consent screen.
+5. OpenAI domain and developer verification for `crawler.today`.
+6. Reviewer assets: screenshots / screencast and the walked-through test run.
+7. App directory portal metadata.
 
 While these are open, no approval, production readiness or launch clearance is claimed.
 
