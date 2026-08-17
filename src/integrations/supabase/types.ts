@@ -41,9 +41,48 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          actor_hash: string | null
+          created_at: string
+          event_type: string
+          id: number
+          metadata: Json
+          owner_subject_hash: string
+          room_id: string
+        }
+        Insert: {
+          actor_hash?: string | null
+          created_at?: string
+          event_type: string
+          id?: never
+          metadata?: Json
+          owner_subject_hash: string
+          room_id: string
+        }
+        Update: {
+          actor_hash?: string | null
+          created_at?: string
+          event_type?: string
+          id?: never
+          metadata?: Json
+          owner_subject_hash?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       anonymous_identities: {
         Row: {
           account_id: string | null
+          auth_user_hash: string | null
           custom_alias: string | null
           first_seen_at: string
           handle: string | null
@@ -52,6 +91,7 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          auth_user_hash?: string | null
           custom_alias?: string | null
           first_seen_at?: string
           handle?: string | null
@@ -60,6 +100,7 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          auth_user_hash?: string | null
           custom_alias?: string | null
           first_seen_at?: string
           handle?: string | null
@@ -274,6 +315,109 @@ export type Database = {
           },
         ]
       }
+      content_likes: {
+        Row: {
+          created_at: string
+          id: string
+          owner_subject_hash: string
+          room_id: string | null
+          subject_hash: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_subject_hash: string
+          room_id?: string | null
+          subject_hash: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_subject_hash?: string
+          room_id?: string | null
+          subject_hash?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_likes_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          reason: string
+          receipt: string
+          reporter_subject_hash: string
+          resolution: string | null
+          resolved_at: string | null
+          reviewer_hash: string | null
+          room_id: string | null
+          status: string
+          target_kind: string
+          target_owner_subject_hash: string | null
+          target_ref: string
+          target_snapshot_hash: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason: string
+          receipt: string
+          reporter_subject_hash: string
+          resolution?: string | null
+          resolved_at?: string | null
+          reviewer_hash?: string | null
+          room_id?: string | null
+          status?: string
+          target_kind: string
+          target_owner_subject_hash?: string | null
+          target_ref: string
+          target_snapshot_hash?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          reason?: string
+          receipt?: string
+          reporter_subject_hash?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          reviewer_hash?: string | null
+          room_id?: string | null
+          status?: string
+          target_kind?: string
+          target_owner_subject_hash?: string | null
+          target_ref?: string
+          target_snapshot_hash?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_reports_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entitlement_overrides: {
         Row: {
           account_id: string
@@ -359,6 +503,35 @@ export type Database = {
           },
           {
             foreignKeyName: "events_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      handle_redirects: {
+        Row: {
+          created_at: string
+          old_handle: string
+          owner_subject_hash: string
+          room_id: string
+        }
+        Insert: {
+          created_at?: string
+          old_handle: string
+          owner_subject_hash: string
+          room_id: string
+        }
+        Update: {
+          created_at?: string
+          old_handle?: string
+          owner_subject_hash?: string
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handle_redirects_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
@@ -719,6 +892,33 @@ export type Database = {
           },
         ]
       }
+      moderator_subjects: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          label: string
+          subject_hash: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          subject_hash: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          subject_hash?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           live_event: boolean
@@ -1026,6 +1226,66 @@ export type Database = {
           },
         ]
       }
+      privacy_requests: {
+        Row: {
+          auth_user_hash: string
+          created_at: string
+          expires_at: string
+          id: string
+          note: string | null
+          reference: string
+          request_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          auth_user_hash: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          reference: string
+          request_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          auth_user_hash?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          reference?: string
+          request_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profile_blocks: {
+        Row: {
+          blocked_subject_hash: string
+          created_at: string
+          id: string
+          reason: string | null
+          subject_hash: string
+        }
+        Insert: {
+          blocked_subject_hash: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          subject_hash: string
+        }
+        Update: {
+          blocked_subject_hash?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          subject_hash?: string
+        }
+        Relationships: []
+      }
       rate_events: {
         Row: {
           action: string
@@ -1131,6 +1391,7 @@ export type Database = {
           retention_texts: number | null
           room_number: number
           rules: string | null
+          slug: string | null
           status: string
           title: string | null
           topic_id: string | null
@@ -1153,6 +1414,7 @@ export type Database = {
           retention_texts?: number | null
           room_number: number
           rules?: string | null
+          slug?: string | null
           status?: string
           title?: string | null
           topic_id?: string | null
@@ -1175,6 +1437,7 @@ export type Database = {
           retention_texts?: number | null
           room_number?: number
           rules?: string | null
+          slug?: string | null
           status?: string
           title?: string | null
           topic_id?: string | null
@@ -1372,6 +1635,54 @@ export type Database = {
           },
         ]
       }
+      support_requests: {
+        Row: {
+          body: string
+          category: string
+          contact: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          public_target: string | null
+          reference: string
+          requester_hash: string | null
+          requester_hash_expires_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          category: string
+          contact?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          public_target?: string | null
+          reference: string
+          requester_hash?: string | null
+          requester_hash_expires_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          contact?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          public_target?: string | null
+          reference?: string
+          requester_hash?: string | null
+          requester_hash_expires_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       topic_aliases: {
         Row: {
           created_at: string
@@ -1460,35 +1771,56 @@ export type Database = {
       user_rooms: {
         Row: {
           avatar_path: string | null
+          banner_path: string | null
           created_at: string
           description: string | null
+          external_url: string | null
           handle: string
           id: string
+          location: string | null
           owner_subject_hash: string
+          profile_visibility: string
           room_id: string
           room_name: string
+          show_follower_count: boolean
+          show_likes: boolean
+          show_online_status: boolean
           updated_at: string
         }
         Insert: {
           avatar_path?: string | null
+          banner_path?: string | null
           created_at?: string
           description?: string | null
+          external_url?: string | null
           handle: string
           id?: string
+          location?: string | null
           owner_subject_hash: string
+          profile_visibility?: string
           room_id: string
           room_name: string
+          show_follower_count?: boolean
+          show_likes?: boolean
+          show_online_status?: boolean
           updated_at?: string
         }
         Update: {
           avatar_path?: string | null
+          banner_path?: string | null
           created_at?: string
           description?: string | null
+          external_url?: string | null
           handle?: string
           id?: string
+          location?: string | null
           owner_subject_hash?: string
+          profile_visibility?: string
           room_id?: string
           room_name?: string
+          show_follower_count?: boolean
+          show_likes?: boolean
+          show_online_status?: boolean
           updated_at?: string
         }
         Relationships: [
@@ -1571,6 +1903,8 @@ export type Database = {
     }
     Functions: {
       cleanup_expired: { Args: never; Returns: Json }
+      cleanup_support_requests: { Args: never; Returns: Json }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       enforce_all_retention: {
         Args: never
         Returns: {
