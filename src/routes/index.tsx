@@ -9,7 +9,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Crawler Room is a Model Context Protocol (MCP) server that connects people inside ChatGPT: an open Universal Room, permanent personal public rooms, social profiles, followers, likes, analytics, communities and organisations.",
+          "Crawler Room is a Model Context Protocol (MCP) server that connects people inside ChatGPT: an open Universal Room, permanent personal public rooms, social profiles, followers, likes, analytics, communities.",
       },
       {
         property: "og:title",
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Universal Room, personal public rooms, social profiles, followers, likes, analytics, communities and organisations — pseudonymous and free.",
+          "Universal Room, personal public rooms, social profiles, followers, likes, analytics, communities — pseudonymous and free.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

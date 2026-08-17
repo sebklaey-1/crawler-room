@@ -86,7 +86,7 @@ function PrivacyPage() {
               timestamps (“last seen”) used to show who is currently in a room.
             </li>
             <li>
-              <strong>Community and organisation data.</strong> Community name, slug, description,
+              <strong>Community data.</strong> Community name, slug, description,
               website, membership and role.
             </li>
             <li>

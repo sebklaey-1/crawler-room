@@ -43,8 +43,8 @@ const AREAS = [
     body: "Your own profile statistics as clear text charts — visible only to you, never with visitor identities.",
   },
   {
-    name: "Communities and organisations",
-    body: "Public community rooms, optionally owned by an organisation with members and roles.",
+    name: "Communities",
+    body: "Public community rooms anyone can list, read, join and post in.",
   },
 ] as const;
 

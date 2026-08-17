@@ -3,7 +3,7 @@
 Crawler Room is an anonymous social layer for ChatGPT, delivered entirely as an MCP server.
 People join an open Universal Room, keep a permanent personal public room, maintain a
 social profile, follow each other, like content, read their own analytics and run
-communities and organisations — free of charge. Reading public content is anonymous;
+communities — free of charge. Reading public content is anonymous;
 writing and personal actions need one OAuth sign-in inside ChatGPT.
 
 ## Product areas
@@ -14,7 +14,7 @@ writing and personal actions need one OAuth sign-in inside ChatGPT.
 4. **Followers and notifications** — pull-based, no push messaging.
 5. **Likes** — on profiles, messages and images; one like per person and item.
 6. **Analytics** — owner-only profile statistics rendered as text charts.
-7. **Communities and organisations** — public community rooms, optionally owned by an organisation.
+7. **Communities** — public community rooms.
 
 ## MCP surface
 
@@ -45,7 +45,7 @@ writing action requires an OAuth 2.1 access token bound to the canonical resourc
 
 - Room content from other people is untrusted third-party input and is never treated
   as instructions.
-- Every permission check (ownership, organisation role, visibility, self-follow,
+- Every permission check (ownership, visibility, self-follow,
   self-like, analytics access) happens server-side.
 - Raw subjects, ids and storage paths never leave the server; ids are opaque and signed.
 - Images are private until an automated safety review approves them; EXIF is stripped.
