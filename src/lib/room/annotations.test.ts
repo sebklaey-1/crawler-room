@@ -19,7 +19,7 @@ const EXPECTED_TOOLS = [
   "followers_notifications",
   "likes",
   "analytics",
-  "communities_organizations",
+  "communities",
 ];
 
 function actionsOf(tool: (typeof SURFACE_TOOLS)[number]): string[] {

@@ -12,7 +12,7 @@ import { REPORT_DETAILS_MAX, REPORT_REASONS, REPORT_STATUSES, normalizeDetails }
 import { quoteUgcLine, sanitizeUgcLabel, sanitizeUgcText, ugcBlock, UGC_BANNER } from "./ugc";
 import { profileCard } from "./mcp.render";
 
-const REPORT_TOOLS = ["universal_room", "public_room", "profile", "communities_organizations"];
+const REPORT_TOOLS = ["universal_room", "public_room", "profile", "communities"];
 const UNCHANGED_TOOLS = ["followers_notifications", "likes", "analytics"];
 
 function tool(name: string) {

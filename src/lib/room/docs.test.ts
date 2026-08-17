@@ -16,7 +16,7 @@ const REAL_TOOLS = [
   "followers_notifications",
   "likes",
   "analytics",
-  "communities_organizations",
+  "communities",
 ];
 
 const ALIAS_TOOLS = ["my_room", "social", "notifications", "communities"];

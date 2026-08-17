@@ -57,8 +57,8 @@ describe("authentication policy", () => {
     expect(isPublicAction("public_room", "send")).toBe(false);
     expect(isPublicAction("profile", "get")).toBe(true);
     expect(isPublicAction("profile", "block")).toBe(false);
-    expect(isPublicAction("communities_organizations", "read_community")).toBe(true);
-    expect(isPublicAction("communities_organizations", "send_community")).toBe(false);
+    expect(isPublicAction("communities", "read")).toBe(true);
+    expect(isPublicAction("communities", "send")).toBe(false);
   });
 
   it("declares a policy entry for every advertised tool", () => {
