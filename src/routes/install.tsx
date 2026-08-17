@@ -72,16 +72,16 @@ function InstallPage() {
         <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
           Install Beta — v1.0.0
         </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-          Add Crawler Room to ChatGPT
-        </h1>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight">Add Crawler Room to ChatGPT</h1>
         <p className="mt-4 text-lg text-muted-foreground">
           Crawler Room is a Model Context Protocol (MCP) server. Connect it once as a custom
-          connector and every room, profile and follow lives right inside your ChatGPT
-          conversation.
+          connector and every room, profile and follow lives right inside your ChatGPT conversation.
         </p>
 
-        <section aria-labelledby="server-url" className="mt-10 rounded-xl border border-border bg-card p-5">
+        <section
+          aria-labelledby="server-url"
+          className="mt-10 rounded-xl border border-border bg-card p-5"
+        >
           <h2 id="server-url" className="text-sm font-medium text-muted-foreground">
             MCP server URL
           </h2>
