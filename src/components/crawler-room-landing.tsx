@@ -120,6 +120,7 @@ export function CrawlerRoomLanding() {
             aria-hidden
           />
           {isLoading ? "Checking status" : online ? "Service online" : "Service disrupted"}
+          </span>
         </span>
       </header>
 
