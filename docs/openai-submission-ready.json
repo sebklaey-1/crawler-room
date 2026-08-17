@@ -22,7 +22,10 @@
         "openWorldHint": true,
         "idempotentHint": false
       },
-      "securitySchemes": [{ "type": "noauth" }, { "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "securitySchemes": [
+        { "type": "noauth" },
+        { "type": "oauth2", "scopes": ["openid", "profile"] }
+      ],
       "rationale": "read is public and side-effect free (noauth); enter/send/report write state and send publishes a publicly readable message (openWorld). Nothing is removed, so not destructive."
     },
     {
@@ -33,7 +36,10 @@
         "openWorldHint": true,
         "idempotentHint": false
       },
-      "securitySchemes": [{ "type": "noauth" }, { "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "securitySchemes": [
+        { "type": "noauth" },
+        { "type": "oauth2", "scopes": ["openid", "profile"] }
+      ],
       "rationale": "open is a public read (noauth); update/send publish publicly; leave removes a membership, which is destructive."
     },
     {
@@ -44,7 +50,10 @@
         "openWorldHint": true,
         "idempotentHint": false
       },
-      "securitySchemes": [{ "type": "noauth" }, { "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "securitySchemes": [
+        { "type": "noauth" },
+        { "type": "oauth2", "scopes": ["openid", "profile"] }
+      ],
       "rationale": "get is a public profile read (noauth); update/set_image/open_link change public data or contact an external URL; change_handle releases the old public handle and block removes interaction — both destructive."
     },
     {
@@ -88,7 +97,10 @@
         "openWorldHint": true,
         "idempotentHint": false
       },
-      "securitySchemes": [{ "type": "noauth" }, { "type": "oauth2", "scopes": ["openid", "profile"] }],
+      "securitySchemes": [
+        { "type": "noauth" },
+        { "type": "oauth2", "scopes": ["openid", "profile"] }
+      ],
       "rationale": "Listing and reading communities/organizations is public (noauth); create/update/join/send publish publicly; leave_community and remove_member remove state (destructive)."
     }
   ],

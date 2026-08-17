@@ -26,26 +26,26 @@ tests never make external network calls.
 
 ## Custom domain ownership and routing verified — HARD BLOCKER
 
-The canonical resource is only valid if `crawler.today` is served by _this_
-project. Confirm all of the following before enabling anything that binds to
-the domain:
+Target architecture (since 2026-08-17): **one project, one domain, one MCP.**
+`crawler.today` and `www.crawler.today` point directly at this Crawler Room
+project; the former separate Crawler/Crawler-Social gateway project is
+decommissioned and is no longer a prerequisite of any gate. Historical notes
+about a split setup are migration history only.
 
 - [ ] `crawler.today` **and** `www.crawler.today` are attached to this Crawler Room
       project in Project Settings → Domains and both report **Active**.
-      Verified on 2026-08-16: both domains are active on this project.
+      Verified on 2026-08-17: both domains are active on this project.
 - [ ] DNS: A records for `@` and `www` point at the Lovable address, the
       `_lovable` TXT verification record resolves, and no stale records from a
       previous project remain. CAA records, if any, must permit Let's Encrypt.
 - [ ] TLS: certificates issued for both hostnames; `https://crawler.today`
       answers without a certificate warning and does not redirect off-domain.
+- [ ] `https://crawler.today/crawler-room` returns 200 from this project
+      (documentation alias, `resource_documentation`, no redirect).
 - [ ] `bun run verify:domain` reports the metadata, consent and health routes
       from the same deployment. Exit code 2 means "not deployed yet", exit code
       1 means a real misconfiguration and blocks the release.
 - [ ] `bun run verify:domain --rpc` returns exactly the seven public tool names.
-- [ ] If the domain is attached to a different project, or ownership cannot be
-      verified with certainty: **do not move it, do not deploy.** Record it here
-      as an open blocker instead. Never overwrite an existing crawler.today
-      production app.
 
 ### Dependent steps — only after the domain assignment is confirmed
 
