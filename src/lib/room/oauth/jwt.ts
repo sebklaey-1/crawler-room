@@ -79,10 +79,14 @@ export async function verifyJwt(token: string): Promise<JwtClaims | null> {
 
   let ok = false;
   try {
+    const signature = base64UrlToBytes(signaturePart);
     ok = await crypto.subtle.verify(
       "HMAC",
       await signingKey(),
-      base64UrlToBytes(signaturePart) as unknown as ArrayBufferView,
+      signature.buffer.slice(
+        signature.byteOffset,
+        signature.byteOffset + signature.byteLength,
+      ) as ArrayBuffer,
       encoder.encode(`${headerPart}.${payloadPart}`),
     );
   } catch {
