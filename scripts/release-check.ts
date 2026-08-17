@@ -565,15 +565,14 @@ check(
 );
 check(
   "auth binds the token to the canonical /mcp resource",
-  authSource.includes("room_resource") &&
-    /if \(!boundByAud && roomResource[\s\S]{0,120}throw roomError\("INVALID_TOKEN"\)/.test(
-      authSource,
-    ),
-  "aud or room_resource must equal https://crawler.today/mcp",
+  /const boundByAud[\s\S]{0,200}if \(!boundByAud\) throw roomError\("INVALID_TOKEN"\)/.test(
+    authSource,
+  ),
+  "aud must equal https://crawler.today/mcp (RFC 8707)",
 );
 check(
   "auth enforces the required scopes without synthesising them",
-  /for \(const required of REQUIRED_SCOPES\)[\s\S]{0,160}throw roomError\("INVALID_TOKEN"\)/.test(
+  /for \(const required of BASE_SCOPES\)[\s\S]{0,160}throw roomError\("INVALID_TOKEN"\)/.test(
     authSource,
   ) && !/scopes\s*=\s*\[[^\]]*openid/.test(authSource),
   "missing scopes are rejected, never defaulted",
@@ -591,7 +590,7 @@ check(
     "a token whose only audience is the default",
     "a token without any scope claim",
     "retired /api/public/mcp resource",
-    "a token bound to another resource",
+    "a wrong audience",
   ].every((phrase) => authTests.includes(phrase)),
   "plain session, authenticated-only aud, missing scope, legacy resource, foreign resource",
 );
