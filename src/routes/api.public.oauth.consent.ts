@@ -19,11 +19,14 @@ const CORS = {
   "access-control-allow-headers": "content-type, authorization",
 } as const;
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json", "cache-control": "no-store", ...CORS },
+function json(body: unknown, status = 200, setCookie?: string | null): Response {
+  const headers = new Headers({
+    "content-type": "application/json",
+    "cache-control": "no-store",
+    ...CORS,
   });
+  if (setCookie) headers.append("set-cookie", setCookie);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 function sessionToken(request: Request): string | null {
