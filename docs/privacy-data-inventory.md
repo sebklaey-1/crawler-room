@@ -21,7 +21,7 @@ Canonical MCP resource: `https://crawler.today/mcp`.
 | Images (metadata) | `image_messages`                                 | Newest 3 approved per room; pending >30 min, rejected and failed purged. `enforce_image_retention`, `purge_dead_images`.                                 |
 | Image files       | Storage bucket `room-images` (private)           | Deleted together with the row; served only as short-lived signed URLs.                                                                                   |
 | Profile fields    | `user_rooms`                                     | Until changed or deleted by the owner.                                                                                                                   |
-| Communities       | `organizations`, `organization_members`, `rooms` | Until deleted by an admin.                                                                                                                               |
+| Communities       | `rooms`, `memberships`                          | Until deleted by an admin.                                                                                                                               |
 
 ## Social and operational
 

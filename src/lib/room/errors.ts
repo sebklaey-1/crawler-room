@@ -29,6 +29,7 @@ export type RoomErrorCode =
   | "NOT_FOUND"
   | "FORBIDDEN"
   | "ORGANIZATION_REQUIRED"
+  | "FEATURE_REMOVED"
   | "CAMPAIGN_INVALID"
   | "POLICY_VIOLATION"
   | "DUPLICATE_REQUEST"
@@ -67,6 +68,8 @@ const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   NOT_FOUND: "Nicht gefunden.",
   FORBIDDEN: "Dafür fehlt dir die Berechtigung.",
   ORGANIZATION_REQUIRED: "Dafür wird eine verifizierte Organisation mit Business-Abo benötigt.",
+  FEATURE_REMOVED:
+    "Diese Funktion gibt es in Crawler Room nicht mehr. Bitte nutze stattdessen die Community-Funktionen.",
   CAMPAIGN_INVALID: "Die Kampagnendaten sind unvollständig oder unzulässig.",
   POLICY_VIOLATION: "Dieser Inhalt verstösst gegen die Inhaltsrichtlinien von Crawler Room.",
   DUPLICATE_REQUEST: "Diese Anfrage wurde bereits verarbeitet.",

@@ -12,7 +12,7 @@ const EXPECTED = [
   "followers_notifications",
   "likes",
   "analytics",
-  "communities_organizations",
+  "communities",
 ];
 
 const REMOVED = [
@@ -166,7 +166,7 @@ describe("MCP surface", () => {
       ["followers_notifications", { action: "list_following" }],
       ["likes", { action: "like", target_type: "profile", username: "someone" }],
       ["analytics", { action: "profile" }],
-      ["communities_organizations", { action: "create_community", title: "Test" }],
+      ["communities", { action: "create", title: "Test" }],
     ] as const) {
       const result = await callTool(name, args);
       expect(result.isError, name).toBe(true);
@@ -195,7 +195,7 @@ describe("MCP surface", () => {
       ["profile", { action: "change_handle" }],
       ["followers_notifications", { action: "follow" }],
       ["likes", { action: "like", target_type: "message" }],
-      ["communities_organizations", { action: "get_community" }],
+      ["communities", { action: "get" }],
     ];
     for (const [name, args] of cases) {
       const result = await callTool(name, args, meta);

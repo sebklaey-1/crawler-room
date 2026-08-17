@@ -19,7 +19,7 @@ const EXPECTED = [
   "followers_notifications",
   "likes",
   "analytics",
-  "communities_organizations",
+  "communities",
 ];
 
 /** Broad "just in case" context inputs a reviewer flags immediately. */

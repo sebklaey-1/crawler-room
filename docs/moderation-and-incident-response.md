@@ -21,7 +21,7 @@ malware or spam. `/safety` states the same rules publicly.
 Two intake paths lead into the same human queue:
 
 1. **In-product (OAuth required).** `universal_room / report`, `public_room / report`,
-   `profile / report` and `communities_organizations / report`. The reporter identity is the
+   `profile / report` and `communities / report`. The reporter identity is the
    existing pseudonymous `subjectHash`; the raw auth subject is never stored. Input is a closed
    reason enum plus optional details (trimmed, max 500 characters). Targets are resolved
    server-side, so invented ids and cross-room targets are refused, self-reports are blocked and

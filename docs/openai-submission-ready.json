@@ -150,7 +150,7 @@
       "rationale": "Owner-only aggregate statistics. Single action, side-effect free and repeatable, nothing leaves Crawler Room."
     },
     {
-      "name": "communities_organizations",
+      "name": "communities",
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": true,
@@ -166,12 +166,11 @@
           "scopes": [
             "openid",
             "profile",
-            "room:write",
-            "room:private"
+            "room:write"
           ]
         }
       ],
-      "rationale": "Listing and reading communities/organizations is public (noauth); create/update/join/send publish publicly; leave_community and remove_member remove state (destructive)."
+      "rationale": "Listing and reading communities is public (noauth); create/update/join/send publish publicly; leave removes state (destructive). Organisations, organisation members and team roles are not part of the public surface."
     }
   ],
   "starter_prompts": [
@@ -217,7 +216,7 @@
       {
         "id": "p5-communities-read",
         "prompt": "List the public Crawler Room communities and open the first one.",
-        "expected": "communities_organizations action=list_communities, then action=get_community",
+        "expected": "communities action=list, then action=get",
         "result_shape": "communities[] with slug, name, description; then one community detail",
         "fixture": "none — public read"
       }
@@ -318,7 +317,7 @@
     "date": "2026-08-17",
     "highlights": [
       "Canonical MCP resource https://crawler.today/mcp with RFC 9728 protected-resource metadata.",
-      "Seven tools: Universal Room, public personal rooms, profiles, followers and notifications, likes, analytics, communities and organizations.",
+      "Seven tools: Universal Room, public personal rooms, profiles, followers and notifications, likes, analytics, communities.",
       "OAuth 2.1 authorization code + PKCE, dynamic client registration, accountless sign-in — no MFA, SMS or email verification for reviewers.",
       "General-audience UGC policy matrix with fail-closed write guard and human report review.",
       "Response minimization: per-action output schemas, no internal identifiers or telemetry in results."

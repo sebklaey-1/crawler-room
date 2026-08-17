@@ -53,7 +53,7 @@ const EXPECTED_ANNOTATIONS: Record<
     openWorldHint: false,
     idempotentHint: true,
   },
-  communities_organizations: {
+  communities: {
     readOnlyHint: false,
     destructiveHint: true,
     openWorldHint: true,

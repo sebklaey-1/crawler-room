@@ -100,8 +100,8 @@ describe("action-aware write guard", () => {
       assertSafePublishedUgc("profile", { action: "update", bio: SOLICITATION }),
     ).toThrowError();
     expect(() =>
-      assertSafePublishedUgc("communities_organizations", {
-        action: "create_community",
+      assertSafePublishedUgc("communities", {
+        action: "create",
         title: "Crypto talk",
         description: SOLICITATION,
       }),
@@ -109,7 +109,7 @@ describe("action-aware write guard", () => {
   });
 
   it("never filters moderation report details, so prohibited content can be described", () => {
-    for (const tool of ["universal_room", "public_room", "profile", "communities_organizations"]) {
+    for (const tool of ["universal_room", "public_room", "profile", "communities"]) {
       expect(() =>
         assertSafePublishedUgc(tool, {
           action: "report",
@@ -123,8 +123,8 @@ describe("action-aware write guard", () => {
 
   it("never filters read or lookup identifiers", () => {
     expect(() =>
-      assertSafePublishedUgc("communities_organizations", {
-        action: "list_communities",
+      assertSafePublishedUgc("communities", {
+        action: "list",
         query: SOLICITATION,
       }),
     ).not.toThrow();

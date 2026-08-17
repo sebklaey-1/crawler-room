@@ -17,7 +17,7 @@ import { embedded, type EmbeddedShapes } from "./dbtypes";
 import { retentionCutoffIso } from "./config";
 import { sha256Hex } from "./crypto";
 import { roomError } from "./errors";
-import { decodeImageId, decodeMessageId, decodeOrgId, decodeRoomId } from "./ids";
+import { decodeImageId, decodeMessageId, decodeRoomId } from "./ids";
 import { findRoomByHandle, normalizeHandleInput } from "./personal";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import type { Db } from "./store";
@@ -40,6 +40,8 @@ export const REPORT_STATUSES = ["received", "reviewing", "actioned", "dismissed"
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 
 export type ReportTargetKind =
+  // "organization" stays in the union for historical rows stored before the
+  // organisation feature was removed from the public surface.
   "profile" | "room" | "message" | "image" | "community" | "organization";
 
 export const REPORT_DETAILS_MAX = 500;
@@ -205,10 +207,13 @@ export async function resolveProfileTarget(db: Db, username: unknown): Promise<R
   };
 }
 
-/** Community / organization / community message. */
+/**
+ * Community or community message. Organisations are no longer part of the
+ * public surface and can therefore not be reported through it.
+ */
 export async function resolveCommunityTarget(
   db: Db,
-  targetType: "community" | "organization" | "message",
+  targetType: "community" | "message",
   reference: unknown,
   targetId: unknown,
 ): Promise<ResolvedTarget> {
@@ -216,24 +221,7 @@ export async function resolveCommunityTarget(
     .trim()
     .replace(/^@/, "");
 
-  if (targetType === "organization") {
-    if (!raw) throw roomError("INVALID_INPUT", "Bitte nenne die Organisation.");
-    const decoded = await decodeOrgId(raw);
-    const base = db.from("organizations").select("id, name, slug");
-    const { data } = decoded
-      ? await base.eq("id", decoded).maybeSingle()
-      : await base.ilike("slug", raw).maybeSingle();
-    const row = data;
-    if (!row) throw roomError("NOT_FOUND", "Diese Organisation gibt es nicht.");
-    return {
-      kind: "organization",
-      ref: row.id,
-      roomId: null,
-      ownerSubjectHash: null,
-      snapshot: await snapshotHash(`organization:${row.slug ?? row.id}`),
-      label: String(row.slug ?? row.name ?? "Organisation"),
-    };
-  }
+
 
   if (!raw) throw roomError("INVALID_INPUT", "Bitte nenne die Community.");
   const decodedRoom = await decodeRoomId(raw);

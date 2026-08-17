@@ -2,20 +2,12 @@ import { asRecord } from "./jsonschema";
 import { describe, expect, it } from "vitest";
 
 import { fakeDb } from "@/test/fake-db";
-import {
-  canManage,
-  publicGetOrganization,
-  publicListOrganizations,
-  removeOrgMember,
-  slugify,
-  updateCommunity,
-  updateOrganization,
-} from "./communities";
+import { canManage, slugify, updateCommunity } from "./communities";
 import { followRoom, unfollowRoom, type PersonalRoom } from "./personal";
 import { addLike } from "./profile";
 import { publicRoomView } from "./tools.personal";
 import { publicProfileView } from "./tools.profile";
-import { isPublicAction } from "./mcp.surface";
+import { REMOVED_COMMUNITY_ACTIONS, SURFACE_TOOLS, isPublicAction } from "./mcp.surface";
 import { validateMessage } from "./validation";
 import { profileCard, analyticsCard } from "./mcp.render";
 
@@ -64,7 +56,7 @@ describe("like guards", () => {
   });
 });
 
-describe("communities and organizations", () => {
+describe("communities", () => {
   it("computes management rights from ownership and org role", () => {
     expect(canManage({ myAccountId: "a", ownerAccountId: "a", orgRole: null })).toBe(true);
     expect(canManage({ myAccountId: "a", ownerAccountId: "b", orgRole: "admin" })).toBe(true);
@@ -75,30 +67,6 @@ describe("communities and organizations", () => {
   it("builds stable, url-safe slugs", () => {
     expect(slugify("Berner Künstler & Freunde")).toBe("berner-kuenstler-freunde");
     expect(slugify("  ")).toBe("");
-  });
-
-  it("refuses removing the organization owner", async () => {
-    const db = fakeDb({
-      organizations: { data: { id: "org-1", owner_account_id: "acc-1", name: "Org", slug: "org" } },
-      anonymous_identities: { data: { account_id: "acc-1" } },
-      user_rooms: { data: { owner_subject_hash: "owner-hash" } },
-    });
-    await expect(removeOrgMember(db, "me", "org", "@owner")).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-  });
-
-  it("refuses organization updates from non-managers", async () => {
-    const db = fakeDb({
-      organizations: {
-        data: { id: "org-1", owner_account_id: "acc-owner", name: "Org", slug: "org" },
-      },
-      anonymous_identities: { data: { account_id: "acc-other" } },
-      organization_members: { data: { role: "member" } },
-    });
-    await expect(updateOrganization(db, "me", "org", { name: "Hack" })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
   });
 
   it("refuses community updates from non-managers", async () => {
@@ -195,46 +163,23 @@ describe("public reads never write", () => {
     expect(db.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
   });
 
-  it("keeps the public organization reads read-only and free of personal data", async () => {
-    const row = {
-      id: "22222222-2222-4222-8222-222222222222",
-      slug: "acme",
-      name: "Acme",
-      description: "Public org",
-      website: "https://acme.test",
-      logo_path: null,
-      verified: true,
-      created_at: new Date().toISOString(),
-      owner_account_id: "secret-account",
-      suspended_at: null,
-    };
-
-    const listDb = fakeDb({ organizations: { data: [row] } });
-    const orgs = await publicListOrganizations(listDb).catch(() => []);
-    expect(listDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
-    for (const entry of orgs) {
-      const org = asRecord(entry);
-      expect(org["owner_account_id"]).toBeUndefined();
-      expect(org["my_role"]).toBeUndefined();
-      expect(org["is_member"]).toBeUndefined();
-      expect(org["can_manage"]).toBeUndefined();
-      expect(JSON.stringify(org)).not.toContain("secret-account");
-    }
-
-    const getDb = fakeDb({ organizations: { data: row } });
-    const single = await publicGetOrganization(getDb, "acme").catch(() => null);
-    expect(getDb.methods.filter((method: string) => WRITE_METHODS.includes(method))).toEqual([]);
-    expect(getDb.methods.some((method: string) => method.startsWith("rpc:"))).toBe(false);
-    if (single) {
-      expect(asRecord(single)["owner_account_id"]).toBeUndefined();
-      expect(asRecord(single)["members"]).toBeUndefined();
-      expect(JSON.stringify(single)).not.toContain("secret-account");
+  it("rejects every removed organisation action without leaking data", async () => {
+    const tool = SURFACE_TOOLS.find((entry) => entry.name === "communities")!;
+    const enumValues = (tool.inputSchema as { properties: { action: { enum: string[] } } })
+      .properties.action.enum;
+    for (const action of REMOVED_COMMUNITY_ACTIONS) {
+      expect(enumValues).not.toContain(action);
+      expect(isPublicAction("communities", action)).toBe(false);
+      await expect(tool.handler({ action, organization: "acme" }, {})).rejects.toMatchObject({
+        code: "FEATURE_REMOVED",
+      });
     }
   });
 
-  it("serves the public organization actions without a token", async () => {
-    for (const action of ["list_organizations", "get_organization"]) {
-      expect(isPublicAction("communities_organizations", action)).toBe(true);
-    }
+  it("keeps the legacy community action names working", async () => {
+    const tool = SURFACE_TOOLS.find((entry) => entry.name === "communities")!;
+    await expect(tool.handler({ action: "send_community", text: "hi" }, {})).rejects.toMatchObject({
+      code: "AUTH_REQUIRED",
+    });
   });
 });

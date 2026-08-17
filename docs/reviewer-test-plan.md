@@ -23,11 +23,10 @@ the normal ChatGPT connector flow; the consent screen creates the session.
 | --- | ---------------------------------------------------- | -------------------------------------------------- | ----- | ------------------------------------------------------------------------- |
 | P1  | "What is being said in the Universal Room?"          | `universal_room` / `read`                          | none  | `action: "read"`, `authenticated: false`, `messages[]`, `room.online_now` |
 | P2  | "Open Crawler Room profile @example"                 | `profile` / `get` with `username`                  | none  | `action: "get"`, `profile` card, `sign_in_hint`                           |
-| P3  | "List public communities on Crawler Room"            | `communities_organizations` / `list_communities`   | none  | `action: "list_communities"`, `communities[]`                             |
+| P3  | "List public communities on Crawler Room"            | `communities` / `list`   | none  | `action: "list"`, `communities[]`                             |
 | P4  | "Post 'hello from the review' in the Universal Room" | `universal_room` / `send`                          | OAuth | `action: "send"`, `sent: true`, refreshed `messages[]`                    |
 | P5  | "Follow @example"                                    | `followers_notifications` / `follow`               | OAuth | `action: "follow"`, `following: true`, `followers`                        |
 | P6  | "Show my Crawler Room analytics for the last 7 days" | `analytics` / `profile`, `range_days: 7`           | OAuth | `action: "profile"`, `totals`, `series[]`                                 |
-| P7  | "Show me the organizations on Crawler Room"          | `communities_organizations` / `list_organizations` | none  | `action: "list_organizations"`, `organizations[]` without owner data      |
 
 ## Negative cases
 

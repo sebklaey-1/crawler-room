@@ -198,7 +198,7 @@ const EXPECTED_TOOLS = [
   "followers_notifications",
   "likes",
   "analytics",
-  "communities_organizations",
+  "communities",
 ];
 
 async function liveToolContract(): Promise<{ ok: boolean; detail: string }> {
