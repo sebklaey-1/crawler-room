@@ -1,0 +1,15 @@
+DO $$
+BEGIN
+  BEGIN
+    EXECUTE 'REVOKE ALL ON TABLE cron.job_run_details FROM PUBLIC, anon, authenticated';
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+  BEGIN
+    EXECUTE 'REVOKE ALL ON TABLE cron.job FROM PUBLIC, anon, authenticated';
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+  BEGIN
+    EXECUTE 'REVOKE ALL ON SCHEMA cron FROM PUBLIC, anon, authenticated';
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+END $$;
