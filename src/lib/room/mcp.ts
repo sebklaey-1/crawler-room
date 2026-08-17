@@ -25,9 +25,10 @@ import {
   type AuthUser,
 } from "./auth";
 import { SERVICE_NAME, SERVICE_VERSION } from "./config";
-import { RoomError, toRoomError } from "./errors";
+import { RoomError, roomError, toRoomError } from "./errors";
 import { AUTH_META_KEY, sanitizeClientMeta, type McpMeta } from "./identity";
 import { PUBLIC_ACTIONS, SURFACE_TOOLS, type SurfaceTool, actionEnumOf } from "./mcp.surface";
+import { requiredScope } from "./oauth/scopes";
 import { enforceOutputContract } from "./output";
 import { getDb } from "./store";
 
