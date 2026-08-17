@@ -32,6 +32,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
 import { Route as ApiPublicSupportRouteImport } from './routes/api.public.support'
 import { Route as ApiPublicAdminCleanupRouteImport } from './routes/api.public.admin.cleanup'
+import { Route as ApiPublicOauthConsentRouteImport } from './routes/api.public.oauth.consent'
 import { Route as ApiPublicRoomUploadRouteImport } from './routes/api.public.room.upload'
 import { Route as DotwellKnownOauthProtectedResourceApiPublicMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.api.public.mcp'
 
@@ -154,6 +155,11 @@ const ApiPublicAdminCleanupRoute = ApiPublicAdminCleanupRouteImport.update({
   path: '/api/public/admin/cleanup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicOauthConsentRoute = ApiPublicOauthConsentRouteImport.update({
+  id: '/api/public/oauth/consent',
+  path: '/api/public/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicRoomUploadRoute = ApiPublicRoomUploadRouteImport.update({
   id: '/api/public/room/upload',
   path: '/api/public/room/upload',
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
+  '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
   '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
 }
@@ -217,6 +224,7 @@ export interface FileRoutesByTo {
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
+  '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
   '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
 }
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
+  '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
   '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
 }
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/api/public/mcp'
     | '/api/public/support'
     | '/api/public/admin/cleanup'
+    | '/api/public/oauth/consent'
     | '/api/public/room/upload'
     | '/.well-known/oauth-protected-resource/api/public/mcp'
   fileRoutesByTo: FileRoutesByTo
@@ -301,6 +311,7 @@ export interface FileRouteTypes {
     | '/api/public/mcp'
     | '/api/public/support'
     | '/api/public/admin/cleanup'
+    | '/api/public/oauth/consent'
     | '/api/public/room/upload'
     | '/.well-known/oauth-protected-resource/api/public/mcp'
   id:
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
     | '/api/public/mcp'
     | '/api/public/support'
     | '/api/public/admin/cleanup'
+    | '/api/public/oauth/consent'
     | '/api/public/room/upload'
     | '/.well-known/oauth-protected-resource/api/public/mcp'
   fileRoutesById: FileRoutesById
@@ -355,6 +367,7 @@ export interface RootRouteChildren {
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicSupportRoute: typeof ApiPublicSupportRoute
   ApiPublicAdminCleanupRoute: typeof ApiPublicAdminCleanupRoute
+  ApiPublicOauthConsentRoute: typeof ApiPublicOauthConsentRoute
   ApiPublicRoomUploadRoute: typeof ApiPublicRoomUploadRoute
 }
 
@@ -521,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminCleanupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/oauth/consent': {
+      id: '/api/public/oauth/consent'
+      path: '/api/public/oauth/consent'
+      fullPath: '/api/public/oauth/consent'
+      preLoaderRoute: typeof ApiPublicOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/room/upload': {
       id: '/api/public/room/upload'
       path: '/api/public/room/upload'
@@ -581,6 +601,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicSupportRoute: ApiPublicSupportRoute,
   ApiPublicAdminCleanupRoute: ApiPublicAdminCleanupRoute,
+  ApiPublicOauthConsentRoute: ApiPublicOauthConsentRoute,
   ApiPublicRoomUploadRoute: ApiPublicRoomUploadRoute,
 }
 export const routeTree = rootRouteImport

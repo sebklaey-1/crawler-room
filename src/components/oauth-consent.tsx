@@ -2,51 +2,35 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LEGAL_LINKS } from "@/lib/room/legal";
+import { SCOPE_DESCRIPTIONS } from "@/lib/room/oauth/catalog.labels";
 
 /**
- * OAuth 2.1 consent screen for the Crawler Room MCP server.
+ * OAuth 2.1 consent screen of the Crawler Room authorization server.
  *
  * Accountless by design: there is no e-mail, password, sign-up or MFA step.
- * When no Supabase session exists, exactly one anonymous session is created
- * with the official `signInAnonymously()` method; the person then only
- * confirms the connection. If anonymous sign-ins are disabled we fail closed
- * and explain it — we never fall back to `openai/subject` as a write bypass.
+ * When no browser session exists, exactly one anonymous session is created;
+ * the person then only confirms the connection. The session token never leaves
+ * the browser except as the `Authorization` header of the consent call, and the
+ * server stores only its keyed pseudonymous digest.
  */
-interface AuthorizationDetails {
-  client?: { name?: string; client_name?: string; client_uri?: string } | null;
-  redirect_uri?: string;
-  scope?: string;
-  redirect_url?: string;
-  redirect_to?: string;
+interface ConsentDetails {
+  request_id: string;
+  client_name: string;
+  client_uri: string | null;
+  redirect_uri: string;
+  scopes: string[];
+  resource: string;
 }
-
-interface OAuthNamespace {
-  getAuthorizationDetails: (
-    id: string,
-  ) => Promise<{ data: AuthorizationDetails | null; error: unknown }>;
-  approveAuthorization: (
-    id: string,
-  ) => Promise<{ data: AuthorizationDetails | null; error: unknown }>;
-  denyAuthorization: (id: string) => Promise<{ data: AuthorizationDetails | null; error: unknown }>;
-}
-
-function oauthApi(): OAuthNamespace | null {
-  const api = (supabase.auth as unknown as { oauth?: OAuthNamespace }).oauth;
-  return api ?? null;
-}
-
-const SCOPE_LABELS: Record<string, string> = {
-  openid: "Deine anonyme Crawler-Room-Verbindung bestätigen",
-  profile: "Dein öffentliches Crawler Room-Basisprofil teilen",
-};
 
 export const ANONYMOUS_UNAVAILABLE =
   "Die anonyme Verbindung ist momentan nicht möglich. Bitte versuche es später erneut — es wird kein Konto und keine E-Mail-Adresse angelegt.";
 
-export function OAuthConsent({ authorizationId }: { authorizationId: string | undefined }) {
+const EXPIRED =
+  "Diese Anfrage ist abgelaufen. Bitte starte die Verbindung in ChatGPT noch einmal.";
+
+export function OAuthConsent({ requestId }: { requestId: string | undefined }) {
   const [connected, setConnected] = useState<boolean | null>(null);
-  const [details, setDetails] = useState<AuthorizationDetails | null>(null);
+  const [details, setDetails] = useState<ConsentDetails | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const anonymousStarted = useRef(false);
@@ -58,7 +42,6 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
 
     void supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
-        // Reuse the existing session; never create a second one.
         setConnected(true);
         return;
       }
@@ -77,53 +60,52 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
   }, []);
 
   useEffect(() => {
-    if (!connected || !authorizationId) return;
-    const api = oauthApi();
-    if (!api) {
-      setError("Die Verbindung ist gerade nicht verfügbar. Bitte versuche es später erneut.");
-      return;
-    }
-    void api.getAuthorizationDetails(authorizationId).then(({ data, error: detailsError }) => {
-      if (detailsError || !data) {
-        setError("Diese Anfrage ist abgelaufen. Bitte starte die Verbindung in ChatGPT neu.");
-        return;
-      }
-      const immediate = data.redirect_url ?? data.redirect_to;
-      if (immediate && !data.client) {
-        window.location.href = immediate;
-        return;
-      }
-      setDetails(data);
-    });
-  }, [connected, authorizationId]);
+    if (!requestId) return;
+    void fetch(`/api/public/oauth/consent?request_id=${encodeURIComponent(requestId)}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          setError(EXPIRED);
+          return;
+        }
+        setDetails((await response.json()) as ConsentDetails);
+      })
+      .catch(() => setError(EXPIRED));
+  }, [requestId]);
 
   const decide = useCallback(
-    (action: "approve" | "deny") => {
+    (decision: "approve" | "deny") => {
       setBusy(true);
       setError(null);
       void (async () => {
         try {
-          const api = oauthApi();
-          if (!api || !authorizationId) return;
-          const { data, error: decisionError } =
-            action === "approve"
-              ? await api.approveAuthorization(authorizationId)
-              : await api.denyAuthorization(authorizationId);
-          const target = data?.redirect_url ?? data?.redirect_to;
-          if (decisionError || !target) {
-            setError("Das hat nicht geklappt. Bitte starte die Verbindung in ChatGPT neu.");
+          const { data } = await supabase.auth.getSession();
+          const token = data.session?.access_token;
+          if (!token || !requestId) {
+            setError(ANONYMOUS_UNAVAILABLE);
             return;
           }
-          window.location.href = target;
+          const response = await fetch("/api/public/oauth/consent", {
+            method: "POST",
+            headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+            body: JSON.stringify({ request_id: requestId, decision }),
+          });
+          const payload = (await response.json()) as { redirect_url?: string };
+          if (!response.ok || !payload.redirect_url) {
+            setError(EXPIRED);
+            return;
+          }
+          window.location.href = payload.redirect_url;
+        } catch {
+          setError(EXPIRED);
         } finally {
           setBusy(false);
         }
       })();
     },
-    [authorizationId],
+    [requestId],
   );
 
-  if (!authorizationId) {
+  if (!requestId) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-6">
         <h1 className="text-2xl font-semibold">Verbindung bestätigen</h1>
@@ -134,10 +116,8 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
     );
   }
 
-  const clientName =
-    details?.client?.name ?? details?.client?.client_name ?? "Die verbundene Anwendung";
-  // Only the scopes the client actually requested are shown.
-  const scopes = (details?.scope ?? "openid profile").split(/\s+/).filter(Boolean);
+  const clientName = details?.client_name ?? "Die verbundene Anwendung";
+  const scopes = details?.scopes ?? [];
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 px-6 py-12">
@@ -145,8 +125,7 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
         <h1 className="text-2xl font-semibold">{clientName} mit Crawler Room verbinden</h1>
         <p className="text-sm text-muted-foreground">
           Ohne Konto, ohne Registrierung, ohne E-Mail oder Passwort. Lesen bleibt anonym; Schreiben,
-          Folgen, Liken, Verwalten und Analytics laufen über eine pseudonyme, kontolose Verbindung,
-          die deine Inhalte schützt.
+          Folgen, Liken, Verwalten und Analytics laufen über eine pseudonyme, kontolose Verbindung.
         </p>
       </header>
 
@@ -160,46 +139,33 @@ export function OAuthConsent({ authorizationId }: { authorizationId: string | un
         <p className="text-sm text-muted-foreground">Anonyme Verbindung wird vorbereitet …</p>
       ) : null}
 
-      {connected ? (
+      {connected && details ? (
         <section className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Verbunden als anonyme Crawler Room-Identität. Es wurde kein Konto erstellt.
           </p>
           <p className="text-sm">
-            <strong>{clientName}</strong> darf Crawler Room für dich nutzen: Nachrichten schreiben,
-            deinen Raum und dein Profil verwalten, folgen und liken.
+            <strong>{clientName}</strong> bittet um diese Berechtigungen:
           </p>
           <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
             {scopes.map((scope) => (
-              <li key={scope}>{SCOPE_LABELS[scope] ?? `Zusätzliche Berechtigung: ${scope}`}</li>
+              <li key={scope}>{SCOPE_DESCRIPTIONS[scope] ?? `Zusätzliche Berechtigung: ${scope}`}</li>
             ))}
           </ul>
-          {details?.redirect_uri ? (
-            <p className="text-xs text-muted-foreground">Rückleitung an {details.redirect_uri}</p>
-          ) : null}
+          <p className="text-xs text-muted-foreground">Rückleitung an {details.redirect_uri}</p>
           <p className="text-xs text-muted-foreground">
             Nachrichten und Bilder werden in jedem Raum spätestens nach 24 Stunden gelöscht. Du
-            kannst den Zugriff jederzeit in ChatGPT entfernen.
+            kannst den Zugriff jederzeit in ChatGPT entfernen. Berechtigungen von Crawler Room
+            selbst — etwa Moderation und Raumregeln — gelten unverändert weiter.
           </p>
           <div className="flex gap-3">
-            <Button disabled={busy || !details} onClick={() => decide("approve")}>
+            <Button disabled={busy} onClick={() => decide("approve")}>
               Verbindung erlauben
             </Button>
             <Button variant="outline" disabled={busy} onClick={() => decide("deny")}>
-              Verbindung abbrechen
+              Abbrechen
             </Button>
           </div>
-          <nav aria-label="Legal and support" className="flex flex-wrap gap-x-4 gap-y-2 pt-2">
-            {LEGAL_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-xs text-muted-foreground underline underline-offset-4"
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
         </section>
       ) : null}
     </main>
