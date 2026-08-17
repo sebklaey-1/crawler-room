@@ -1119,22 +1119,6 @@ function messageLines(messages: MessageView[] | undefined): string {
   return ugcBlock(messages.map((message) => quoteUgcLine(message.alias ?? "", message.text ?? "")));
 }
 
-/**
- * Only the server-issued signed storage URL is rendered as an image; the alt
- * text and the alias come from other people and stay escaped.
- */
-function imageLines(images: ImageView[] | undefined): string {
-  const shown = (images ?? []).filter((image) => typeof image.url === "string" && image.url);
-  if (!shown.length) return "";
-  return `\n\n${shown
-    .map(
-      (image) =>
-        `![Bild](${encodeURI(String(image.url))})\n_${sanitizeUgcLabel(image.alias ?? "")}_${
-          image.alt_text ? `\n${sanitizeUgcText(image.alt_text, 200)}` : ""
-        }`,
-    )
-    .join("\n\n")}`;
-}
 
 /** Report confirmations never echo the reported content. */
 function reportSummary(result: SummaryResult): string {

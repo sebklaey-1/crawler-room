@@ -59,7 +59,6 @@ export function profileCard(result: SummaryResult): string {
   );
 
   const messages: MessageView[] = result.tabs?.messages ?? [];
-  const images: ImageView[] = result.tabs?.images ?? [];
 
   parts.push(
     `### 💬 Nachrichten\n${
@@ -73,17 +72,6 @@ export function profileCard(result: SummaryResult): string {
     }`,
   );
 
-  if (images.length) {
-    parts.push(
-      `### 🖼️ Bilder\n${images
-        .map((i: ImageView) => {
-          const url = safeUrl(i.url);
-          const caption = `_${sanitizeUgcLabel(i.alias ?? "")} · ♥ ${i.likes ?? 0}_`;
-          return url ? `![Bild](${url})\n${caption}` : caption;
-        })
-        .join("\n\n")}`,
-    );
-  }
 
   return parts.join("\n\n");
 }
