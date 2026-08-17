@@ -19,7 +19,9 @@ import {
 } from "../src/lib/room/legal";
 
 const ROOT = process.cwd();
-const CANONICAL_RESOURCE = "https://crawler.today/api/public/mcp";
+const CANONICAL_RESOURCE = "https://crawler.today/mcp";
+/** DEPRECATED compatibility endpoint. Allowed only where explicitly labelled. */
+const LEGACY_RESOURCE_PATH = "/api/public/mcp";
 const TOOL_NAMES = [
   "universal_room",
   "public_room",
@@ -54,7 +56,7 @@ const auth = read("src/lib/room/auth.ts");
 const pinned =
   auth.includes(CANONICAL_RESOURCE) ||
   (auth.includes('PRODUCTION_ORIGIN = "https://crawler.today"') &&
-    auth.includes("/api/public/mcp"));
+    auth.includes("`${PRODUCTION_ORIGIN}/mcp`"));
 check("canonical resource pinned", pinned, `auth.ts pins ${CANONICAL_RESOURCE}`);
 
 /* ------------------------------ 2. tool surface ------------------------------ */
@@ -427,10 +429,59 @@ check(
 );
 
 check(
-  "path-specific RFC 9728 metadata route present",
-  existsSync(join(ROOT, "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts")) &&
+  "canonical RFC 9728 metadata route present",
+  existsSync(join(ROOT, "src/routes/[.]well-known.oauth-protected-resource.mcp.ts")) &&
     auth.includes("/.well-known/oauth-protected-resource"),
-  "challenges point at https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp",
+  "challenges point at https://crawler.today/.well-known/oauth-protected-resource/mcp",
+);
+
+check(
+  "root and legacy PRM aliases serve the canonical document",
+  ["src/routes/[.]well-known.oauth-protected-resource.ts",
+   "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts"].every((file) => {
+    const text = read(file);
+    return text.includes("metadataResponse") && text.includes("metadataPreflight");
+  }),
+  "both aliases reuse the shared metadataResponse (resource = canonical /mcp)",
+);
+
+check(
+  "canonical /mcp route present and sharing the handler",
+  read("src/routes/mcp.ts").includes('createFileRoute("/mcp")') &&
+    read("src/routes/mcp.ts").includes("handleMcpRequest") &&
+    read("src/routes/api.public.mcp.ts").includes("handleMcpRequest"),
+  "both endpoints call the same handleMcpRequest implementation",
+);
+
+/* --- no accidental active references to the retired resource identity ------ */
+
+const legacyAllowed = new Set([
+  "src/routes/api.public.mcp.ts",
+  "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts",
+  "src/routes/[.]well-known.oauth-protected-resource.ts",
+  "src/lib/room/resource-metadata.ts",
+  "src/lib/room/auth.ts",
+  "src/lib/room/auth.test.ts",
+  "src/lib/room/metadata.test.ts",
+  "src/lib/room/surface.test.ts",
+]);
+
+function walk(dir: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) walk(rel, out);
+    else if (/\.(ts|tsx)$/.test(entry.name) && entry.name !== "routeTree.gen.ts") out.push(rel);
+  }
+  return out;
+}
+
+const strayLegacy = walk("src").filter(
+  (file) => !legacyAllowed.has(file) && read(file).includes(LEGACY_RESOURCE_PATH),
+);
+check(
+  "no active source references the retired /api/public/mcp resource",
+  strayLegacy.length === 0,
+  strayLegacy.length ? `stray: ${strayLegacy.join(", ")}` : "only deprecation-labelled files",
 );
 
 /* --------------------------------- report ------------------------------------ */

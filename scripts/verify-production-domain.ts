@@ -16,8 +16,12 @@
  *      (routes missing / not deployed yet) — not a misconfiguration
  */
 const ORIGIN = "https://crawler.today";
-const RESOURCE = `${ORIGIN}/api/public/mcp`;
-const METADATA = `${ORIGIN}/.well-known/oauth-protected-resource/api/public/mcp`;
+const RESOURCE = `${ORIGIN}/mcp`;
+const METADATA = `${ORIGIN}/.well-known/oauth-protected-resource/mcp`;
+const ROOT_METADATA = `${ORIGIN}/.well-known/oauth-protected-resource`;
+/** DEPRECATED compatibility endpoint — kept reachable, never advertised. */
+const LEGACY_RESOURCE_URL = `${ORIGIN}/api/public/mcp`;
+const LEGACY_METADATA = `${ORIGIN}/.well-known/oauth-protected-resource/api/public/mcp`;
 const CONSENT = `${ORIGIN}/oauth/consent`;
 const HEALTH = `${ORIGIN}/api/public/health`;
 const TOOL_NAMES = [
