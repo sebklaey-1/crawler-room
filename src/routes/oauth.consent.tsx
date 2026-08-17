@@ -3,15 +3,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { OAuthConsent } from "@/components/oauth-consent";
 
 interface ConsentSearch {
-  authorization_id: string | undefined;
+  request_id: string | undefined;
 }
 
 /** OAuth consent page for the Crawler Room MCP server. */
 export const Route = createFileRoute("/oauth/consent")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>): ConsentSearch => ({
-    authorization_id:
-      typeof search["authorization_id"] === "string" ? search["authorization_id"] : undefined,
+    request_id: typeof search["request_id"] === "string" ? search["request_id"] : undefined,
   }),
   head: () => ({
     meta: [
@@ -40,6 +39,6 @@ export const Route = createFileRoute("/oauth/consent")({
 });
 
 function ConsentPage() {
-  const { authorization_id: authorizationId } = Route.useSearch();
-  return <OAuthConsent authorizationId={authorizationId} />;
+  const { request_id: requestId } = Route.useSearch();
+  return <OAuthConsent requestId={requestId} />;
 }
