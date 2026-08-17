@@ -474,7 +474,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           room_id?: string | null
-          starts_at: string
+          starts_at?: string
           status?: string
           title: string
           updated_at?: string
