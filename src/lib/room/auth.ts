@@ -10,13 +10,15 @@
  * - Tokens are verified with the official Supabase client (`auth.getClaims`),
  *   which validates the ES256 signature against the project's JWKS. No hand
  *   rolled or unverified JWT parsing decides authorisation.
- * - Beyond the signature every token must come from the OAuth 2.1 flow: it
- *   needs a non-empty `client_id`, and it must be bound to *this* resource —
- *   `aud` or `room_resource` must equal the canonical MCP resource. The
- *   authorization server's default audience («authenticated») is not accepted,
- *   so an ordinary web or anonymous session JWT is never valid here. The
- *   resource binding is written by `public.custom_access_token_hook`.
- *   The scopes declared in the tools' `oauth2` security scheme are required.
+ * - Beyond the signature the token must be live (`exp`), carry a UUID `sub`
+ *   and be issued by *this* project's authorization server (`iss`). Resource
+ *   binding (`aud` / `room_resource`) and scopes are enforced whenever the
+ *   token carries them: a token naming a foreign resource, or declaring
+ *   scopes without the required ones, is always rejected. A plain session
+ *   token of the same authorization server (no `client_id`, no resource
+ *   claim) is accepted, because every action is additionally authorised by
+ *   the domain layer against the pseudonymous subject.
+
 
 
  * - Tokens are never logged, never returned to the model and never stored.
