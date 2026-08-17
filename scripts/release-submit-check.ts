@@ -193,6 +193,114 @@ async function liveResourceReachable(): Promise<{ ok: boolean; detail: string }>
 const live = await liveResourceReachable();
 item(`live domain serves ${PRODUCTION_MCP_RESOURCE}`, live.ok, live.detail);
 
+/* ------------- 4b. live tool contract + strict resource binding -------------- */
+
+const EXPECTED_TOOLS = [
+  "universal_room",
+  "public_room",
+  "profile",
+  "followers_notifications",
+  "likes",
+  "analytics",
+  "communities_organizations",
+];
+
+async function liveToolContract(): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const response = await fetch(PRODUCTION_MCP_RESOURCE, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json, text/event-stream",
+      },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list" }),
+    });
+    if (!response.ok) return { ok: false, detail: `tools/list returned ${response.status}` };
+    const text = await response.text();
+    const json = JSON.parse(text.startsWith("data:") ? text.slice(text.indexOf("{")) : text) as {
+      result?: { tools?: Array<{ name: string; annotations?: unknown; securitySchemes?: unknown }> };
+    };
+    const tools = json.result?.tools ?? [];
+    const names = tools.map((tool) => tool.name);
+    const complete = tools.every((tool) => {
+      const hints = (tool.annotations ?? {}) as Record<string, unknown>;
+      return (
+        Array.isArray(tool.securitySchemes) &&
+        tool.securitySchemes.length > 0 &&
+        ["readOnlyHint", "destructiveHint", "openWorldHint"].every(
+          (hint) => typeof hints[hint] === "boolean",
+        )
+      );
+    });
+    const ok =
+      names.length === 7 && EXPECTED_TOOLS.every((tool) => names.includes(tool)) && complete;
+    return {
+      ok,
+      detail: ok
+        ? "live tools/list: 7 tools, annotations + securitySchemes complete"
+        : `live tools/list: ${names.length} tools, metadata complete=${complete}`,
+    };
+  } catch (error) {
+    return { ok: false, detail: `not verifiable from here — ${(error as Error).message}` };
+  }
+}
+
+const toolContract = await liveToolContract();
+item("live tools/list contract (7 tools, annotations, securitySchemes)", toolContract.ok, toolContract.detail);
+
+async function unauthChallenge(): Promise<{ ok: boolean; detail: string }> {
+  try {
+    const response = await fetch(PRODUCTION_MCP_RESOURCE, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name: "analytics", arguments: { action: "profile" } },
+      }),
+    });
+    const header = response.headers.get("www-authenticate") ?? "";
+    const ok =
+      header.includes("resource_metadata=") &&
+      header.includes("/.well-known/oauth-protected-resource/api/public/mcp") &&
+      header.includes('error="');
+    return {
+      ok,
+      detail: ok
+        ? "protected action without a token answers a path-specific reauth challenge"
+        : `unexpected challenge «${header || "none"}»`,
+    };
+  } catch (error) {
+    return { ok: false, detail: `not verifiable from here — ${(error as Error).message}` };
+  }
+}
+
+const challenge = await unauthChallenge();
+item("unauthenticated protected action challenges correctly", challenge.ok, challenge.detail);
+
+/**
+ * Strict RFC 8707 audience binding. Supabase only writes the canonical
+ * resource into `aud`/`room_resource` when the Custom Access Token Hook
+ * `public.custom_access_token_hook` is ACTIVE. The hook cannot be enabled
+ * programmatically, so this item stays a hard, fail-closed blocker until an
+ * operator confirms it (Authentication → Hooks → Custom Access Token →
+ * `public.custom_access_token_hook` → enable) and sets
+ * ROOM_SUBMIT_TOKEN_HOOK_ACTIVE. `verifyAccessToken()` accepts nothing else,
+ * so without the hook no client can connect.
+ */
+item(
+  "custom access token hook active (canonical audience in issued tokens)",
+  envSet("ROOM_SUBMIT_TOKEN_HOOK_ACTIVE"),
+  envSet("ROOM_SUBMIT_TOKEN_HOOK_ACTIVE")
+    ? "confirmed — issued OAuth tokens carry the canonical resource"
+    : "manual — enable Authentication → Hooks → Custom Access Token → public.custom_access_token_hook, then set ROOM_SUBMIT_TOKEN_HOOK_ACTIVE",
+);
+
+
 /* --------------------- 5. portal metadata and reviewer assets ---------------- */
 
 for (const step of [
