@@ -25,6 +25,7 @@ export const Route = createFileRoute("/crawler-room")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:url", content: "https://crawler.today/crawler-room" },
     ],
     links: [{ rel: "canonical", href: "https://crawler.today/crawler-room" }],
   }),
