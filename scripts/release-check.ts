@@ -150,7 +150,7 @@ check(
 );
 check(
   "verifier enforces the declared oauth2 scopes",
-  auth.includes("REQUIRED_SCOPES") && /for \(const required of REQUIRED_SCOPES\)/.test(auth),
+  auth.includes("BASE_SCOPES") && /for \(const required of BASE_SCOPES\)/.test(auth),
   "openid + profile required, fail closed",
 );
 check(
