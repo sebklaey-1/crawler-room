@@ -442,15 +442,17 @@ export async function removeProfileImage(db: Db, subjectHash: string, kind: Prof
 
 export async function profileImageUrls(db: Db, profile: ProfileRow) {
   // Stable app-hosted URLs: the assistant renders these directly as images.
+  // Missing images are omitted entirely so no empty "Banner: —" line appears.
   return {
-    profile_image_url: profile.avatarPath
-      ? await publicProfileImageUrl(profile.roomId, "avatar")
-      : null,
-    banner_image_url: profile.bannerPath
-      ? await publicProfileImageUrl(profile.roomId, "banner")
-      : null,
+    ...(profile.avatarPath
+      ? { profile_image_url: await publicProfileImageUrl(profile.roomId, "avatar") }
+      : {}),
+    ...(profile.bannerPath
+      ? { banner_image_url: await publicProfileImageUrl(profile.roomId, "banner") }
+      : {}),
   };
 }
+
 
 /* ---------------------------------- likes --------------------------------- */
 
