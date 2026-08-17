@@ -57,15 +57,15 @@ Derived from the checked-in action/side-effect matrix in
 
 ## Security scheme matrix
 
-| Tool                        | Schemes                        | Why                                             |
-| --------------------------- | ------------------------------ | ------------------------------------------------- |
+| Tool                        | Schemes                               | Why                                        |
+| --------------------------- | ------------------------------------- | ------------------------------------------ |
 | `universal_room`            | `noauth` + `oauth2` (openid, profile) | `read` is public, everything else personal |
-| `public_room`               | `noauth` + `oauth2`            | `open` is public                                 |
-| `profile`                   | `noauth` + `oauth2`            | `get` is a public profile read                   |
-| `followers_notifications`   | `oauth2` only                  | every action is personal                         |
-| `likes`                     | `oauth2` only                  | requires an identity                             |
-| `analytics`                 | `oauth2` only                  | owner-scoped data                                |
-| `communities_organizations` | `noauth` + `oauth2`            | listing/reading is public                        |
+| `public_room`               | `noauth` + `oauth2`                   | `open` is public                           |
+| `profile`                   | `noauth` + `oauth2`                   | `get` is a public profile read             |
+| `followers_notifications`   | `oauth2` only                         | every action is personal                   |
+| `likes`                     | `oauth2` only                         | requires an identity                       |
+| `analytics`                 | `oauth2` only                         | owner-scoped data                          |
+| `communities_organizations` | `noauth` + `oauth2`                   | listing/reading is public                  |
 
 Every privileged action is additionally gated server-side against
 `PUBLIC_ACTIONS`; the declared schemes never replace that check.

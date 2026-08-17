@@ -74,7 +74,7 @@ is **not** `SECURITY DEFINER`; only `supabase_auth_admin` may execute it.
 ## Threat model
 
 - **A normal web access token cannot call the MCP server.** Verification
-  requires a non-empty `client_id` *and* strict binding to the canonical
+  requires a non-empty `client_id` _and_ strict binding to the canonical
   resource (`aud` or `room_resource`). The authorization server's default
   audience `authenticated` is not accepted, so a stolen or copied app session
   token is always rejected with `INVALID_TOKEN`. A token bound to another

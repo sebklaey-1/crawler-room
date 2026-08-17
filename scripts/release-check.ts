@@ -177,7 +177,6 @@ check(
   "renders the landing page directly",
 );
 
-
 /* ------------------------------ 4. documentation ----------------------------- */
 
 for (const doc of [

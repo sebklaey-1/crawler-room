@@ -47,7 +47,6 @@ about a split setup are migration history only.
       1 means a real misconfiguration and blocks the release.
 - [ ] `bun run verify:domain --rpc` returns exactly the seven public tool names.
 
-
 ### Dependent steps — only after the domain assignment is confirmed
 
 - [ ] OpenAI portal domain verification for `crawler.today` completed.
