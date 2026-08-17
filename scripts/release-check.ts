@@ -508,8 +508,8 @@ check(
 
 check(
   "UGC write guard wired into the single input choke point",
-  read("src/lib/room/mcp.surface.ts").includes("assertSafeUgcInput(result.data)"),
-  "every parsed tool input passes the fail-closed content guard",
+  read("src/lib/room/mcp.surface.ts").includes("assertSafePublishedUgc(tool, result.data)"),
+  "every parsed tool input passes the action-aware fail-closed content guard",
 );
 
 check(
@@ -521,6 +521,7 @@ check(
 );
 
 interface SubmissionDoc {
+  availability?: { regions?: string };
   audience?: unknown;
   ugc_policy?: unknown;
   data_minimization?: unknown;
@@ -551,6 +552,80 @@ check(
   "submission package ships 5+ positive and 3+ negative test cases",
   positives >= 5 && negatives >= 3 && starters >= 5,
   `${positives} positive / ${negatives} negative / ${starters} starter prompts`,
+);
+
+/* --- OAuth regression gate (a weak fallback must never come back) ----------- */
+
+const authSource = read("src/lib/room/auth.ts");
+const authTests = read("src/lib/room/auth.test.ts");
+check(
+  "auth requires a non-empty client_id",
+  /const clientId[\s\S]{0,200}if \(!clientId\) throw roomError\("INVALID_TOKEN"\)/.test(authSource),
+  "an ordinary session JWT without client_id is rejected",
+);
+check(
+  "auth binds the token to the canonical /mcp resource",
+  authSource.includes("room_resource") &&
+    /if \(!boundByAud && roomResource[\s\S]{0,120}throw roomError\("INVALID_TOKEN"\)/.test(
+      authSource,
+    ),
+  "aud or room_resource must equal https://crawler.today/mcp",
+);
+check(
+  "auth enforces the required scopes without synthesising them",
+  /for \(const required of REQUIRED_SCOPES\)[\s\S]{0,160}throw roomError\("INVALID_TOKEN"\)/.test(
+    authSource,
+  ) && !/scopes\s*=\s*\[[^\]]*openid/.test(authSource),
+  "missing scopes are rejected, never defaulted",
+);
+check(
+  "no acceptance path for the generic «authenticated» audience",
+  !/accepts?[^\n]{0,80}(plain|ordinary) session/i.test(authSource + authTests) &&
+    !/"authenticated"[^\n]{0,40}(ok|accept|allow)/i.test(authSource),
+  "generic aud=authenticated never satisfies resource binding",
+);
+check(
+  "auth tests keep the five rejection cases",
+  [
+    "a plain authorization-server session token without client_id or resource",
+    "a token whose only audience is the default",
+    "a token without any scope claim",
+    "retired /api/public/mcp resource",
+    "a token bound to another resource",
+  ].every((phrase) => authTests.includes(phrase)),
+  "plain session, authenticated-only aud, missing scope, legacy resource, foreign resource",
+);
+
+/* --- safety guard must stay action-aware and exempt report details ---------- */
+
+check(
+  "write guard is action-aware and never scans moderation report details",
+  safety.includes("PUBLISHED_UGC_FIELDS") &&
+    safety.includes("assertSafePublishedUgc") &&
+    !/"(universal_room|public_room|profile|communities_organizations)\.report"/.test(safety) &&
+    read("src/lib/room/mcp.surface.ts").includes("assertSafePublishedUgc(tool, result.data)"),
+  "only published fields are filtered; report details, queries and lookups are not",
+);
+
+check(
+  "no document claims that an old handle is released",
+  !/handle is released|releases the old (public )?handle/i.test(
+    read("src/lib/room/actions.matrix.ts") + read("docs/openai-submission-ready.json"),
+  ),
+  "previous handles stay reserved and redirect to the same owner",
+);
+
+check(
+  "privacy page uses the controller-limited OpenAI training statement",
+  !/We do not send data to OpenAI for\s+training/i.test(read("src/routes/privacy.tsx")) &&
+    read("src/routes/privacy.tsx").includes("does not separately"),
+  "no claim about how OpenAI itself handles ChatGPT conversations",
+);
+
+check(
+  "submission availability is a manual portal decision",
+  submissionDoc.availability?.regions === "manual_portal_selection_required",
+  "no worldwide or legally cleared availability is asserted",
 );
 
 /* --------------------------------- report ------------------------------------ */

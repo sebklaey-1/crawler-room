@@ -49,7 +49,9 @@ export const ACTION_MATRIX: Record<string, Record<string, ActionEffect>> = {
   profile: {
     get: READ,
     update: PUBLIC_WRITE,
-    // The old handle is released and public links to it stop working.
+    // The current public identifier changes. The previous handle stays reserved
+    // for the same owner and redirects to them; it never becomes claimable by
+    // anyone else. Destructive only in the sense that the public name changes.
     change_handle: PUBLIC_DESTRUCTIVE,
     // Fetches an external image URL and publishes the result.
     set_image: PUBLIC_WRITE,

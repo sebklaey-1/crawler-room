@@ -190,23 +190,52 @@ export function assertSafeUgc(raw: unknown): void {
   }
 }
 
-/** Fields of the public tool surface that carry user-authored text. */
-export const UGC_INPUT_FIELDS = [
-  "text",
-  "display_name",
-  "bio",
-  "location",
-  "handle",
-  "room_name",
-  "description",
-  "title",
-  "name",
-  "details",
-] as const;
+/**
+ * Fields that are actually PUBLISHED, per `tool.action`.
+ *
+ * The write guard is deliberately action-aware. Only text that becomes visible
+ * to other people is filtered:
+ *
+ * - Moderation report `details` are NEVER scanned. A reporter must be able to
+ *   write "they asked me for my seed phrase" or describe a threat, otherwise
+ *   the safety filter would block the safety mechanism. Report details stay
+ *   capped at 500 characters and carry the do-not-add-personal-data hint.
+ * - Read-only identifiers, search queries, cursors and handles used to look
+ *   somebody up are not published content and are not scanned either.
+ *
+ * Any `tool.action` that is not listed publishes no user-authored text.
+ */
+export const PUBLISHED_UGC_FIELDS: Record<string, readonly string[]> = {
+  "universal_room.send": ["text"],
+  "public_room.send": ["text"],
+  "public_room.update": ["room_name", "description"],
+  "profile.update": ["display_name", "bio", "location"],
+  "profile.change_handle": ["handle"],
+  "communities_organizations.send_community": ["text"],
+  "communities_organizations.create_community": ["title", "name", "description"],
+  "communities_organizations.update_community": ["title", "name", "description"],
+  "communities_organizations.create_organization": ["title", "name", "description"],
+  "communities_organizations.update_organization": ["title", "name", "description"],
+};
 
-/** Applies the write guard to every user-authored field of a parsed input. */
-export function assertSafeUgcInput(data: unknown): void {
+/** All fields that can ever be published, used by the contract tests. */
+export const PUBLISHED_UGC_FIELD_NAMES = [
+  ...new Set(Object.values(PUBLISHED_UGC_FIELDS).flat()),
+].sort();
+
+/** Fields that must never be treated as published content. */
+export const NEVER_FILTERED_FIELDS = ["details", "query", "target_id", "username", "cursor"];
+
+/**
+ * Applies the fail-closed write guard to exactly the published fields of one
+ * tool action. Everything else — report details, search queries, lookup
+ * identifiers — passes through untouched.
+ */
+export function assertSafePublishedUgc(tool: string, data: unknown): void {
   if (!data || typeof data !== "object") return;
   const record = data as Record<string, unknown>;
-  for (const field of UGC_INPUT_FIELDS) assertSafeUgc(record[field]);
+  const action = typeof record["action"] === "string" ? record["action"] : "";
+  const fields = PUBLISHED_UGC_FIELDS[`${tool}.${action}`];
+  if (!fields) return;
+  for (const field of fields) assertSafeUgc(record[field]);
 }

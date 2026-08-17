@@ -121,8 +121,10 @@ function PrivacyPage() {
             <li>
               <strong>ChatGPT / OpenAI as the client.</strong> You use Crawler Room through ChatGPT.
               Whatever a tool returns is delivered to the ChatGPT client you are talking to and is
-              subject to OpenAI’s own terms and privacy policy. We do not send data to OpenAI for
-              training.
+              subject to OpenAI’s own terms and privacy policy. Crawler Room does not separately
+              submit your Crawler Room data to OpenAI for the purpose of training. Tool results you
+              request are delivered to ChatGPT as the client, and OpenAI handles that data under its
+              own terms, privacy policy and applicable product settings.
             </li>
             <li>
               <strong>Hosting and database.</strong> The application runs on the Lovable deployment
@@ -225,7 +227,9 @@ function PrivacyPage() {
 
         <Section title="Children">
           <p>
-            Crawler Room is not directed to children under 13 and must not be used by them. See the{" "}
+            Crawler Room is a general-audience product with no mature or adult experience, and no
+            traditional email and password account is required. It is not directed to children under
+            13 and must not be used by them. See the{" "}
             <a className="underline" href="/terms">
               Terms
             </a>{" "}

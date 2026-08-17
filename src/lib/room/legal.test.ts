@@ -129,3 +129,36 @@ describe("public support contact", () => {
     expect(/immediate (reply|response)|sofortige Antwort|instant reply/i.test(support)).toBe(false);
   });
 });
+
+describe("legal copy gates", () => {
+  const privacy = readFileSync("src/routes/privacy.tsx", "utf8");
+  const terms = readFileSync("src/routes/terms.tsx", "utf8");
+  const safety = readFileSync("src/routes/safety.tsx", "utf8");
+
+  it("uses the precise, controller-limited OpenAI training statement", () => {
+    expect(privacy).not.toMatch(/We do not send data to OpenAI for\s+training/i);
+    expect(privacy).toMatch(/does not separately/i);
+    expect(privacy).toMatch(/own terms, privacy policy and applicable product settings/i);
+  });
+
+  it("agrees across privacy, terms and safety on the general-audience framing", () => {
+    for (const [name, text] of [
+      ["privacy", privacy],
+      ["terms", terms],
+      ["safety", safety],
+    ] as const) {
+      expect(text, `${name}: general audience`).toMatch(/general[- ]audience|general audience/i);
+      expect(text, `${name}: under 13`).toMatch(/13/);
+      expect(text, `${name}: no account`).not.toMatch(
+        /create an account with your email and password/i,
+      );
+    }
+  });
+
+  it("invents no age verification or legal availability guarantee", () => {
+    for (const text of [privacy, terms, safety]) {
+      expect(text).not.toMatch(/age[- ]verified|age verification|id check/i);
+      expect(text).not.toMatch(/available worldwide|legally cleared/i);
+    }
+  });
+});

@@ -81,7 +81,7 @@
           ]
         }
       ],
-      "rationale": "get is a public profile read (noauth); update/set_image/open_link change public data or contact an external URL; change_handle releases the old public handle and block removes interaction — both destructive."
+      "rationale": "get is a public profile read (noauth); update/set_image/open_link change public data or contact an external URL; change_handle changes the current public identifier (the previous handle stays reserved for and redirects to the same owner and can never be claimed by anyone else) and block removes interaction — both destructive."
     },
     {
       "name": "followers_notifications",
@@ -284,20 +284,23 @@
     "review_categories": [
       "spam_injection"
     ],
-    "third_party_content": "Messages by other people are returned quoted, escaped and banner-marked as untrusted data, never as instructions."
+    "third_party_content": "Messages by other people are returned quoted, escaped and banner-marked as untrusted data, never as instructions.",
+    "report_details_exemption": "Moderation report details are deliberately NOT filtered by the write guard, so a reporter can describe prohibited content (for example a credential solicitation) to a human moderator. Report details stay capped at 500 characters and carry the do-not-add-personal-data hint."
   },
   "data_minimization": {
     "inputs": "Only task-specific fields. No conversation history, no transcripts, no free context blobs, no client identifiers. Enforced by src/lib/room/review.test.ts.",
     "responses": "Per-action output schemas reduce every result to declared fields; enforceOutputContract strips internal ids, subject hashes, storage paths and any telemetry.",
-    "never_collected": [
+    "retention": "Messages and images are deleted after 24 hours by a scheduled job; profiles and follows persist until the user deletes them.",
+    "never_requested_as_auth_or_required_input": [
       "passwords",
       "API keys",
       "MFA or OTP codes",
       "government IDs",
-      "health data",
-      "payment card data"
+      "health or medical records",
+      "payment card credentials"
     ],
-    "retention": "Messages and images are deleted after 24 hours by a scheduled job; profiles and follows persist until the user deletes them."
+    "prohibited_ugc": "Credential and payment-secret solicitation and doxxing of private, sensitive data are blocked at write time when detected, and prohibited by the content rules. Users are instructed not to post personal or sensitive data about themselves or others; anything that slips through is removable through the report and moderation path and expires with the 24 hour retention.",
+    "honest_limitation": "Crawler Room is a free-text social product. It cannot guarantee that no user ever types sensitive information into a message or profile field; it guarantees that it never requests such data and never requires it."
   },
   "release_notes": {
     "version": "1.0.0",
@@ -311,7 +314,9 @@
     ]
   },
   "availability": {
-    "regions": "worldwide",
+    "regions": "manual_portal_selection_required",
+    "note": "Availability is a manual publisher decision in the submission portal. The publisher selects only countries where legal and support readiness has been confirmed. No EU/EEA, global or worldwide availability is asserted as legally cleared here.",
+    "home_market_suggestion": "Switzerland is the publisher's home market and a natural first selection; it is a suggestion only, not an assertion that it is the only or a confirmed cleared market.",
     "languages": "Results are returned in the language of the caller's request.",
     "uptime_contact": "info@crawler.today",
     "status_endpoint": "https://crawler.today/api/public/health"
