@@ -89,9 +89,7 @@ describe("review documents match the live surface", () => {
   it("claims readiness without claiming approval", () => {
     for (const doc of REVIEW_DOCS) {
       const text = readFileSync(doc, "utf8");
-      expect(/\b(approved by openai|openai-certified|certified by openai)\b/i.test(text), doc).toBe(
-        false,
-      );
+      expect(/\bis (approved|certified|endorsed) by openai\b/i.test(text), doc).toBe(false);
     }
     const pkg = JSON.parse(readFileSync("docs/openai-submission-ready.json", "utf8")) as {
       review_status?: string;

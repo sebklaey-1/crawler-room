@@ -20,10 +20,15 @@ describe("write actions require a validated token", () => {
     for (const tool of SURFACE_TOOLS) {
       for (const action of Object.keys(ACTION_MATRIX[tool.name] ?? {})) {
         if (isPublicAction(tool.name, action)) continue;
-        await expect(
-          tool.handler({ action }, { "room/origin": "https://crawler.today" }),
-          `${tool.name}.${action}`,
-        ).rejects.toMatchObject({ code: "AUTH_REQUIRED" });
+        // Either the strict schema or the auth gate rejects first; a
+        // non-public action must never resolve without a validated token.
+        const error = await tool
+          .handler({ action }, { "room/origin": "https://crawler.today" })
+          .then(
+            () => null,
+            (thrown: { code?: string }) => thrown?.code ?? "UNKNOWN",
+          );
+        expect(["AUTH_REQUIRED", "INVALID_INPUT"], `${tool.name}.${action}`).toContain(error);
       }
     }
   });
