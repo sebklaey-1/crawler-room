@@ -508,8 +508,8 @@ check(
 
 check(
   "UGC write guard wired into the single input choke point",
-  read("src/lib/room/mcp.surface.ts").includes("assertSafeUgcInput(result.data)"),
-  "every parsed tool input passes the fail-closed content guard",
+  read("src/lib/room/mcp.surface.ts").includes("assertSafePublishedUgc(tool, result.data)"),
+  "every parsed tool input passes the action-aware fail-closed content guard",
 );
 
 check(
