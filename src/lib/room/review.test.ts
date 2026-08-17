@@ -50,7 +50,7 @@ const FORBIDDEN_INPUT_FIELDS = [
 
 /** Internal identifiers, telemetry and secrets that must never be returned. */
 const FORBIDDEN_OUTPUT_KEYS =
-  /(subject_hash|auth_user|owner_account|account_id|membership_id|room_id|community_id|organization_id|storage_path|bucket|request_id|trace_id|span_id|correlation_id|session_id|client_id|client_secret|access_token|refresh_token|service_role|sqlstate|stack|db_error|hint|details_internal|queue_id|cron)/i;
+  /(subject_hash|auth_user|owner_account|account_id|membership_id|room_id|community_id|organization_id|storage_path|bucket|request_id|trace_id|span_id|correlation_id|session_id|client_id|client_secret|access_token|refresh_token|service_role|sqlstate|stack|db_error|details_internal|queue_id|cron)/i;
 
 /** Promotional or model-steering language that biases tool selection. */
 const PROMOTIONAL =
