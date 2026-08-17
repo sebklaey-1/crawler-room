@@ -30,13 +30,13 @@ Files changed since baseline: 75 (source, routes, docs, scripts, migrations).
 
 ### Migrations since baseline
 
-| File               | Content                                                             |
-| ------------------ | ------------------------------------------------------------------- |
-| `20260816173415_…` | drop `auth_user_id`, introduce `auth_user_hash` (hash-only)         |
-| `20260816174957_…` | `custom_access_token_hook` → `https://crawler.today/mcp` |
-| `20260816180514_…` | `support_requests`, `privacy_requests` + grants/RLS                 |
-| `20260816182006_…` | retention hard cap (24 h) across all room types                     |
-| `20260816185204_…` | `content_reports`, `moderator_subjects`, `profile_blocks`           |
+| File               | Content                                                     |
+| ------------------ | ----------------------------------------------------------- |
+| `20260816173415_…` | drop `auth_user_id`, introduce `auth_user_hash` (hash-only) |
+| `20260816174957_…` | `custom_access_token_hook` → `https://crawler.today/mcp`    |
+| `20260816180514_…` | `support_requests`, `privacy_requests` + grants/RLS         |
+| `20260816182006_…` | retention hard cap (24 h) across all room types             |
+| `20260816185204_…` | `content_reports`, `moderator_subjects`, `profile_blocks`   |
 
 `20260816171442_…` (pre-hook, adds `auth_user_id`) is superseded by `20260816173415_…`;
 it is retained for migration history only and the column no longer exists.

@@ -9,8 +9,7 @@ import {
   resourceMetadataUrl,
 } from "./auth";
 
-const CANONICAL_METADATA_URL =
-  "https://crawler.today/.well-known/oauth-protected-resource/mcp";
+const CANONICAL_METADATA_URL = "https://crawler.today/.well-known/oauth-protected-resource/mcp";
 
 describe("RFC 9728 path-specific metadata", () => {
   it("inserts the well-known suffix between host and resource path", () => {

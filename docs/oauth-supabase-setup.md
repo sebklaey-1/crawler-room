@@ -4,14 +4,14 @@ The Crawler Room MCP endpoint is an OAuth 2.0 **protected resource** (RFC 9728).
 authorization server is this project's own Cloud auth service; Crawler Room never
 issues, stores or forwards credentials.
 
-| Value                         | Setting                                                                     |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| App domain (canonical)        | `https://crawler.today`                                                     |
+| Value                         | Setting                                                          |
+| ----------------------------- | ---------------------------------------------------------------- |
+| App domain (canonical)        | `https://crawler.today`                                          |
 | Canonical MCP resource        | `https://crawler.today/mcp`                                      |
 | Protected resource metadata   | `https://crawler.today/.well-known/oauth-protected-resource/mcp` |
-| Authorization server (issuer) | `${SUPABASE_URL}/auth/v1`                                                   |
-| Consent page                  | `https://crawler.today/oauth/consent`                                       |
-| Scopes                        | `openid`, `profile` (no `email`)                                            |
+| Authorization server (issuer) | `${SUPABASE_URL}/auth/v1`                                        |
+| Consent page                  | `https://crawler.today/oauth/consent`                            |
+| Scopes                        | `openid`, `profile` (no `email`)                                 |
 
 Clients discover the authorization server through the protected-resource
 metadata and then read the issuer's own discovery documents
@@ -20,12 +20,12 @@ The app does **not** proxy or mirror those documents.
 
 ## Required environment variables
 
-| Name                                                | Scope  | Purpose                                                                                                                                                      |
-| --------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Name                                                | Scope  | Purpose                                                                                                                                           |
+| --------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ROOM_MCP_RESOURCE`                                 | server | Canonical https resource identifier, exactly `https://crawler.today/mcp`. Mandatory in production; the value never derives from a request header. |
-| `SUPABASE_URL`                                      | server | Used to build the issuer `${SUPABASE_URL}/auth/v1`.                                                                                                          |
-| `SUPABASE_PUBLISHABLE_KEY` (or `SUPABASE_ANON_KEY`) | server | Used by the non-persisting verification client.                                                                                                              |
-| `SUBJECT_HASH_SECRET`                               | server | HMAC key for pseudonymous subjects.                                                                                                                          |
+| `SUPABASE_URL`                                      | server | Used to build the issuer `${SUPABASE_URL}/auth/v1`.                                                                                               |
+| `SUPABASE_PUBLISHABLE_KEY` (or `SUPABASE_ANON_KEY`) | server | Used by the non-persisting verification client.                                                                                                   |
+| `SUBJECT_HASH_SECRET`                               | server | HMAC key for pseudonymous subjects.                                                                                                               |
 
 ## Manual backend steps (required)
 

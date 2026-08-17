@@ -4,14 +4,14 @@ Canonical, human-readable companion to `docs/openai-submission-ready.json`.
 The JSON file is the machine-checked source; `release:check` verifies that the
 annotations and security schemes documented here match the live MCP surface.
 
-| Field                       | Value                                                                       |
-| --------------------------- | --------------------------------------------------------------------------- |
-| Publisher                   | SEBKLAEY Agency — Sebastian Kläy (business verification NOT confirmed here) |
-| Product                     | Crawler Room                                                                |
-| Production MCP              | `https://crawler.today/mcp`                                      |
-| Protected resource metadata | `https://crawler.today/.well-known/oauth-protected-resource/mcp` |
-| Documentation               | `https://crawler.today/crawler-room`                                        |
-| Support                     | `info@crawler.today`                                                        |
+| Field                       | Value                                                                                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Publisher                   | SEBKLAEY Agency — Sebastian Kläy (business verification NOT confirmed here)                                                                                                                                                          |
+| Product                     | Crawler Room                                                                                                                                                                                                                         |
+| Production MCP              | `https://crawler.today/mcp`                                                                                                                                                                                                          |
+| Protected resource metadata | `https://crawler.today/.well-known/oauth-protected-resource/mcp`                                                                                                                                                                     |
+| Documentation               | `https://crawler.today/crawler-room`                                                                                                                                                                                                 |
+| Support                     | `info@crawler.today`                                                                                                                                                                                                                 |
 | Deprecated compatibility    | `https://crawler.today/api/public/mcp` — legacy endpoint, kept reachable for already-configured clients only. It has no resource identity: it advertises the canonical `/mcp` resource. **Do not use it for the OpenAI submission.** |
 
 Single project, single domain, single MCP: Crawler Room is served directly from

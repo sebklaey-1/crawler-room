@@ -53,11 +53,26 @@ about a split setup are migration history only.
 - [ ] Supabase Site URL set to `https://crawler.today`.
 - [ ] Supabase redirect allow list contains the ChatGPT OAuth callback and
       `https://crawler.today/oauth/consent`.
-- [ ] Custom access token hook enabled, issuing `aud` and `room_resource`
-      bound to `https://crawler.today/mcp`. Activate this in
-      production **only** after the domain assignment above is confirmed —
-      switching the claim earlier invalidates every live token and breaks the
-      connector.
+- [ ] **Custom access token hook enabled (the one remaining manual blocker).**
+      The SQL function `public.custom_access_token_hook(jsonb)` is deployed and
+      already issues `aud = room_resource = https://crawler.today/mcp` plus
+      `room_scopes = ["openid","profile"]` for OAuth tokens; only its
+      _activation_ is dashboard-only and cannot be toggled through any
+      available API/tool. Manual click path:
+      Supabase Dashboard → project → Authentication → Hooks →
+      "Customize Access Token (JWT) Claims" → Enable → Hook type `Postgres` →
+      schema `public`, function `custom_access_token_hook` → Save.
+      Afterwards a freshly issued OAuth token must contain
+      `aud`/`room_resource` exactly `https://crawler.today/mcp`.
+      Until then the strict verifier in `src/lib/room/auth.ts` rejects every
+      token, so this build must NOT be deployed.
+
+- [ ] Canonical MCP resource is `https://crawler.today/mcp` with PRM
+      `https://crawler.today/.well-known/oauth-protected-resource/mcp`. The root
+      PRM and `/.well-known/oauth-protected-resource/api/public/mcp` are
+      compatibility aliases serving the identical document; the endpoint
+      `https://crawler.today/api/public/mcp` stays reachable as a DEPRECATED
+      compatibility route without its own resource identity.
 
 ## Remaining manual blockers
 

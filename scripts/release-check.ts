@@ -437,8 +437,10 @@ check(
 
 check(
   "root and legacy PRM aliases serve the canonical document",
-  ["src/routes/[.]well-known.oauth-protected-resource.ts",
-   "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts"].every((file) => {
+  [
+    "src/routes/[.]well-known.oauth-protected-resource.ts",
+    "src/routes/[.]well-known.oauth-protected-resource.api.public.mcp.ts",
+  ].every((file) => {
     const text = read(file);
     return text.includes("metadataResponse") && text.includes("metadataPreflight");
   }),
