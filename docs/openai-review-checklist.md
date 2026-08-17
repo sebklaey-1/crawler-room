@@ -85,12 +85,12 @@ footer of every public page.
 ## 8. Manual blockers before submission
 
 2. OpenAI domain verification for `crawler.today`.
-3. ChatGPT OAuth callback URL added to the Supabase redirect allowlist.
-4. Custom access token hook enabled in the auth settings.
-5. Anonymous sign-ins enabled in production — REQUIRED for the accountless consent screen.
-6. Reviewer screenshots / screencast.
-7. App directory portal metadata (name, icon, categories, descriptions).
-8. At least one real moderator subject hash configured in `moderator_subjects`, with a named
+3. `ROOM_OAUTH_SIGNING_SECRET` configured for the self-hosted authorization
+   server on `https://crawler.today` (no auth hook involved).
+4. Anonymous sign-ins enabled in production — REQUIRED for the accountless consent screen.
+5. Reviewer screenshots / screencast.
+6. App directory portal metadata (name, icon, categories, descriptions).
+7. At least one real moderator subject hash configured in `moderator_subjects`, with a named
    responsible person, review rhythm and escalation path.
 
 `bun run release:check` reports each of these deterministically.

@@ -66,7 +66,6 @@ item(`moderator on record for ${MODERATION_OWNER}`, moderator.ok, moderator.deta
 for (const step of [
   ["OAuth 2.1 authorization server enabled", "ROOM_SUBMIT_OAUTH_SERVER_READY"],
   ["dynamic client registration / redirect URIs registered", "ROOM_SUBMIT_OAUTH_REDIRECTS_READY"],
-  ["custom access token hook enabled", "ROOM_SUBMIT_TOKEN_HOOK_READY"],
 ] as const) {
   item(
     step[0],
@@ -286,21 +285,18 @@ const challenge = await unauthChallenge();
 item("unauthenticated protected action challenges correctly", challenge.ok, challenge.detail);
 
 /**
- * Strict RFC 8707 audience binding. Supabase only writes the canonical
- * resource into `aud`/`room_resource` when the Custom Access Token Hook
- * `public.custom_access_token_hook` is ACTIVE. The hook cannot be enabled
- * programmatically, so this item stays a hard, fail-closed blocker until an
- * operator confirms it (Authentication → Hooks → Custom Access Token →
- * `public.custom_access_token_hook` → enable) and sets
- * ROOM_SUBMIT_TOKEN_HOOK_ACTIVE. `verifyAccessToken()` accepts nothing else,
- * so without the hook no client can connect.
+ * Strict RFC 8707 audience binding is enforced by the self-hosted
+ * authorization server on crawler.today: `/oauth/token` mints HS256 JWTs whose
+ * `aud`/`resource` are the canonical MCP resource, signed with the server-only
+ * `ROOM_OAUTH_SIGNING_SECRET`. No Supabase Custom Access Token Hook is
+ * involved anywhere in the runtime, release or submission path.
  */
 item(
-  "custom access token hook active (canonical audience in issued tokens)",
-  envSet("ROOM_SUBMIT_TOKEN_HOOK_ACTIVE"),
-  envSet("ROOM_SUBMIT_TOKEN_HOOK_ACTIVE")
-    ? "confirmed — issued OAuth tokens carry the canonical resource"
-    : "manual — enable Authentication → Hooks → Custom Access Token → public.custom_access_token_hook, then set ROOM_SUBMIT_TOKEN_HOOK_ACTIVE",
+  "self-hosted OAuth signing secret configured",
+  envSet("ROOM_OAUTH_SIGNING_SECRET"),
+  envSet("ROOM_OAUTH_SIGNING_SECRET")
+    ? "configured — issued access tokens are signed server-side"
+    : "missing — set ROOM_OAUTH_SIGNING_SECRET (server-only secret, never exposed)",
 );
 
 /* --------------------- 5. portal metadata and reviewer assets ---------------- */

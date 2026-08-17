@@ -51,21 +51,14 @@ about a split setup are migration history only.
 
 - [ ] OpenAI portal domain verification for `crawler.today` completed.
 - [ ] Supabase Site URL set to `https://crawler.today`.
-- [ ] Supabase redirect allow list contains the ChatGPT OAuth callback and
-      `https://crawler.today/oauth/consent`.
-- [ ] **Custom access token hook enabled (the one remaining manual blocker).**
-      The SQL function `public.custom_access_token_hook(jsonb)` is deployed and
-      already issues `aud = room_resource = https://crawler.today/mcp` plus
-      `room_scopes = ["openid","profile"]` for OAuth tokens; only its
-      _activation_ is dashboard-only and cannot be toggled through any
-      available API/tool. Manual click path:
-      Supabase Dashboard → project → Authentication → Hooks →
-      "Customize Access Token (JWT) Claims" → Enable → Hook type `Postgres` →
-      schema `public`, function `custom_access_token_hook` → Save.
-      Afterwards a freshly issued OAuth token must contain
-      `aud`/`room_resource` exactly `https://crawler.today/mcp`.
-      Until then the strict verifier in `src/lib/room/auth.ts` rejects every
-      token, so this build must NOT be deployed.
+- [ ] MCP client registered through dynamic client registration at
+      `https://crawler.today/oauth/register` (public client,
+      `token_endpoint_auth_method = none`, exact redirect URIs).
+- [ ] `ROOM_OAUTH_SIGNING_SECRET` configured in production (server-only secret
+      for the self-hosted authorization server on `https://crawler.today`).
+      No Supabase custom access token hook is involved: access tokens are
+      self-issued HS256 JWTs with `iss = https://crawler.today` and
+      `aud = resource = https://crawler.today/mcp`.
 
 - [ ] Canonical MCP resource is `https://crawler.today/mcp` with PRM
       `https://crawler.today/.well-known/oauth-protected-resource/mcp`. The root
@@ -87,13 +80,12 @@ configured in `moderator_subjects` only and never appears in code, migrations
 or logs.
 
 2. OpenAI domain verification for `crawler.today`.
-3. ChatGPT OAuth callback URL in the Supabase redirect allow list.
-4. Custom access token hook enabled in production.
-5. Anonymous sign-ins enabled in production — REQUIRED for the accountless
+3. `ROOM_OAUTH_SIGNING_SECRET` set in production.
+4. Anonymous sign-ins enabled in production — REQUIRED for the accountless
    consent screen; a disabled setting blocks the release.
-6. Reviewer screenshots / screencast.
-7. App directory portal metadata.
-8. Moderation staffing: a named responsible person, at least one configured moderator subject
+5. Reviewer screenshots / screencast.
+6. App directory portal metadata.
+7. Moderation staffing: a named responsible person, at least one configured moderator subject
    hash in `moderator_subjects`, a documented review rhythm and an escalation path.
 
 No statement in this repository claims that an OpenAI approval exists or is

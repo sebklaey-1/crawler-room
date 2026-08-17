@@ -82,7 +82,7 @@ it is retained for migration history only and the column no longer exists.
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | Token verification     | `supabase.auth.getClaims(token)`, ES256, audience/resource bound, timeout, fail-closed                                           |
 | Test stubs             | `x-room-test-user` / `Test-AuthContext` only when `NODE_ENV=test`, otherwise `INTERNAL_ERROR`                                    |
-| Access token hook      | sets the crawler.today resource; not `SECURITY DEFINER`; execute revoked from `public`                                           |
+| Access tokens          | self-issued HS256 JWTs from `https://crawler.today`; no Supabase auth hook in any runtime path                                   |
 | SSRF                   | central `src/lib/room/ssrf.ts`: HTTPS only, private/loopback/link-local blocked, ≤3 redirects, timeout, size cap, MIME allowlist |
 | Reports                | service-role only, rate limited per reporter and per target, idempotent, never an automatic sanction                             |
 | Blocks                 | mutual for personal rooms, self-service, no content deletion                                                                     |
@@ -130,12 +130,11 @@ No production writes, reports, blocks or data-rights requests were created.
    canonical value; the explicit setting is the release gate).
 2. Moderator identity/role: at least one real subject hash in `moderator_subjects`, a named
    responsible person, review rhythm and escalation path (`ROOM_MODERATION_OWNER`).
-3. Custom access token hook enabled in the production auth settings.
-4. Supabase Site URL and redirect allow list, including the ChatGPT OAuth callback.
-5. Anonymous sign-ins enabled in production — REQUIRED for the accountless consent screen.
-6. OpenAI domain and developer verification for `crawler.today`.
-7. Reviewer assets: screenshots / screencast and the walked-through test run.
-8. App directory portal metadata.
+3. `ROOM_OAUTH_SIGNING_SECRET` set in the production environment.
+4. Anonymous sign-ins enabled in production — REQUIRED for the accountless consent screen.
+5. OpenAI domain and developer verification for `crawler.today`.
+6. Reviewer assets: screenshots / screencast and the walked-through test run.
+7. App directory portal metadata.
 
 While these are open, no approval, production readiness or launch clearance is claimed.
 

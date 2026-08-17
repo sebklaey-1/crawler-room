@@ -17,17 +17,14 @@ export const Route = createFileRoute("/.well-known/oauth-authorization-server")(
   server: {
     handlers: {
       GET: ({ request }) =>
-        new Response(
-          JSON.stringify(authorizationServerMetadata(new URL(request.url).origin)),
-          {
-            status: 200,
-            headers: {
-              "content-type": "application/json",
-              "cache-control": "public, max-age=300",
-              ...CORS,
-            },
+        new Response(JSON.stringify(authorizationServerMetadata(new URL(request.url).origin)), {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+            "cache-control": "public, max-age=300",
+            ...CORS,
           },
-        ),
+        }),
       OPTIONS: () => new Response(null, { status: 204, headers: { ...CORS } }),
     },
   },

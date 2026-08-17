@@ -13,13 +13,7 @@
  */
 import { ACTION_MATRIX } from "../actions.matrix";
 import { isPublicAction } from "../mcp.surface";
-import {
-  BASE_SCOPES,
-  parseScope,
-  SCOPE_PRIVATE,
-  SCOPE_WRITE,
-  SUPPORTED_SCOPES,
-} from "./catalog";
+import { BASE_SCOPES, parseScope, SCOPE_PRIVATE, SCOPE_WRITE, SUPPORTED_SCOPES } from "./catalog";
 
 export {
   BASE_SCOPES,

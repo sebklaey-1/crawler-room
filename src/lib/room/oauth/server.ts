@@ -302,7 +302,9 @@ async function loadAuthRequest(db: Db, requestId: unknown): Promise<AuthRequestR
   if (typeof requestId !== "string" || !requestId.startsWith("req_")) return null;
   const { data, error } = await db
     .from("oauth_auth_requests")
-    .select("id, client_id, redirect_uri, state, scope, resource, code_challenge, status, expires_at")
+    .select(
+      "id, client_id, redirect_uri, state, scope, resource, code_challenge, status, expires_at",
+    )
     .eq("id", requestId)
     .maybeSingle();
   if (error) throw roomError("INTERNAL_ERROR");
@@ -490,22 +492,22 @@ export async function exchangeToken(
     const codeHash = await digest(code);
     const { data, error } = await database
       .from("oauth_codes")
-      .select("code_hash, client_id, redirect_uri, scope, resource, code_challenge, subject_id, expires_at, used_at")
+      .select(
+        "code_hash, client_id, redirect_uri, scope, resource, code_challenge, subject_id, expires_at, used_at",
+      )
       .eq("code_hash", codeHash)
       .maybeSingle();
     if (error) throw roomError("INTERNAL_ERROR");
-    const row = data as
-      | {
-          client_id: string;
-          redirect_uri: string;
-          scope: string;
-          resource: string;
-          code_challenge: string;
-          subject_id: string;
-          expires_at: string;
-          used_at: string | null;
-        }
-      | null;
+    const row = data as {
+      client_id: string;
+      redirect_uri: string;
+      scope: string;
+      resource: string;
+      code_challenge: string;
+      subject_id: string;
+      expires_at: string;
+      used_at: string | null;
+    } | null;
     if (!row || row.used_at || new Date(row.expires_at).getTime() <= Date.now()) {
       return oauthFailure("invalid_grant", "The authorization code is invalid or expired.");
     }
@@ -545,20 +547,20 @@ export async function exchangeToken(
     const hash = await digest(refresh);
     const { data, error } = await database
       .from("oauth_refresh_tokens")
-      .select("token_hash, client_id, subject_id, scope, resource, expires_at, revoked_at, replaced_by")
+      .select(
+        "token_hash, client_id, subject_id, scope, resource, expires_at, revoked_at, replaced_by",
+      )
       .eq("token_hash", hash)
       .maybeSingle();
     if (error) throw roomError("INTERNAL_ERROR");
-    const row = data as
-      | {
-          client_id: string;
-          subject_id: string;
-          scope: string;
-          resource: string;
-          expires_at: string;
-          revoked_at: string | null;
-        }
-      | null;
+    const row = data as {
+      client_id: string;
+      subject_id: string;
+      scope: string;
+      resource: string;
+      expires_at: string;
+      revoked_at: string | null;
+    } | null;
     if (!row) return oauthFailure("invalid_grant", "Unknown refresh token.");
     if (row.client_id !== client.client_id) {
       return oauthFailure("invalid_grant", "This refresh token belongs to another client.");
@@ -593,7 +595,10 @@ export async function exchangeToken(
     });
     const { error: rotateError } = await database
       .from("oauth_refresh_tokens")
-      .update({ revoked_at: new Date().toISOString(), replaced_by: await digest(tokens.refresh_token) })
+      .update({
+        revoked_at: new Date().toISOString(),
+        replaced_by: await digest(tokens.refresh_token),
+      })
       .eq("token_hash", hash)
       .is("revoked_at", null);
     if (rotateError) throw roomError("INTERNAL_ERROR");
