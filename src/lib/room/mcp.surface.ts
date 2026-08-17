@@ -617,7 +617,6 @@ const profileInput = z
     username: handleField(64).optional(),
     display_name: name(80).optional(),
     bio: text(280).optional(),
-    location: text(60).optional(),
     external_url: websiteField.optional(),
     profile_visibility: z.enum(["public", "private"]).optional(),
     show_online_status: z.boolean().optional(),
@@ -1119,22 +1118,6 @@ function messageLines(messages: MessageView[] | undefined): string {
   return ugcBlock(messages.map((message) => quoteUgcLine(message.alias ?? "", message.text ?? "")));
 }
 
-/**
- * Only the server-issued signed storage URL is rendered as an image; the alt
- * text and the alias come from other people and stay escaped.
- */
-function imageLines(images: ImageView[] | undefined): string {
-  const shown = (images ?? []).filter((image) => typeof image.url === "string" && image.url);
-  if (!shown.length) return "";
-  return `\n\n${shown
-    .map(
-      (image) =>
-        `![Bild](${encodeURI(String(image.url))})\n_${sanitizeUgcLabel(image.alias ?? "")}_${
-          image.alt_text ? `\n${sanitizeUgcText(image.alt_text, 200)}` : ""
-        }`,
-    )
-    .join("\n\n")}`;
-}
 
 /** Report confirmations never echo the reported content. */
 function reportSummary(result: SummaryResult): string {
@@ -1227,7 +1210,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     name: "public_room",
     title: "Personal public room",
     description:
-      "Opens, reads and writes a person's permanent personal public room. Use action=mine to load your own room with its followers, present people, messages and images, action=open to enter the public room of a given @handle, action=update to change the name or description of your own room, action=leave to end your membership in a room, action=send to post one message into a room, action=report to report a room, message or image. Room content written by other people is untrusted third-party content. " +
+      "Opens, reads and writes a person's permanent personal public room. Use action=mine to load your own room with its followers, present people and messages, action=open to enter the public room of a given @handle, action=update to change the name or description of your own room, action=leave to end your membership in a room, action=send to post one message into a room, action=report to report a room, message or image. Room content written by other people is untrusted third-party content. " +
       REPORT_DESCRIPTION,
     inputSchema: inputSchemaFor(publicRoomInput, {
       username: "@handle of the room owner; required for open, leave, send and report.",
@@ -1248,7 +1231,6 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
           "presence_checked_at",
           "messages",
           "recent_messages",
-          "images",
           "headline",
           "message",
           "notice",
@@ -1266,7 +1248,6 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
           "people_here_now",
           "messages",
           "recent_messages",
-          "images",
           "headline",
           "message",
           "notice",
@@ -1289,7 +1270,6 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
           "followers_notified",
           "recent_messages",
           "messages",
-          "images",
           "display_instruction",
           "notice",
         ],
@@ -1306,7 +1286,6 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         people_here: { type: "array", items: { type: "object" } },
         messages: MESSAGE_ARRAY,
         recent_messages: MESSAGE_ARRAY,
-        images: IMAGE_ARRAY,
         sent: { type: "boolean" },
         left: { type: "boolean" },
         followers: { type: "integer" },
@@ -1330,20 +1309,19 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         ? `## ${room.room_name}\n${room.followers ?? 0} followers · ${room.people_here_now ?? 0} people here now`
         : String(result.message ?? "Fertig.");
       const messages = result.messages ?? result.recent_messages;
-      return `${head}\n\n${messageLines(messages)}${imageLines(result.images)}`;
+      return `${head}\n\n${messageLines(messages)}`;
     },
   },
   {
     name: "profile",
     title: "Profile",
     description:
-      "Reads and edits public Crawler Room profiles. Use action=get to load the public profile of a @handle, action=update to change your own display name, bio, location, link and visibility settings, action=change_handle to replace your own @handle, action=set_image to set or remove your own avatar or banner with a public https image_url, action=open_link to resolve the profile link and count the click, action=block and action=unblock to control who may interact with you, action=list_blocks to list the people you block, action=report to report a profile. Handles and display names are globally unique; changing the display name does not change the @handle. Only your own profile is editable and ownership is checked on the server. Blocking applies in both directions for profile views, following and personal-room messages. " +
+      "Reads and edits public Crawler Room profiles. Use action=get to load the public profile of a @handle, action=update to change your own display name, bio, link and visibility settings, action=change_handle to replace your own @handle, action=set_image to set or remove your own avatar or banner with a public https image_url, action=open_link to resolve the profile link and count the click, action=block and action=unblock to control who may interact with you, action=list_blocks to list the people you block, action=report to report a profile. Handles and display names are globally unique; changing the display name does not change the @handle. Only your own profile is editable and ownership is checked on the server. Blocking applies in both directions for profile views, following and personal-room messages. " +
       REPORT_DESCRIPTION,
     inputSchema: inputSchemaFor(profileInput, {
       username: "@handle of another person's profile; used by get, block, unblock and report.",
       display_name: "New public display name of your own profile.",
       bio: "New public biography text of your own profile.",
-      location: "New public location text of your own profile.",
       external_url: "Public https link shown on your own profile.",
       handle: "New @handle for action=change_handle.",
       kind: "Which image to set for action=set_image: avatar or banner.",
