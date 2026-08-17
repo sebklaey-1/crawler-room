@@ -520,7 +520,7 @@ check(
   "review.test.ts, submission.test.ts and safety.test.ts present",
 );
 
-const submissionDoc = JSON.parse(read("docs/openai-submission-ready.json")) as Record<string, any>;
+const submissionDoc = JSON.parse(read("docs/openai-submission-ready.json")) as Record<string, unknown>;
 check(
   "submission package carries the 2026 listing fields",
   Boolean(
@@ -536,8 +536,8 @@ check(
 
 check(
   "submission package ships 5+ positive and 3+ negative test cases",
-  (submissionDoc["test_cases"]?.positive?.length ?? 0) >= 5 &&
-    (submissionDoc["test_cases"]?.negative?.length ?? 0) >= 3 &&
+  ((submissionDoc["test_cases"] as Record<string, unknown[]> | undefined)?.positive?.length ?? 0) >= 5 &&
+    ((submissionDoc["test_cases"] as Record<string, unknown[]> | undefined)?.negative?.length ?? 0) >= 3 &&
     (submissionDoc["starter_prompts"]?.length ?? 0) >= 5,
   `${submissionDoc["test_cases"]?.positive?.length} positive / ${submissionDoc["test_cases"]?.negative?.length} negative / ${submissionDoc["starter_prompts"]?.length} starter prompts`,
 );
