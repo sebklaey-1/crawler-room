@@ -205,10 +205,13 @@ export async function resolveProfileTarget(db: Db, username: unknown): Promise<R
   };
 }
 
-/** Community / organization / community message. */
+/**
+ * Community or community message. Organisations are no longer part of the
+ * public surface and can therefore not be reported through it.
+ */
 export async function resolveCommunityTarget(
   db: Db,
-  targetType: "community" | "organization" | "message",
+  targetType: "community" | "message",
   reference: unknown,
   targetId: unknown,
 ): Promise<ResolvedTarget> {
@@ -216,24 +219,7 @@ export async function resolveCommunityTarget(
     .trim()
     .replace(/^@/, "");
 
-  if (targetType === "organization") {
-    if (!raw) throw roomError("INVALID_INPUT", "Bitte nenne die Organisation.");
-    const decoded = await decodeOrgId(raw);
-    const base = db.from("organizations").select("id, name, slug");
-    const { data } = decoded
-      ? await base.eq("id", decoded).maybeSingle()
-      : await base.ilike("slug", raw).maybeSingle();
-    const row = data;
-    if (!row) throw roomError("NOT_FOUND", "Diese Organisation gibt es nicht.");
-    return {
-      kind: "organization",
-      ref: row.id,
-      roomId: null,
-      ownerSubjectHash: null,
-      snapshot: await snapshotHash(`organization:${row.slug ?? row.id}`),
-      label: String(row.slug ?? row.name ?? "Organisation"),
-    };
-  }
+
 
   if (!raw) throw roomError("INVALID_INPUT", "Bitte nenne die Community.");
   const decodedRoom = await decodeRoomId(raw);
