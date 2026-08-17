@@ -24,6 +24,7 @@ import { Route as DotwellKnownOpenaiAppsChallengeRouteImport } from './routes/[.
 import { Route as OauthAuthorizeRouteImport } from './routes/oauth.authorize'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as OauthRegisterRouteImport } from './routes/oauth.register'
+import { Route as OauthTokenRouteImport } from './routes/oauth.token'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as DotwellKnownOauthProtectedResourceMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.mcp'
 import { Route as ApiPublicDataDeletionRouteImport } from './routes/api.public.data-deletion'
@@ -112,6 +113,11 @@ const OauthRegisterRoute = OauthRegisterRouteImport.update({
   path: '/oauth/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OauthTokenRoute = OauthTokenRouteImport.update({
+  id: '/oauth/token',
+  path: '/oauth/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   id: '/.lovable/oauth/consent',
   path: '/.lovable/oauth/consent',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/oauth/authorize': typeof OauthAuthorizeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/oauth/register': typeof OauthRegisterRoute
+  '/oauth/token': typeof OauthTokenRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/oauth/authorize': typeof OauthAuthorizeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/oauth/register': typeof OauthRegisterRoute
+  '/oauth/token': typeof OauthTokenRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/oauth/authorize': typeof OauthAuthorizeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/oauth/register': typeof OauthRegisterRoute
+  '/oauth/token': typeof OauthTokenRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/oauth/authorize'
     | '/oauth/consent'
     | '/oauth/register'
+    | '/oauth/token'
     | '/.lovable/oauth/consent'
     | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
@@ -283,6 +293,7 @@ export interface FileRouteTypes {
     | '/oauth/authorize'
     | '/oauth/consent'
     | '/oauth/register'
+    | '/oauth/token'
     | '/.lovable/oauth/consent'
     | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/oauth/authorize'
     | '/oauth/consent'
     | '/oauth/register'
+    | '/oauth/token'
     | '/.lovable/oauth/consent'
     | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
@@ -336,6 +348,7 @@ export interface RootRouteChildren {
   OauthAuthorizeRoute: typeof OauthAuthorizeRoute
   OauthConsentRoute: typeof OauthConsentRoute
   OauthRegisterRoute: typeof OauthRegisterRoute
+  OauthTokenRoute: typeof OauthTokenRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicDataDeletionRoute: typeof ApiPublicDataDeletionRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -452,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/oauth/token': {
+      id: '/oauth/token'
+      path: '/oauth/token'
+      fullPath: '/oauth/token'
+      preLoaderRoute: typeof OauthTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.lovable/oauth/consent': {
       id: '/.lovable/oauth/consent'
       path: '/.lovable/oauth/consent'
@@ -554,6 +574,7 @@ const rootRouteChildren: RootRouteChildren = {
   OauthAuthorizeRoute: OauthAuthorizeRoute,
   OauthConsentRoute: OauthConsentRoute,
   OauthRegisterRoute: OauthRegisterRoute,
+  OauthTokenRoute: OauthTokenRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicDataDeletionRoute: ApiPublicDataDeletionRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
