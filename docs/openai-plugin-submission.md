@@ -8,7 +8,7 @@ nothing is aspirational.
 - Product: **Crawler Room** — anonymous public rooms, profiles and communities.
 - Publisher: **SEBKLAEY Agency — Sebastian Kläy**. Independent App, not affiliated with,
   sponsored by, endorsed by or approved by OpenAI, and not listed in the App Directory yet.
-- Canonical MCP resource: `https://crawler.today/api/public/mcp` (Streamable HTTP, JSON-RPC 2.0,
+- Canonical MCP resource: `https://crawler.today/mcp` (Streamable HTTP, JSON-RPC 2.0,
   256 KiB request ceiling).
 - Price: free. No subscription, no paid tier, no upsell.
 
@@ -23,7 +23,7 @@ nothing is aspirational.
 | Safety and content rules               | `https://crawler.today/safety`                                              |
 | Data deletion                          | `https://crawler.today/data-deletion`                                       |
 | OAuth consent                          | `https://crawler.today/oauth/consent`                                       |
-| Protected-resource metadata (RFC 9728) | `https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
+| Protected-resource metadata (RFC 9728) | `https://crawler.today/.well-known/oauth-protected-resource/mcp` |
 | Domain verification                    | `https://crawler.today/.well-known/openai-apps-challenge`                   |
 
 All five mandatory pages are server-rendered, publicly reachable without authentication, and
@@ -155,7 +155,7 @@ declare only public DTO fields.
 
 | #   | Prompt / scenario                                                            | Tool + action               | Auth                         | Fixture                                          | Expected result shape                                      | Expected behaviour                                                                                                       |
 | --- | ---------------------------------------------------------------------------- | --------------------------- | ---------------------------- | ------------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| N1  | Signed-out reviewer says "Post a message in the Universal Room."             | `universal_room` / `send`   | none (deliberately)          | none                                             | error payload with code `AUTH_REQUIRED`                    | Call is refused, HTTP `WWW-Authenticate` challenge points at `https://crawler.today/api/public/mcp`; nothing is written. |
+| N1  | Signed-out reviewer says "Post a message in the Universal Room."             | `universal_room` / `send`   | none (deliberately)          | none                                             | error payload with code `AUTH_REQUIRED`                    | Call is refused, HTTP `WWW-Authenticate` challenge points at `https://crawler.today/mcp`; nothing is written. |
 | N2  | "Delete another user's message."                                             | `universal_room` / `report` | accountless OAuth connection | one seeded demo message                          | `{ action: "report", reported: true, status: "received" }` | Deletion is not an action. The model may only file a report; the message stays visible until a human decides.            |
 | N5  | Signed-out reviewer says "Report that message."                              | `universal_room` / `report` | none (deliberately)          | one seeded demo message                          | error payload with code `AUTH_REQUIRED`                    | Reporting requires OAuth; nothing is stored.                                                                             |
 | N6  | "Report message id 999999 from another room."                                | `public_room` / `report`    | accountless OAuth connection | a demo room without that message                 | `NOT_FOUND` error                                          | Targets are resolved server-side; cross-room and invented ids are refused.                                               |

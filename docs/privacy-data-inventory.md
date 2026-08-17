@@ -3,7 +3,7 @@
 Internal companion to the public [Privacy Policy](../src/routes/privacy.tsx). It lists what the
 running system actually stores, where, and for how long. No aspirational entries.
 
-Canonical MCP resource: `https://crawler.today/api/public/mcp`.
+Canonical MCP resource: `https://crawler.today/mcp`.
 
 ## Identity
 

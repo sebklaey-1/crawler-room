@@ -7,7 +7,7 @@ tests never make external network calls.
 
 ## Automated gates (`bun run release:check`)
 
-- [ ] Canonical resource `https://crawler.today/api/public/mcp` pinned in the auth layer
+- [ ] Canonical resource `https://crawler.today/mcp` pinned in the auth layer
 - [ ] Exactly seven public tools, each with explicit annotations
 - [ ] Runtime output contract enforcement wired into the MCP layer
 - [ ] `/privacy`, `/terms`, `/support`, `/safety`, `/data-deletion` routes present
@@ -54,7 +54,7 @@ about a split setup are migration history only.
 - [ ] Supabase redirect allow list contains the ChatGPT OAuth callback and
       `https://crawler.today/oauth/consent`.
 - [ ] Custom access token hook enabled, issuing `aud` and `room_resource`
-      bound to `https://crawler.today/api/public/mcp`. Activate this in
+      bound to `https://crawler.today/mcp`. Activate this in
       production **only** after the domain assignment above is confirmed —
       switching the claim earlier invalidates every live token and breaks the
       connector.

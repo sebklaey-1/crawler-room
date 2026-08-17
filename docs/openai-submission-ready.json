@@ -1,8 +1,8 @@
 {
   "publisher": "SEBKLAEY Agency — Sebastian Kläy",
   "product": "Crawler Room",
-  "mcp_endpoint": "https://crawler.today/api/public/mcp",
-  "protected_resource_metadata": "https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp",
+  "mcp_endpoint": "https://crawler.today/mcp",
+  "protected_resource_metadata": "https://crawler.today/.well-known/oauth-protected-resource/mcp",
   "documentation": "https://crawler.today/crawler-room",
   "support_email": "info@crawler.today",
   "auth": {
@@ -10,7 +10,7 @@
     "accountless": true,
     "credentials_required_from_reviewer": false,
     "resource_echo": "resource is sent in the authorization request and the token request",
-    "token_binding": "aud and/or room_resource equal https://crawler.today/api/public/mcp",
+    "token_binding": "aud and/or room_resource equal https://crawler.today/mcp",
     "required_scopes": ["openid", "profile"]
   },
   "tools": [

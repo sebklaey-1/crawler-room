@@ -1,6 +1,6 @@
 # Reviewer test plan — Crawler Room
 
-MCP endpoint: `https://crawler.today/api/public/mcp` (Streamable HTTP, JSON and SSE).
+MCP endpoint: `https://crawler.today/mcp` (Streamable HTTP, JSON and SSE).
 No test credentials are shipped in this repository. A reviewer signs in through
 the normal ChatGPT connector flow; the consent screen creates the session.
 
@@ -33,7 +33,7 @@ the normal ChatGPT connector flow; the consent screen creates the session.
 
 | #   | Prompt / call                                                            | Expected behaviour                                                                                                                                                     |
 | --- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| N1  | `universal_room` `send` without a token                                  | `isError: true`, code `AUTH_REQUIRED`, `WWW-Authenticate` challenge with `resource_metadata=https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
+| N1  | `universal_room` `send` without a token                                  | `isError: true`, code `AUTH_REQUIRED`, `WWW-Authenticate` challenge with `resource_metadata=https://crawler.today/.well-known/oauth-protected-resource/mcp` |
 | N2  | `analytics` `profile` without a token                                    | `AUTH_REQUIRED`, no data                                                                                                                                               |
 | N3  | `profile` `set_image` with `image_url: "http://127.0.0.1/x.png"`         | `INVALID_INPUT`; no request leaves the server, no host or IP in the message                                                                                            |
 | N4  | Unknown action, e.g. `likes` action `delete`                             | `INVALID_INPUT` from schema validation, no side effect                                                                                                                 |

@@ -8,8 +8,8 @@ annotations and security schemes documented here match the live MCP surface.
 | --------------------------- | --------------------------------------------------------------------------- |
 | Publisher                   | SEBKLAEY Agency — Sebastian Kläy (business verification NOT confirmed here) |
 | Product                     | Crawler Room                                                                |
-| Production MCP              | `https://crawler.today/api/public/mcp`                                      |
-| Protected resource metadata | `https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
+| Production MCP              | `https://crawler.today/mcp`                                      |
+| Protected resource metadata | `https://crawler.today/.well-known/oauth-protected-resource/mcp` |
 | Documentation               | `https://crawler.today/crawler-room`                                        |
 | Support                     | `info@crawler.today`                                                        |
 
