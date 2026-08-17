@@ -132,7 +132,7 @@ No production writes, reports, blocks or data-rights requests were created.
    responsible person, review rhythm and escalation path (`ROOM_MODERATION_OWNER`).
 3. Custom access token hook enabled in the production auth settings.
 4. Supabase Site URL and redirect allow list, including the ChatGPT OAuth callback.
-5. Recorded decision on anonymous sign-in for the consent screen.
+5. Anonymous sign-ins enabled in production — REQUIRED for the accountless consent screen.
 6. OpenAI domain and developer verification for `crawler.today`.
 7. Reviewer assets: screenshots / screencast and the walked-through test run.
 8. App directory portal metadata.

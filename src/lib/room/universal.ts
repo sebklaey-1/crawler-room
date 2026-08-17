@@ -183,7 +183,6 @@ export async function universalFeed(
     });
   }
 
-
   const nextCursor = hasMore && page.length ? String(page[0]?.id ?? "") : null;
 
   const [trending, activeRooms, events, placements] = await Promise.all([

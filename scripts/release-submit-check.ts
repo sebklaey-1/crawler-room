@@ -67,7 +67,6 @@ for (const step of [
   ["OAuth 2.1 authorization server enabled", "ROOM_SUBMIT_OAUTH_SERVER_READY"],
   ["dynamic client registration / redirect URIs registered", "ROOM_SUBMIT_OAUTH_REDIRECTS_READY"],
   ["custom access token hook enabled", "ROOM_SUBMIT_TOKEN_HOOK_READY"],
-  ["anonymous sign-in policy reviewed", "ROOM_SUBMIT_ANON_POLICY_READY"],
 ] as const) {
   item(
     step[0],
@@ -75,6 +74,52 @@ for (const step of [
     envSet(step[1]) ? "confirmed" : `manual — confirm and set ${step[1]}`,
   );
 }
+
+/**
+ * Crawler Room is accountless: the consent page signs the visitor in with
+ * `signInAnonymously()`. Anonymous sign-ins are therefore REQUIRED in
+ * production — a disabled configuration breaks every connect attempt and is a
+ * hard release blocker, never an optional policy decision.
+ */
+async function anonymousSignInEnabled(): Promise<{ ok: boolean; detail: string }> {
+  const url = (process.env["VITE_SUPABASE_URL"] ?? process.env["SUPABASE_URL"])?.trim();
+  const key = (
+    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_PUBLISHABLE_KEY"]
+  )?.trim();
+  if (!url || !key) {
+    return {
+      ok: envSet("ROOM_SUBMIT_ANON_SIGNIN_READY"),
+      detail: envSet("ROOM_SUBMIT_ANON_SIGNIN_READY")
+        ? "confirmed manually — auth API not reachable from here"
+        : "cannot verify — publishable credentials not available here (required, not optional)",
+    };
+  }
+  try {
+    const response = await fetch(`${url}/auth/v1/signup`, {
+      method: "POST",
+      headers: { apikey: key, "content-type": "application/json" },
+      body: "{}",
+    });
+    const body = (await response.json()) as {
+      access_token?: string;
+      error_code?: string;
+      msg?: string;
+    };
+    // Never print a token value — only whether a session came back.
+    if (response.status === 200 && body.access_token) {
+      return { ok: true, detail: "anonymous sign-in enabled — accountless connect works" };
+    }
+    return {
+      ok: false,
+      detail: `BLOCKER — anonymous sign-in rejected (${response.status} ${body.error_code ?? body.msg ?? "unknown"}); enable it in Auth settings`,
+    };
+  } catch (error) {
+    return { ok: false, detail: `cannot verify — ${(error as Error).message}` };
+  }
+}
+
+const anon = await anonymousSignInEnabled();
+item("anonymous sign-ins enabled (REQUIRED for accountless connect)", anon.ok, anon.detail);
 
 /* ------------------------------- 3. cleanup cron ----------------------------- */
 

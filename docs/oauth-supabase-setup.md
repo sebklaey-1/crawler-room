@@ -46,9 +46,11 @@ The app does **not** proxy or mirror those documents.
 4. **Redirect allow-list** — add the callback URL that the MCP client (ChatGPT)
    displays while connecting. Use exactly the value the client shows; do not
    invent one.
-5. **Anonymous sign-ins** — only enable if the "continue without an account"
-   button on the consent page should work. Otherwise the button reports a
-   friendly error and users sign in normally.
+5. **Anonymous sign-ins** — **REQUIRED, not optional.** Crawler Room is
+   accountless: the consent page signs the visitor in with
+   `signInAnonymously()`. With anonymous sign-ins disabled, no user can connect
+   at all. `bun run release:check:submit` probes this live and treats a
+   disabled configuration as a release blocker.
 
 ## The custom access token hook
 

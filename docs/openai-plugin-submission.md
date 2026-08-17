@@ -220,6 +220,6 @@ committed to the repository.
 - Register the OAuth client with OpenAI against the canonical resource.
 - Create the accountless OAuth connection plus its seeded fixtures and hand the credentials over through
   the OpenAI review portal only.
-- Enable anonymous sign-ins for the project so the accountless consent flow can mint its session.
+- Anonymous sign-ins MUST stay enabled for the project; the accountless consent flow mints its session with them and cannot work otherwise.
 - Schedule the maintenance cleanup call (`POST /api/public/admin/cleanup` with `ADMIN_TOKEN`) so the time-based retention windows are actually met.
 - Staff the manual queue handling for `support_requests` and `privacy_requests`.

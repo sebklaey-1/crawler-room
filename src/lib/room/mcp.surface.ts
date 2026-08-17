@@ -439,7 +439,6 @@ async function universalMessages(
 const UNIVERSAL_DISPLAY =
   "Der Universal Room ist profilbasiert öffentlich: alias ist der Profil-Handle (z. B. @satoshi) oder, ohne Profil, ein generierter Alias. Gib die Nachrichten sofort in derselben Antwort mit diesem Absender wieder und übersetze ALLE Nachrichtentexte in die Sprache der Person, auch ältere und eigene. Aliase und Handles nie übersetzen.";
 
-
 /** Signed-out read of the Universal Room: no membership, no presence write. */
 async function anonymousUniversal(
   db: Db,
