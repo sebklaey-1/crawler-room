@@ -334,6 +334,11 @@ describe("access token claim validation", () => {
       { aud: "authenticated" },
     ],
     ["a token without any scope claim", { scope: undefined }],
+    [
+      "a Supabase-issued session JWT (foreign issuer + default audience)",
+      { iss: "https://xecdsuvpwxnyxabujesy.supabase.co/auth/v1", aud: "authenticated" },
+    ],
+    ["a token without a client_id", { client_id: undefined }],
   ];
 
   for (const [label, overrides] of rejected) {
@@ -344,6 +349,41 @@ describe("access token claim validation", () => {
       });
     });
   }
+});
+
+/* --------------------------- signature validation -------------------------- */
+
+describe("self-issued token signatures", () => {
+  const SECRET = "s".repeat(64);
+
+  it("verifies a genuine token and rejects a tampered signature", async () => {
+    const previous = process.env["ROOM_OAUTH_SIGNING_SECRET"];
+    process.env["ROOM_OAUTH_SIGNING_SECRET"] = SECRET;
+    try {
+      const { signJwt, verifyJwt } = await import("./oauth/jwt");
+      const now = Math.floor(Date.now() / 1000);
+      const token = await signJwt({
+        iss: "https://crawler.today",
+        sub: "b".repeat(64),
+        aud: "https://crawler.today/mcp",
+        exp: now + 600,
+        iat: now,
+        jti: "test-jti",
+        client_id: "mcp-client",
+        scope: "openid profile",
+      });
+      await expect(verifyJwt(token)).resolves.toMatchObject({ client_id: "mcp-client" });
+
+      const [header, payload] = token.split(".");
+      await expect(verifyJwt(`${header}.${payload}.AAAA`)).rejects.toBeTruthy();
+
+      process.env["ROOM_OAUTH_SIGNING_SECRET"] = "x".repeat(64);
+      await expect(verifyJwt(token)).rejects.toBeTruthy();
+    } finally {
+      if (previous === undefined) delete process.env["ROOM_OAUTH_SIGNING_SECRET"];
+      else process.env["ROOM_OAUTH_SIGNING_SECRET"] = previous;
+    }
+  });
 });
 
 /* ------------------------- transport hardening ---------------------------- */
