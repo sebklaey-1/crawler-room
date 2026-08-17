@@ -121,8 +121,6 @@ async function anonymousSignInEnabled(): Promise<{ ok: boolean; detail: string }
 const anon = await anonymousSignInEnabled();
 item("anonymous sign-ins enabled (REQUIRED for accountless connect)", anon.ok, anon.detail);
 
-
-
 /* ------------------------------- 3. cleanup cron ----------------------------- */
 
 /**
