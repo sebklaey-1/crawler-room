@@ -35,7 +35,8 @@ import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import { getDb, touchPresence, type Db } from "./store";
 
 export const PROFILE_DISPLAY_INSTRUCTION =
-  "PFLICHT: Gib den mitgelieferten Markdown-Text der Antwort unverändert und vollständig aus, damit Banner und Profilbild als echte Bilder erscheinen. Bilder immer als ![alt](url) rendern — niemals als Link, Codeblock oder Beschreibung, niemals weglassen, URLs nie kürzen oder verändern. Reihenfolge: Banner, Profilbild, Anzeigename, @handle, Bio, Ort/Link/Beitritt, Kennzahlen-Tabelle (followers · following · likes · people here now), dann Nachrichten und Bilder. Übersetze nur Bio, Nachrichten und Alt-Texte in die Sprache der Person; Zahlen, Handles und Bild-URLs bleiben unverändert. Beim eigenen Profil biete Bearbeiten an (Name, Bio, Ort, Link, Bilder, Handle, Sichtbarkeit).";
+  "PFLICHT: Gib den mitgelieferten Markdown-Text der Antwort unverändert und vollständig aus. Vorhandene Bilder immer als ![alt](url) rendern — niemals als Link, Codeblock oder Beschreibung, URLs nie kürzen oder verändern. Fehlt ein Banner oder Profilbild, lasse die Zeile komplett weg: niemals «Banner: —» oder «Profilbild: —» oder ähnliche Platzhalter ausgeben und nicht erwähnen, dass ein Bild fehlt. Reihenfolge: Banner, Profilbild, Anzeigename, @handle, Bio, Ort/Link/Beitritt, Kennzahlen-Tabelle (followers · following · likes · people here now), dann Nachrichten und Bilder. Übersetze nur Bio, Nachrichten und Alt-Texte in die Sprache der Person; Zahlen, Handles und Bild-URLs bleiben unverändert. Beim eigenen Profil biete Bearbeiten an (Name, Bio, Ort, Link, Bilder, Handle, Sichtbarkeit).";
+
 
 /* -------------------------------- helpers -------------------------------- */
 
