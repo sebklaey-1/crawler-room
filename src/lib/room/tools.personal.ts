@@ -16,7 +16,8 @@ import {
 import { roomError } from "./errors";
 import { resolveIdentity, type McpMeta } from "./identity";
 import { encodeMessageId } from "./ids";
-import { aliasesFor, listApprovedImages, signedUrl } from "./imagestore";
+import { aliasesFor, listApprovedImages } from "./imagestore";
+import { publicImageUrl } from "./imageurl";
 import {
   ensurePersonalRoom,
   findRoomByHandle,

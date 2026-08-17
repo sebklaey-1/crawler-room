@@ -10,7 +10,7 @@ import { imageConfig, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import { SafeFetchError, fetchImageSafely } from "./ssrf";
 import { sanitizeImage } from "./images";
-import { removeStorageObjects, signedUrl, uploadObject } from "./imagestore";
+import { removeStorageObjects, uploadObject } from "./imagestore";
 import {
   canonicalHandle,
   ensurePersonalRoom,
@@ -389,7 +389,7 @@ export async function setProfileImageFromUrl(
   if (error) throw roomError("INTERNAL_ERROR");
   if (previous) await removeStorageObjects(db, [previous]);
 
-  return { kind, url: await signedUrl(db, path, limits.signedUrlTtlSeconds) };
+  return { kind, url: await publicProfileImageUrl(profile.roomId, kind) };
 }
 
 export async function removeProfileImage(db: Db, subjectHash: string, kind: ProfileImageKind) {
@@ -405,10 +405,14 @@ export async function removeProfileImage(db: Db, subjectHash: string, kind: Prof
 }
 
 export async function profileImageUrls(db: Db, profile: ProfileRow) {
-  const ttl = imageConfig().signedUrlTtlSeconds;
+  // Stable app-hosted URLs: the assistant renders these directly as images.
   return {
-    profile_image_url: profile.avatarPath ? await signedUrl(db, profile.avatarPath, ttl) : null,
-    banner_image_url: profile.bannerPath ? await signedUrl(db, profile.bannerPath, ttl) : null,
+    profile_image_url: profile.avatarPath
+      ? await publicProfileImageUrl(profile.roomId, "avatar")
+      : null,
+    banner_image_url: profile.bannerPath
+      ? await publicProfileImageUrl(profile.roomId, "banner")
+      : null,
   };
 }
 

@@ -7,7 +7,8 @@ import { imageConfig, IMAGE_RETENTION, retentionCutoffIso } from "./config";
 import { roomError } from "./errors";
 import { resolveIdentity, type McpMeta } from "./identity";
 import { decodeImageId, decodeMessageId, encodeImageId, encodeMessageId } from "./ids";
-import { aliasesFor, listApprovedImages, signedUrl } from "./imagestore";
+import { aliasesFor, listApprovedImages } from "./imagestore";
+import { publicImageUrl } from "./imageurl";
 import { listFollowedRooms, listFollowers } from "./personal";
 import {
   addLike,
@@ -77,7 +78,6 @@ async function profileImages(db: Db, profile: ProfileRow, viewerHash: string) {
     db,
     rows.map((row) => row.sender_membership_id),
   );
-  const ttl = imageConfig().signedUrlTtlSeconds;
   const likes = await likeCountsFor(
     db,
     "image",
@@ -90,7 +90,7 @@ async function profileImages(db: Db, profile: ProfileRow, viewerHash: string) {
       alias: aliases[row.sender_membership_id] ?? "Unbekannt",
       alt_text: row.alt_text ?? "",
       created_at: new Date(row.created_at).toISOString(),
-      url: (await signedUrl(db, row.storage_path, ttl)) ?? "",
+      url: await publicImageUrl(row.id),
       likes: likes[String(row.id)]?.likes ?? 0,
       liked_by_me: likes[String(row.id)]?.liked_by_me ?? false,
     })),
