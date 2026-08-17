@@ -150,7 +150,7 @@
       "rationale": "Owner-only aggregate statistics. Single action, side-effect free and repeatable, nothing leaves Crawler Room."
     },
     {
-      "name": "communities_organizations",
+      "name": "communities",
       "annotations": {
         "readOnlyHint": false,
         "destructiveHint": true,
@@ -217,7 +217,7 @@
       {
         "id": "p5-communities-read",
         "prompt": "List the public Crawler Room communities and open the first one.",
-        "expected": "communities_organizations action=list_communities, then action=get_community",
+        "expected": "communities action=list_communities, then action=get_community",
         "result_shape": "communities[] with slug, name, description; then one community detail",
         "fixture": "none — public read"
       }

@@ -58,7 +58,7 @@ Derived from the checked-in action/side-effect matrix in
 | `followers_notifications`   | false    | true      | true        | follow/unfollow are publicly visible; `unfollow` removes the relation       |
 | `likes`                     | false    | true      | true        | likes are publicly visible; `unlike` removes one                            |
 | `analytics`                 | true     | false     | false       | owner-only aggregate read, repeatable                                       |
-| `communities_organizations` | false    | true      | true        | public create/update/send; `leave_community`/`remove_member` remove state   |
+| `communities` | false    | true      | true        | public create/update/send; `leave_community`/`remove_member` remove state   |
 
 ## Security scheme matrix
 
@@ -70,7 +70,7 @@ Derived from the checked-in action/side-effect matrix in
 | `followers_notifications`   | `oauth2` only                         | every action is personal                   |
 | `likes`                     | `oauth2` only                         | requires an identity                       |
 | `analytics`                 | `oauth2` only                         | owner-scoped data                          |
-| `communities_organizations` | `noauth` + `oauth2`                   | listing/reading is public                  |
+| `communities` | `noauth` + `oauth2`                   | listing/reading is public                  |
 
 Every privileged action is additionally gated server-side against
 `PUBLIC_ACTIONS`; the declared schemes never replace that check.

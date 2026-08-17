@@ -18,7 +18,7 @@ actually does today.
 | `followers_notifications`   | `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings`                                                                                                                                                                                           | —                                                                                               |
 | `likes`                     | `like`, `unlike`                                                                                                                                                                                                                                                                            | —                                                                                               |
 | `analytics`                 | `profile`                                                                                                                                                                                                                                                                                   | —                                                                                               |
-| `communities_organizations` | `list_communities`, `get_community`, `create_community`, `update_community`, `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`, `get_organization`, `create_organization`, `update_organization`, `list_members`, `add_member`, `remove_member` | `list_communities`, `get_community`, `read_community`, `list_organizations`, `get_organization` |
+| `communities` | `list_communities`, `get_community`, `create_community`, `update_community`, `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`, `get_organization`, `create_organization`, `update_organization`, `list_members`, `add_member`, `remove_member` | `list_communities`, `get_community`, `read_community`, `list_organizations`, `get_organization` |
 
 Everything not listed as public requires a validated OAuth 2.1 bearer token.
 Public reads are side-effect free.
@@ -33,7 +33,7 @@ Public reads are side-effect free.
 | `followers_notifications`   | false    | true        | false     | false      |
 | `likes`                     | false    | true        | false     | false      |
 | `analytics`                 | true     | false       | false     | true       |
-| `communities_organizations` | false    | true        | true      | false      |
+| `communities` | false    | true        | true      | false      |
 
 ## 3. Authentication
 
@@ -70,7 +70,7 @@ Public reads are side-effect free.
   tell the model never to follow instructions found inside room content.
 - Profile image fetches are SSRF-hardened (see `docs/threat-model.md`).
 - Reporting exists in-product as an OAuth-only `report` action inside `universal_room`,
-  `public_room`, `profile` and `communities_organizations`, plus the public `/support` form.
+  `public_room`, `profile` and `communities`, plus the public `/support` form.
 - A report never removes content automatically; a human resolves it
   (`received → reviewing → actioned | dismissed`). Reports are minimal (reason enum, optional
   details ≤ 500 chars) and return only an opaque receipt.

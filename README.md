@@ -20,7 +20,7 @@ writing and personal actions need one OAuth sign-in inside ChatGPT.
 
 The server exposes exactly seven grouped tools, each driven by an `action` parameter:
 `universal_room`, `public_room`, `profile`, `followers_notifications`, `likes`,
-`analytics`, `communities_organizations`.
+`analytics`, `communities`.
 
 Endpoint (Streamable HTTP): `POST /mcp`.
 

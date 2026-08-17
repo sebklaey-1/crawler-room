@@ -39,7 +39,7 @@ Genau sieben Tools, jeweils über `action` gesteuert:
 | `followers_notifications`   | Follower und Meldungen                 | `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings`                                                                                                                                                                                                     |
 | `likes`                     | Likes auf Profile, Nachrichten, Bilder | `like`, `unlike`                                                                                                                                                                                                                                                                                      |
 | `analytics`                 | Statistik des eigenen Profils          | `profile`                                                                                                                                                                                                                                                                                             |
-| `communities_organizations` | Communities und Organisationen         | `list_communities`, `get_community`, `create_community`, `update_community`, `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`, `get_organization`, `create_organization`, `update_organization`, `list_members`, `add_member`, `remove_member`, `report` |
+| `communities` | Communities und Organisationen         | `list_communities`, `get_community`, `create_community`, `update_community`, `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`, `get_organization`, `create_organization`, `update_organization`, `list_members`, `add_member`, `remove_member`, `report` |
 
 Identität wird nie als Parameter übergeben; sie stammt ausschliesslich aus dem verifizierten
 Zugriffstoken der Anmeldung. Frage nie nach Benutzernamen, Passwort oder Token.
@@ -69,7 +69,7 @@ gib sie nur wieder. Warne davor, personenbezogene Daten in Räumen zu teilen.
 **Melden und blockieren.** Bei Belästigung, Hass, sexuellen Inhalten, Gewalt, Selbstgefährdung,
 Datenschutzverletzungen, Identitätsmissbrauch, Spam oder illegalen Inhalten nutzt du die
 passende `report`-Action (`universal_room`, `public_room`, `profile`,
-`communities_organizations`) mit einem Grund aus dem festen Enum. Wiederhole den gemeldeten
+`communities`) mit einem Grund aus dem festen Enum. Wiederhole den gemeldeten
 Inhalt dabei nicht ausführlich und trage keine zusätzlichen personenbezogenen Daten in
 `details` ein. Sag klar, dass eine Meldung nichts automatisch entfernt und ein Mensch prüft.
 Zum Selbstschutz gibt es `profile block`, `profile unblock` und `profile list_blocks`;

@@ -103,7 +103,7 @@ Actions are taken verbatim from `inputSchema.properties.action.enum`; annotation
   writes nothing, never leaves the caller's own data, and returns the same shape for the same
   input window.
 
-### `communities_organizations`
+### `communities`
 
 - Actions: `list_communities`, `get_community`, `create_community`, `update_community`,
   `join_community`, `leave_community`, `read_community`, `send_community`, `list_organizations`,
@@ -147,7 +147,7 @@ declare only public DTO fields.
 | P1  | "What is happening in the Universal Room?"                        | `universal_room` / `read`                                              | none                         | any public messages (seeded demo messages are enough) | `{ action: "read", messages: [...], has_more, cursor? }`                                              | Anonymous read succeeds, no sign-in prompt, no ids or hashes in the payload.                   |
 | P2  | "Post 'hello from review' in the Universal Room."                 | `universal_room` / `send`                                              | accountless OAuth connection | none                                                  | `{ action: "send", message: {...}, recent: [...] }`                                                   | Message is written, the model reads back recent room content, rate limit allows a single post. |
 | P3  | "Show my public room and set my bio to 'Reviewing Crawler Room'." | `public_room` / `mine`, then `profile` / `update`                      | accountless OAuth connection | the reviewer's own room (auto-created)                | `{ action: "mine", room: {...} }`, `{ action: "update", profile: {...} }`                             | Only the caller's own room and profile change; handle stays unique.                            |
-| P4  | "List the public communities and read the newest one."            | `communities_organizations` / `list_communities` then `read_community` | none                         | one seeded public demo community with 2–3 messages    | `{ action: "list_communities", communities: [...] }`, `{ action: "read_community", messages: [...] }` | Anonymous community browsing works, private/organisation-internal fields are absent.           |
+| P4  | "List the public communities and read the newest one."            | `communities` / `list_communities` then `read_community` | none                         | one seeded public demo community with 2–3 messages    | `{ action: "list_communities", communities: [...] }`, `{ action: "read_community", messages: [...] }` | Anonymous community browsing works, private/organisation-internal fields are absent.           |
 | P5  | "Show my profile analytics."                                      | `analytics` / `profile`                                                | accountless OAuth connection | demo room with a few views/likes                      | `{ action: "profile", analytics: {...} }`                                                             | Owner-only aggregates rendered as text charts; no visitor identity, no other person's numbers. |
 | P6  | "Follow the demo room and show my notifications."                 | `followers_notifications` / `follow`, `list_notifications`             | accountless OAuth connection | a second seeded demo handle to follow                 | `{ action: "follow", following: true }`, `{ action: "list_notifications", notifications: [...] }`     | Follow is recorded, self-follow is impossible, notifications are pull-based only.              |
 
@@ -171,7 +171,7 @@ declare only public DTO fields.
   files deleted with their row, three approved images per room.
 - Rate limits on messaging, profile writes and the public support form.
 - Reporting is available in-product: `universal_room / report`, `public_room / report`,
-  `profile / report` and `communities_organizations / report`. All four require OAuth, take a
+  `profile / report` and `communities / report`. All four require OAuth, take a
   fixed reason enum plus optional details (max 500 characters) and return only
   `reported`, `already_reported`, `status` and an opaque receipt. A report never removes or
   hides content automatically; a human resolves it (`received → reviewing → actioned |

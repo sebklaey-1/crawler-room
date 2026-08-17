@@ -31,7 +31,7 @@ const TOOL_NAMES = [
   "followers_notifications",
   "likes",
   "analytics",
-  "communities_organizations",
+  "communities",
 ].sort();
 
 const EXPECTED_ISSUER = (process.env["SUPABASE_URL"] ?? "").replace(/\/+$/, "");

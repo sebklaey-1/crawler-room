@@ -44,7 +44,7 @@ it is retained for migration history only and the column no longer exists.
 ## 2. Invariants — verified
 
 - **Exactly seven public tools** (live `tools/list`): `universal_room`, `public_room`,
-  `profile`, `followers_notifications`, `likes`, `analytics`, `communities_organizations`.
+  `profile`, `followers_notifications`, `likes`, `analytics`, `communities`.
 - **Canonical resource** `https://crawler.today/mcp` in code, metadata, hook and docs.
 - **Protected-resource URL** `https://crawler.today/.well-known/oauth-protected-resource/mcp`
   in the metadata document and in every `WWW-Authenticate` challenge.
@@ -109,7 +109,7 @@ output or logs.
 ### MCP smoke (local)
 
 `initialize` ok · `tools/list` returns exactly the seven names · public read
-(`communities_organizations list_organizations`) HTTP 200 · protected action without a token
+(`communities list_organizations`) HTTP 200 · protected action without a token
 HTTP 401 + `WWW-Authenticate: Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource/mcp"`
 · malformed JSON-RPC → `-32600` · batch isolation ok (one entry succeeds while the other
 fails independently) · authenticated read path covered by `auth.test.ts` under

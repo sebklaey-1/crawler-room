@@ -29,7 +29,7 @@ const TOOL_NAMES = [
   "followers_notifications",
   "likes",
   "analytics",
-  "communities_organizations",
+  "communities",
 ];
 
 interface Result {
@@ -601,7 +601,7 @@ check(
   "write guard is action-aware and never scans moderation report details",
   safety.includes("PUBLISHED_UGC_FIELDS") &&
     safety.includes("assertSafePublishedUgc") &&
-    !/"(universal_room|public_room|profile|communities_organizations)\.report"/.test(safety) &&
+    !/"(universal_room|public_room|profile|communities)\.report"/.test(safety) &&
     read("src/lib/room/mcp.surface.ts").includes("assertSafePublishedUgc(tool, result.data)"),
   "only published fields are filtered; report details, queries and lookups are not",
 );
