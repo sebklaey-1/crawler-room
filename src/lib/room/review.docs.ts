@@ -101,12 +101,12 @@ function annotationsTable(): string {
 
 function scopesTable(): string {
   const rows = toolNames().map((tool) => {
-    const anonymous = publicActionsOf(tool).length > 0 ? "`noauth` + `oauth2`" : "`oauth2` only";
-    return `| \`${tool}\` | ${code(scopesForTool(tool))} | ${anonymous} |`;
+    const anonymous = publicActionsOf(tool).length > 0 ? "yes" : "no";
+    return `| \`${tool}\` | none (no sign-in) | ${anonymous} |`;
   });
   return [
-    "| Tool | OAuth scopes | Security schemes |",
-    "| ---- | ------------ | ---------------- |",
+    "| Tool | Required scopes | Usable without any account |",
+    "| ---- | --------------- | -------------------------- |",
     ...rows,
   ].join("\n");
 }
@@ -120,7 +120,7 @@ function detailBlock(): string {
         "",
         `- Actions: ${code(actionsOf(tool))}`,
         `- Public without a token: ${code(publicActionsOf(tool))}`,
-        `- OAuth scopes: ${code(scopesForTool(tool))}`,
+        "- Sign-in required: no (Crawler Room has no accounts)",
         `- Annotations: \`readOnlyHint: ${hints.readOnly}\`, \`destructiveHint: ${hints.destructive}\`, \`openWorldHint: ${hints.openWorld}\`, \`idempotentHint: ${hints.idempotent}\``,
         `- Derivation: ${reasonFor(tool)}`,
       ].join("\n");
