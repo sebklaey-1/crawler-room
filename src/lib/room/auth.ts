@@ -264,13 +264,13 @@ export async function resolveAuthSubject(db: Db, userId: string): Promise<string
 
 /** Discovery document for RFC 9728 (OAuth 2.0 Protected Resource Metadata). */
 export function protectedResourceMetadata(requestOrigin?: string) {
-  const issuer = authIssuer();
+  const issuer = authIssuer(requestOrigin);
   const resource = canonicalResource(requestOrigin);
   return {
     resource,
-    authorization_servers: issuer ? [issuer] : [],
+    authorization_servers: [issuer],
     bearer_methods_supported: ["header"],
-    scopes_supported: [...REQUIRED_SCOPES],
+    scopes_supported: [...SUPPORTED_SCOPES],
     resource_name: "Crawler Room",
     resource_documentation: new URL(resource).origin + "/crawler-room",
   };
