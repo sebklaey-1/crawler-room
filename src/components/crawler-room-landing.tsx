@@ -7,6 +7,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 
+import { Link } from "@tanstack/react-router";
 import roomIcon from "@/assets/room-icon.png.asset.json";
 import { LegalFooter } from "@/components/legal-footer";
 
