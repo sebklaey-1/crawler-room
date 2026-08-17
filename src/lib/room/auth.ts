@@ -218,7 +218,8 @@ export async function verifyAccessToken(token: string, requestOrigin?: string): 
   // `authenticated` — is not a resource and never satisfies this check.
   const audiences = claimList(claims["aud"]);
   const roomResource = typeof claims["room_resource"] === "string" ? claims["room_resource"] : "";
-  if (roomResource && roomResource.replace(/\/+$/, "") !== resource) throw roomError("INVALID_TOKEN");
+  if (roomResource && roomResource.replace(/\/+$/, "") !== resource)
+    throw roomError("INVALID_TOKEN");
   const boundByAud = audiences.some((aud) => aud.replace(/\/+$/, "") === resource);
   if (!boundByAud && roomResource.replace(/\/+$/, "") !== resource) {
     throw roomError("INVALID_TOKEN");

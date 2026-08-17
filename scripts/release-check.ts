@@ -525,11 +525,11 @@ check(
   "submission package carries the 2026 listing fields",
   Boolean(
     submissionDoc["audience"] &&
-      submissionDoc["ugc_policy"] &&
-      submissionDoc["data_minimization"] &&
-      submissionDoc["release_notes"] &&
-      submissionDoc["availability"] &&
-      submissionDoc["attestations"],
+    submissionDoc["ugc_policy"] &&
+    submissionDoc["data_minimization"] &&
+    submissionDoc["release_notes"] &&
+    submissionDoc["availability"] &&
+    submissionDoc["attestations"],
   ),
   "audience, ugc_policy, data_minimization, release_notes, availability, attestations",
 );

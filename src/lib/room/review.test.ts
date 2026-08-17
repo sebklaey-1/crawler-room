@@ -58,7 +58,8 @@ const PROMOTIONAL =
 
 const ENDORSEMENT = /\b(made by openai|openai[- ]approved|endorsed by openai|official openai)\b/i;
 
-const AGE_CLAIMS = /\b(18\+|adult only|adults only|nsfw|xxx|dating|for kids|for children|ages? 8)\b/i;
+const AGE_CLAIMS =
+  /\b(18\+|adult only|adults only|nsfw|xxx|dating|for kids|for children|ages? 8)\b/i;
 
 const ACTION_VERB =
   /^(Reads|Opens|Lists|Manages|Adds|Returns|Creates|Sends|Posts|Follows|Reports|Fetches|Updates)\b/;

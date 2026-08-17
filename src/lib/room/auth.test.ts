@@ -343,9 +343,6 @@ describe("access token claim validation", () => {
     ["a token without any scope claim", { room_scopes: undefined, scope: undefined }],
   ];
 
-
-
-
   for (const [label, overrides] of rejected) {
     it(`rejects ${label}`, async () => {
       stub(overrides);
