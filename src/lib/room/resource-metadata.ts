@@ -1,14 +1,13 @@
 /**
- * Shared RFC 9728 response for both metadata routes.
+ * Shared RFC 9728 response for all three metadata routes.
  *
  * The canonical (challenge-advertised) location is the path-specific
- * `/.well-known/oauth-protected-resource/mcp`. The bare root path (and the
- * deprecated `/api/public/mcp` variant) stay available as compatibility
- * aliases
- * stays available as a compatibility alias and serves the *identical*
- * document, so a client that guesses the root form still discovers the same
- * `resource` value.
+ * `/.well-known/oauth-protected-resource/mcp`. The bare root path and the
+ * DEPRECATED `/.well-known/oauth-protected-resource/api/public/mcp` variant
+ * stay available as compatibility aliases and serve the *identical* document,
+ * so any client still discovers the same canonical `resource` value.
  */
+
 import { protectedResourceMetadata } from "./auth";
 
 export const METADATA_CORS = {
