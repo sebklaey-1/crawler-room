@@ -9,7 +9,7 @@
 import { describe, expect, it } from "vitest";
 
 import { actionEnum, branchesOf, propertiesOf, schemaOf } from "./jsonschema";
-import { PUBLIC_ACTIONS, SURFACE_TOOLS } from "./mcp.surface";
+import { PUBLIC_ACTIONS, SURFACE_TOOLS, securitySchemesFor } from "./mcp.surface";
 import { enforceOutputContract } from "./output";
 
 const EXPECTED = [
@@ -142,7 +142,7 @@ describe("OpenAI review metadata gate", () => {
       for (const hint of ["readOnlyHint", "destructiveHint", "openWorldHint"]) {
         expect(typeof tool.annotations[hint], `${tool.name}.${hint}`).toBe("boolean");
       }
-      const schemes = tool.securitySchemes ?? [];
+      const schemes = tool.securitySchemes ?? securitySchemesFor(tool.name);
       expect(schemes.length, tool.name).toBeGreaterThan(0);
       const types = schemes.map((scheme) => (scheme as { type?: string }).type);
       expect(types, tool.name).toContain("oauth2");
