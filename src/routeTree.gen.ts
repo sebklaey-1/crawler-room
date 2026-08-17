@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CrawlerRoomRouteImport } from './routes/crawler-room'
 import { Route as DataDeletionRouteImport } from './routes/data-deletion'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SafetyRouteImport } from './routes/safety'
 import { Route as SupportRouteImport } from './routes/support'
@@ -20,6 +21,7 @@ import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes
 import { Route as DotwellKnownOpenaiAppsChallengeRouteImport } from './routes/[.]well-known.openai-apps-challenge'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as DotwellKnownOauthProtectedResourceMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.mcp'
 import { Route as ApiPublicDataDeletionRouteImport } from './routes/api.public.data-deletion'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
@@ -41,6 +43,11 @@ const CrawlerRoomRoute = CrawlerRoomRouteImport.update({
 const DataDeletionRoute = DataDeletionRouteImport.update({
   id: '/data-deletion',
   path: '/data-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -85,6 +92,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownOauthProtectedResourceMcpRoute =
+  DotwellKnownOauthProtectedResourceMcpRouteImport.update({
+    id: '/mcp',
+    path: '/mcp',
+    getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
+  } as any)
 const ApiPublicDataDeletionRoute = ApiPublicDataDeletionRouteImport.update({
   id: '/api/public/data-deletion',
   path: '/api/public/data-deletion',
@@ -126,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/crawler-room': typeof CrawlerRoomRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/safety': typeof SafetyRoute
   '/support': typeof SupportRoute
@@ -134,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
@@ -146,6 +161,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/crawler-room': typeof CrawlerRoomRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/safety': typeof SafetyRoute
   '/support': typeof SupportRoute
@@ -154,6 +170,7 @@ export interface FileRoutesByTo {
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
@@ -167,6 +184,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/crawler-room': typeof CrawlerRoomRoute
   '/data-deletion': typeof DataDeletionRoute
+  '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/safety': typeof SafetyRoute
   '/support': typeof SupportRoute
@@ -175,6 +193,7 @@ export interface FileRoutesById {
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
   '/oauth/consent': typeof OauthConsentRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
@@ -189,6 +208,7 @@ export interface FileRouteTypes {
     | '/'
     | '/crawler-room'
     | '/data-deletion'
+    | '/mcp'
     | '/privacy'
     | '/safety'
     | '/support'
@@ -197,6 +217,7 @@ export interface FileRouteTypes {
     | '/.well-known/openai-apps-challenge'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
@@ -209,6 +230,7 @@ export interface FileRouteTypes {
     | '/'
     | '/crawler-room'
     | '/data-deletion'
+    | '/mcp'
     | '/privacy'
     | '/safety'
     | '/support'
@@ -217,6 +239,7 @@ export interface FileRouteTypes {
     | '/.well-known/openai-apps-challenge'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
@@ -229,6 +252,7 @@ export interface FileRouteTypes {
     | '/'
     | '/crawler-room'
     | '/data-deletion'
+    | '/mcp'
     | '/privacy'
     | '/safety'
     | '/support'
@@ -237,6 +261,7 @@ export interface FileRouteTypes {
     | '/.well-known/openai-apps-challenge'
     | '/oauth/consent'
     | '/.lovable/oauth/consent'
+    | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
@@ -250,6 +275,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CrawlerRoomRoute: typeof CrawlerRoomRoute
   DataDeletionRoute: typeof DataDeletionRoute
+  McpRoute: typeof McpRoute
   PrivacyRoute: typeof PrivacyRoute
   SafetyRoute: typeof SafetyRoute
   SupportRoute: typeof SupportRoute
@@ -287,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/data-deletion'
       fullPath: '/data-deletion'
       preLoaderRoute: typeof DataDeletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -345,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource/mcp': {
+      id: '/.well-known/oauth-protected-resource/mcp'
+      path: '/mcp'
+      fullPath: '/.well-known/oauth-protected-resource/mcp'
+      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceMcpRouteImport
+      parentRoute: typeof DotwellKnownOauthProtectedResourceRoute
+    }
     '/api/public/data-deletion': {
       id: '/api/public/data-deletion'
       path: '/api/public/data-deletion'
@@ -398,11 +438,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface DotwellKnownOauthProtectedResourceRouteChildren {
+  DotwellKnownOauthProtectedResourceMcpRoute: typeof DotwellKnownOauthProtectedResourceMcpRoute
   DotwellKnownOauthProtectedResourceApiPublicMcpRoute: typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
 }
 
 const DotwellKnownOauthProtectedResourceRouteChildren: DotwellKnownOauthProtectedResourceRouteChildren =
   {
+    DotwellKnownOauthProtectedResourceMcpRoute:
+      DotwellKnownOauthProtectedResourceMcpRoute,
     DotwellKnownOauthProtectedResourceApiPublicMcpRoute:
       DotwellKnownOauthProtectedResourceApiPublicMcpRoute,
   }
@@ -416,6 +459,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CrawlerRoomRoute: CrawlerRoomRoute,
   DataDeletionRoute: DataDeletionRoute,
+  McpRoute: McpRoute,
   PrivacyRoute: PrivacyRoute,
   SafetyRoute: SafetyRoute,
   SupportRoute: SupportRoute,

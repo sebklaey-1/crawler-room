@@ -21,7 +21,7 @@ export const Route = createFileRoute("/crawler-room")({
       {
         property: "og:description",
         content:
-          "How Crawler Room works inside ChatGPT: rooms, profiles, safety, retention and the canonical MCP resource https://crawler.today/api/public/mcp.",
+          "How Crawler Room works inside ChatGPT: rooms, profiles, safety, retention and the canonical MCP resource https://crawler.today/mcp.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

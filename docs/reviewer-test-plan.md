@@ -1,6 +1,6 @@
 # Reviewer test plan — Crawler Room
 
-MCP endpoint: `https://crawler.today/api/public/mcp` (Streamable HTTP, JSON and SSE).
+MCP endpoint: `https://crawler.today/mcp` (Streamable HTTP, JSON and SSE).
 No test credentials are shipped in this repository. A reviewer signs in through
 the normal ChatGPT connector flow; the consent screen creates the session.
 
@@ -31,20 +31,20 @@ the normal ChatGPT connector flow; the consent screen creates the session.
 
 ## Negative cases
 
-| #   | Prompt / call                                                            | Expected behaviour                                                                                                                                                     |
-| --- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| N1  | `universal_room` `send` without a token                                  | `isError: true`, code `AUTH_REQUIRED`, `WWW-Authenticate` challenge with `resource_metadata=https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
-| N2  | `analytics` `profile` without a token                                    | `AUTH_REQUIRED`, no data                                                                                                                                               |
-| N3  | `profile` `set_image` with `image_url: "http://127.0.0.1/x.png"`         | `INVALID_INPUT`; no request leaves the server, no host or IP in the message                                                                                            |
-| N4  | Unknown action, e.g. `likes` action `delete`                             | `INVALID_INPUT` from schema validation, no side effect                                                                                                                 |
-| N5  | Unexpected extra field, e.g. `universal_room { action: "read", foo: 1 }` | `INVALID_INPUT` (schemas are strict)                                                                                                                                   |
-| N6  | Request body larger than 256 KiB                                         | HTTP 413, no partial processing                                                                                                                                        |
-| N7  | `universal_room` `report` without a token                                | `AUTH_REQUIRED`; nothing is stored                                                                                                                                     |
-| N8  | `public_room` `report` with a message id from a different room           | `NOT_FOUND`; cross-room and invented targets are refused                                                                                                               |
-| N9  | `profile` `block` on your own handle                                     | `INVALID_INPUT`/`FORBIDDEN`; `list_blocks` unchanged and free of subject hashes                                                                                        |
-| N10 | Same `report` twice for the same target                                  | second call returns `already_reported: true` with the same status; no duplicate case                                                                                   |
-| N11 | Many reports in a row                                                    | `RATE_LIMITED` with `Retry-After`; no internal details                                                                                                                 |
-| N12 | Token issued for another resource                                        | `INVALID_TOKEN` with a fresh challenge; identity is never derived from input                                                                                           |
+| #   | Prompt / call                                                            | Expected behaviour                                                                                                                                          |
+| --- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| N1  | `universal_room` `send` without a token                                  | `isError: true`, code `AUTH_REQUIRED`, `WWW-Authenticate` challenge with `resource_metadata=https://crawler.today/.well-known/oauth-protected-resource/mcp` |
+| N2  | `analytics` `profile` without a token                                    | `AUTH_REQUIRED`, no data                                                                                                                                    |
+| N3  | `profile` `set_image` with `image_url: "http://127.0.0.1/x.png"`         | `INVALID_INPUT`; no request leaves the server, no host or IP in the message                                                                                 |
+| N4  | Unknown action, e.g. `likes` action `delete`                             | `INVALID_INPUT` from schema validation, no side effect                                                                                                      |
+| N5  | Unexpected extra field, e.g. `universal_room { action: "read", foo: 1 }` | `INVALID_INPUT` (schemas are strict)                                                                                                                        |
+| N6  | Request body larger than 256 KiB                                         | HTTP 413, no partial processing                                                                                                                             |
+| N7  | `universal_room` `report` without a token                                | `AUTH_REQUIRED`; nothing is stored                                                                                                                          |
+| N8  | `public_room` `report` with a message id from a different room           | `NOT_FOUND`; cross-room and invented targets are refused                                                                                                    |
+| N9  | `profile` `block` on your own handle                                     | `INVALID_INPUT`/`FORBIDDEN`; `list_blocks` unchanged and free of subject hashes                                                                             |
+| N10 | Same `report` twice for the same target                                  | second call returns `already_reported: true` with the same status; no duplicate case                                                                        |
+| N11 | Many reports in a row                                                    | `RATE_LIMITED` with `Retry-After`; no internal details                                                                                                      |
+| N12 | Token issued for another resource                                        | `INVALID_TOKEN` with a fresh challenge; identity is never derived from input                                                                                |
 
 ## Safety flow (reversible, test data only)
 

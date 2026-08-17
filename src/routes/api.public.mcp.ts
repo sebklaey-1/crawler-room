@@ -3,11 +3,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { handleMcpRequest } from "@/lib/room/mcp";
 
 /**
- * Crawler Room MCP endpoint (Streamable HTTP).
- * Mixed access: side-effect-free public reads are `noauth`, while every
- * personal, writing or administrative action requires a validated OAuth 2.1
- * bearer token. MCP `_meta` (`openai/subject`) only seeds the pseudonymous
- * identity — it is never a proof of authorization or of ownership.
+ * DEPRECATED compatibility endpoint for the Crawler Room MCP server.
+ *
+ * The canonical resource is `https://crawler.today/mcp` (see
+ * `src/routes/mcp.ts`). This legacy path stays functional for already
+ * configured clients and shares the exact same `handleMcpRequest`
+ * implementation — no copy/paste drift, same transport semantics, same seven
+ * tools. It has NO resource identity of its own: `serverInfo`, protected
+ * resource metadata and every `WWW-Authenticate` challenge emitted here name
+ * the canonical `/mcp` resource and its canonical PRM URL.
+ *
+ * Not to be used for the OpenAI submission. No redirect is issued, because a
+ * 30x on a Streamable HTTP POST breaks MCP clients.
  */
 export const Route = createFileRoute("/api/public/mcp")({
   server: {

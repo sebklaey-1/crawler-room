@@ -4,14 +4,14 @@ The Crawler Room MCP endpoint is an OAuth 2.0 **protected resource** (RFC 9728).
 authorization server is this project's own Cloud auth service; Crawler Room never
 issues, stores or forwards credentials.
 
-| Value                         | Setting                                                                     |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| App domain (canonical)        | `https://crawler.today`                                                     |
-| Canonical MCP resource        | `https://crawler.today/api/public/mcp`                                      |
-| Protected resource metadata   | `https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp` |
-| Authorization server (issuer) | `${SUPABASE_URL}/auth/v1`                                                   |
-| Consent page                  | `https://crawler.today/oauth/consent`                                       |
-| Scopes                        | `openid`, `profile` (no `email`)                                            |
+| Value                         | Setting                                                          |
+| ----------------------------- | ---------------------------------------------------------------- |
+| App domain (canonical)        | `https://crawler.today`                                          |
+| Canonical MCP resource        | `https://crawler.today/mcp`                                      |
+| Protected resource metadata   | `https://crawler.today/.well-known/oauth-protected-resource/mcp` |
+| Authorization server (issuer) | `${SUPABASE_URL}/auth/v1`                                        |
+| Consent page                  | `https://crawler.today/oauth/consent`                            |
+| Scopes                        | `openid`, `profile` (no `email`)                                 |
 
 Clients discover the authorization server through the protected-resource
 metadata and then read the issuer's own discovery documents
@@ -20,12 +20,12 @@ The app does **not** proxy or mirror those documents.
 
 ## Required environment variables
 
-| Name                                                | Scope  | Purpose                                                                                                                                                      |
-| --------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ROOM_MCP_RESOURCE`                                 | server | Canonical https resource identifier, exactly `https://crawler.today/api/public/mcp`. Mandatory in production; the value never derives from a request header. |
-| `SUPABASE_URL`                                      | server | Used to build the issuer `${SUPABASE_URL}/auth/v1`.                                                                                                          |
-| `SUPABASE_PUBLISHABLE_KEY` (or `SUPABASE_ANON_KEY`) | server | Used by the non-persisting verification client.                                                                                                              |
-| `SUBJECT_HASH_SECRET`                               | server | HMAC key for pseudonymous subjects.                                                                                                                          |
+| Name                                                | Scope  | Purpose                                                                                                                                           |
+| --------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ROOM_MCP_RESOURCE`                                 | server | Canonical https resource identifier, exactly `https://crawler.today/mcp`. Mandatory in production; the value never derives from a request header. |
+| `SUPABASE_URL`                                      | server | Used to build the issuer `${SUPABASE_URL}/auth/v1`.                                                                                               |
+| `SUPABASE_PUBLISHABLE_KEY` (or `SUPABASE_ANON_KEY`) | server | Used by the non-persisting verification client.                                                                                                   |
+| `SUBJECT_HASH_SECRET`                               | server | HMAC key for pseudonymous subjects.                                                                                                               |
 
 ## Manual backend steps (required)
 
@@ -41,7 +41,7 @@ The app does **not** proxy or mirror those documents.
    narrows `aud` to the canonical resource and adds `room_resource` /
    `room_scopes` for tokens that carry a non-empty `client_id`. Token
    verification **depends on it**: `verifyAccessToken()` accepts only tokens
-   bound to `https://crawler.today/api/public/mcp` and carrying the scopes
+   bound to `https://crawler.today/mcp` and carrying the scopes
    `openid` and `profile`. Without the active hook no client can connect. This
    toggle is dashboard-only; `bun run release:check:submit` treats it as a
    fail-closed blocker until `ROOM_SUBMIT_TOKEN_HOOK_ACTIVE` is confirmed.
@@ -64,7 +64,7 @@ public.custom_access_token_hook(event jsonb) returns jsonb
 It only touches tokens that carry a non-empty `claims.client_id`, i.e. tokens
 issued through the OAuth server to a registered client. For those it sets:
 
-- `aud` → `https://crawler.today/api/public/mcp`
+- `aud` → `https://crawler.today/mcp`
 - `room_resource` → the same value
 - `room_scopes` → `["openid","profile"]`
 

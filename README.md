@@ -22,11 +22,11 @@ The server exposes exactly seven grouped tools, each driven by an `action` param
 `universal_room`, `public_room`, `profile`, `followers_notifications`, `likes`,
 `analytics`, `communities_organizations`.
 
-Endpoint (Streamable HTTP): `POST /api/public/mcp`.
+Endpoint (Streamable HTTP): `POST /mcp`.
 
 Identity is never a tool argument. Public reads stay anonymous; every personal or
 writing action requires an OAuth 2.1 access token bound to the canonical resource
-`https://crawler.today/api/public/mcp`. Only an HMAC hash of the account is stored.
+`https://crawler.today/mcp`. Only an HMAC hash of the account is stored.
 
 ## Architecture
 

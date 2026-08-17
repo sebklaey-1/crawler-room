@@ -170,12 +170,9 @@ item("retention cleanup scheduled every 15 minutes in the database", cleanup.ok,
 
 async function liveResourceReachable(): Promise<{ ok: boolean; detail: string }> {
   try {
-    const response = await fetch(
-      `${PRODUCTION_ORIGIN}/.well-known/oauth-protected-resource/api/public/mcp`,
-      {
-        redirect: "follow",
-      },
-    );
+    const response = await fetch(`${PRODUCTION_ORIGIN}/.well-known/oauth-protected-resource/mcp`, {
+      redirect: "follow",
+    });
     if (!response.ok) return { ok: false, detail: `metadata endpoint returned ${response.status}` };
     const body = (await response.json()) as { resource?: string };
     return {
@@ -272,7 +269,7 @@ async function unauthChallenge(): Promise<{ ok: boolean; detail: string }> {
     const header = response.headers.get("www-authenticate") ?? "";
     const ok =
       header.includes("resource_metadata=") &&
-      header.includes("/.well-known/oauth-protected-resource/api/public/mcp") &&
+      header.includes("/.well-known/oauth-protected-resource/mcp") &&
       header.includes('error="');
     return {
       ok,

@@ -4,7 +4,7 @@
 ChatGPT client
    |  JSON-RPC 2.0 over Streamable HTTP (JSON or SSE)
    v
-https://crawler.today/api/public/mcp        (TanStack server route, edge Worker)
+https://crawler.today/mcp        (TanStack server route, edge Worker)
    |  1. transport checks: 256 KiB body cap, content-type, Accept, origin
    |  2. bearer validation via Supabase auth (getClaims, ES256)
    |  3. subject -> auth_user_hash = HMAC(secret, "auth:" + sub)

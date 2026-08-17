@@ -13,7 +13,7 @@
 ## Token and resource binding
 
 Access tokens are verified with `getClaims` (ES256). A token is accepted only
-when `aud` contains `https://crawler.today/api/public/mcp` and `room_resource`
+when `aud` contains `https://crawler.today/mcp` and `room_resource`
 equals it. A token minted for a different resource is rejected, so a token
 captured by another MCP server cannot be replayed here. Cache keys are HMACs,
 never raw tokens.

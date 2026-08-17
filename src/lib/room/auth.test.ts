@@ -22,7 +22,7 @@ import { __setTestDb } from "./store";
 import { fakeDb } from "@/test/fake-db";
 import { isPublicAction, PUBLIC_ACTIONS, SURFACE_TOOLS } from "./mcp.surface";
 
-const URL_MCP = "http://localhost/api/public/mcp";
+const URL_MCP = "http://localhost/mcp";
 
 function post(body: unknown, init: RequestInit = {}) {
   return handleMcpRequest(
@@ -71,7 +71,7 @@ describe("authentication policy", () => {
     });
     expect(response.status).toBe(401);
     expect(response.headers.get("www-authenticate")).toContain(
-      'resource_metadata="http://localhost/.well-known/oauth-protected-resource/api/public/mcp"',
+      'resource_metadata="http://localhost/.well-known/oauth-protected-resource/mcp"',
     );
     const body = await response.json();
     expect(body.result.structuredContent.error.code).toBe("AUTH_REQUIRED");
@@ -221,7 +221,7 @@ describe("protected resource discovery", () => {
   it("points at the project authorization server", () => {
     process.env["SUPABASE_URL"] ??= "https://example.supabase.co";
     const metadata = protectedResourceMetadata("https://room.example");
-    expect(metadata.resource).toBe("https://room.example/api/public/mcp");
+    expect(metadata.resource).toBe("https://room.example/mcp");
     expect(metadata.authorization_servers).toEqual([`${process.env["SUPABASE_URL"]}/auth/v1`]);
     expect(metadata.scopes_supported).toEqual(["openid", "profile"]);
     expect(metadata.bearer_methods_supported).toEqual(["header"]);
@@ -230,11 +230,11 @@ describe("protected resource discovery", () => {
   it("prefers the configured production resource over any request origin", () => {
     process.env["ROOM_MCP_RESOURCE"] = PRODUCTION_MCP_RESOURCE;
     try {
-      expect(PRODUCTION_MCP_RESOURCE).toBe("https://crawler.today/api/public/mcp");
+      expect(PRODUCTION_MCP_RESOURCE).toBe("https://crawler.today/mcp");
       expect(canonicalResource("https://evil.test")).toBe(PRODUCTION_MCP_RESOURCE);
       expect(protectedResourceMetadata("https://evil.test").resource).toBe(PRODUCTION_MCP_RESOURCE);
       expect(challengeHeader("https://evil.test")).toBe(
-        'Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp"',
+        'Bearer resource_metadata="https://crawler.today/.well-known/oauth-protected-resource/mcp"',
       );
     } finally {
       delete process.env["ROOM_MCP_RESOURCE"];
@@ -243,9 +243,10 @@ describe("protected resource discovery", () => {
 
   it("rejects the retired zinga resource and any foreign configuration", () => {
     for (const wrong of [
-      "https://zinga-room.lovable.app/api/public/mcp",
-      "https://evil.test/api/public/mcp",
-      "http://crawler.today/api/public/mcp",
+      "https://zinga-room.lovable.app/mcp",
+      "https://evil.test/mcp",
+      "http://crawler.today/mcp",
+      "https://crawler.today/api/public/mcp",
     ]) {
       process.env["ROOM_MCP_RESOURCE"] = wrong;
       try {
@@ -259,20 +260,20 @@ describe("protected resource discovery", () => {
   it("falls back to the production resource when nothing is configured", () => {
     expect(canonicalResource()).toBe(PRODUCTION_MCP_RESOURCE);
     expect(resourceMetadataUrl()).toBe(
-      "https://crawler.today/.well-known/oauth-protected-resource/api/public/mcp",
+      "https://crawler.today/.well-known/oauth-protected-resource/mcp",
     );
   });
 
   it("builds a spec compliant challenge", () => {
     expect(challengeHeader("https://room.example", "invalid_token")).toBe(
-      'Bearer resource_metadata="https://room.example/.well-known/oauth-protected-resource/api/public/mcp", error="invalid_token"',
+      'Bearer resource_metadata="https://room.example/.well-known/oauth-protected-resource/mcp", error="invalid_token"',
     );
   });
 });
 
 /* ----------------------------- claim validation ---------------------------- */
 
-const RESOURCE = "http://localhost/api/public/mcp";
+const RESOURCE = "http://localhost/mcp";
 
 function claims(overrides: Record<string, unknown> = {}) {
   return {
@@ -314,9 +315,17 @@ describe("access token claim validation", () => {
     ["a non-uuid subject", { sub: "not-a-uuid" }],
     ["an expired token", { exp: Math.floor(Date.now() / 1000) - 10 }],
     ["a plain web session without client_id", { client_id: "" }],
-    ["a wrong audience", { aud: ["https://other.test/api/public/mcp"], room_resource: undefined }],
+    ["a wrong audience", { aud: ["https://other.test/mcp"], room_resource: undefined }],
 
-    ["a token bound to another resource", { room_resource: "https://other.test/api/public/mcp" }],
+    ["a token bound to another resource", { room_resource: "https://other.test/mcp" }],
+    [
+      "a token bound to the retired /api/public/mcp resource",
+      {
+        aud: ["http://localhost/api/public/mcp"],
+        room_resource: "http://localhost/api/public/mcp",
+      },
+    ],
+    ["a token without any resource claim", { aud: undefined, room_resource: undefined }],
     [
       "an unbound authorization-server token (aud=authenticated, no resource)",
       { aud: "authenticated", room_resource: undefined, scope: "openid profile" },
