@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CrawlerRoomRouteImport } from './routes/crawler-room'
 import { Route as DataDeletionRouteImport } from './routes/data-deletion'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SafetyRouteImport } from './routes/safety'
@@ -30,6 +31,11 @@ import { Route as DotwellKnownOauthProtectedResourceApiPublicMcpRouteImport } fr
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrawlerRoomRoute = CrawlerRoomRouteImport.update({
+  id: '/crawler-room',
+  path: '/crawler-room',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DataDeletionRoute = DataDeletionRouteImport.update({
@@ -118,6 +124,7 @@ const DotwellKnownOauthProtectedResourceApiPublicMcpRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/crawler-room': typeof CrawlerRoomRoute
   '/data-deletion': typeof DataDeletionRoute
   '/privacy': typeof PrivacyRoute
   '/safety': typeof SafetyRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/crawler-room': typeof CrawlerRoomRoute
   '/data-deletion': typeof DataDeletionRoute
   '/privacy': typeof PrivacyRoute
   '/safety': typeof SafetyRoute
@@ -157,6 +165,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/crawler-room': typeof CrawlerRoomRoute
   '/data-deletion': typeof DataDeletionRoute
   '/privacy': typeof PrivacyRoute
   '/safety': typeof SafetyRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/crawler-room'
     | '/data-deletion'
     | '/privacy'
     | '/safety'
@@ -197,6 +207,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/crawler-room'
     | '/data-deletion'
     | '/privacy'
     | '/safety'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/crawler-room'
     | '/data-deletion'
     | '/privacy'
     | '/safety'
@@ -236,6 +248,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CrawlerRoomRoute: typeof CrawlerRoomRoute
   DataDeletionRoute: typeof DataDeletionRoute
   PrivacyRoute: typeof PrivacyRoute
   SafetyRoute: typeof SafetyRoute
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crawler-room': {
+      id: '/crawler-room'
+      path: '/crawler-room'
+      fullPath: '/crawler-room'
+      preLoaderRoute: typeof CrawlerRoomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/data-deletion': {
@@ -394,6 +414,7 @@ const DotwellKnownOauthProtectedResourceRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CrawlerRoomRoute: CrawlerRoomRoute,
   DataDeletionRoute: DataDeletionRoute,
   PrivacyRoute: PrivacyRoute,
   SafetyRoute: SafetyRoute,
