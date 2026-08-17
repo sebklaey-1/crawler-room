@@ -44,7 +44,7 @@ const AREAS = [
   },
   {
     name: "Communities",
-    body: "Public community rooms anyone can list, read, join and post in.",
+    body: "Public community rooms.",
   },
 ] as const;
 
