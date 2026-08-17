@@ -20,7 +20,6 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as DotwellKnownOpenaiAppsChallengeRouteImport } from './routes/[.]well-known.openai-apps-challenge'
-import { Route as ApiPublicDataDeletionRouteImport } from './routes/api.public.data-deletion'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
 import { Route as ApiPublicSupportRouteImport } from './routes/api.public.support'
@@ -82,11 +81,6 @@ const DotwellKnownOpenaiAppsChallengeRoute =
     path: '/.well-known/openai-apps-challenge',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicDataDeletionRoute = ApiPublicDataDeletionRouteImport.update({
-  id: '/api/public/data-deletion',
-  path: '/api/public/data-deletion',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   id: '/api/public/health',
   path: '/api/public/health',
@@ -120,7 +114,6 @@ export interface FileRoutesByFullPath {
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
-  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
@@ -138,7 +131,6 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
-  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
@@ -157,7 +149,6 @@ export interface FileRoutesById {
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
-  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
@@ -177,7 +168,6 @@ export interface FileRouteTypes {
     | '/support'
     | '/terms'
     | '/.well-known/openai-apps-challenge'
-    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/support'
@@ -195,7 +185,6 @@ export interface FileRouteTypes {
     | '/support'
     | '/terms'
     | '/.well-known/openai-apps-challenge'
-    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/support'
@@ -213,7 +202,6 @@ export interface FileRouteTypes {
     | '/support'
     | '/terms'
     | '/.well-known/openai-apps-challenge'
-    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/support'
@@ -232,7 +220,6 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   DotwellKnownOpenaiAppsChallengeRoute: typeof DotwellKnownOpenaiAppsChallengeRoute
-  ApiPublicDataDeletionRoute: typeof ApiPublicDataDeletionRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicSupportRoute: typeof ApiPublicSupportRoute
@@ -318,13 +305,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotwellKnownOpenaiAppsChallengeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/data-deletion': {
-      id: '/api/public/data-deletion'
-      path: '/api/public/data-deletion'
-      fullPath: '/api/public/data-deletion'
-      preLoaderRoute: typeof ApiPublicDataDeletionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/health': {
       id: '/api/public/health'
       path: '/api/public/health'
@@ -368,7 +348,6 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   DotwellKnownOpenaiAppsChallengeRoute: DotwellKnownOpenaiAppsChallengeRoute,
-  ApiPublicDataDeletionRoute: ApiPublicDataDeletionRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicSupportRoute: ApiPublicSupportRoute,
