@@ -375,10 +375,10 @@ describe("self-issued token signatures", () => {
       await expect(verifyJwt(token)).resolves.toMatchObject({ client_id: "mcp-client" });
 
       const [header, payload] = token.split(".");
-      await expect(verifyJwt(`${header}.${payload}.AAAA`)).rejects.toBeTruthy();
+      await expect(verifyJwt(`${header}.${payload}.AAAA`)).resolves.toBeNull();
 
       process.env["ROOM_OAUTH_SIGNING_SECRET"] = "x".repeat(64);
-      await expect(verifyJwt(token)).rejects.toBeTruthy();
+      await expect(verifyJwt(token)).resolves.toBeNull();
     } finally {
       if (previous === undefined) delete process.env["ROOM_OAUTH_SIGNING_SECRET"];
       else process.env["ROOM_OAUTH_SIGNING_SECRET"] = previous;
