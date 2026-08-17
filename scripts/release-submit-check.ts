@@ -213,7 +213,14 @@ async function liveToolContract(): Promise<{ ok: boolean; detail: string }> {
     });
     if (!response.ok) return { ok: false, detail: `tools/list returned ${response.status}` };
     const text = await response.text();
-    const json = JSON.parse(text.startsWith("data:") ? text.slice(text.indexOf("{")) : text) as {
+    // The canonical endpoint answers Streamable HTTP: an SSE frame may carry
+    // `event: message` before the `data:` line, so parse from the payload line.
+    const dataLine = text
+      .split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.startsWith("data:"));
+    const payload = dataLine ? dataLine.slice(dataLine.indexOf("{")) : text;
+    const json = JSON.parse(payload) as {
       result?: {
         tools?: Array<{ name: string; annotations?: unknown; securitySchemes?: unknown }>;
       };
