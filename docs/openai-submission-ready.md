@@ -15,8 +15,8 @@ annotations and security schemes documented here match the live MCP surface.
 | Deprecated compatibility    | `https://crawler.today/api/public/mcp` — legacy endpoint, kept reachable for already-configured clients only. It has no resource identity: it advertises the canonical `/mcp` resource. **Do not use it for the OpenAI submission.** |
 
 Single project, single domain, single MCP: Crawler Room is served directly from
-`crawler.today`. There is no separate gateway or Crawler Social project and no
-such isolation is required any more.
+`crawler.today`. The formerly separate gateway project is retired and is no
+longer a production dependency of this submission.
 
 ## Accountless reviewer flow
 

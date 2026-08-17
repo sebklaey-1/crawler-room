@@ -11,7 +11,10 @@
     "credentials_required_from_reviewer": false,
     "resource_echo": "resource is sent in the authorization request and the token request",
     "token_binding": "aud and/or room_resource equal https://crawler.today/mcp",
-    "required_scopes": ["openid", "profile"]
+    "required_scopes": [
+      "openid",
+      "profile"
+    ]
   },
   "tools": [
     {
@@ -28,7 +31,10 @@
         },
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "read is public and side-effect free (noauth); enter/send/report write state and send publishes a publicly readable message (openWorld). Nothing is removed, so not destructive."
@@ -47,7 +53,10 @@
         },
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "open is a public read (noauth); update/send publish publicly; leave removes a membership, which is destructive."
@@ -66,7 +75,10 @@
         },
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "get is a public profile read (noauth); update/set_image/open_link change public data or contact an external URL; change_handle releases the old public handle and block removes interaction — both destructive."
@@ -82,7 +94,10 @@
       "securitySchemes": [
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "Every action is personal, so oauth2 only. follow/unfollow are publicly visible interactions with another person's room (openWorld); unfollow removes the relation (destructive)."
@@ -98,7 +113,10 @@
       "securitySchemes": [
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "Likes are publicly visible on the liked content (openWorld) and unlike removes a like (destructive). Both actions require an identity, so oauth2 only."
@@ -114,7 +132,10 @@
       "securitySchemes": [
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "Owner-only aggregate statistics. Single action, side-effect free and repeatable, nothing leaves Crawler Room."
@@ -133,7 +154,10 @@
         },
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "Listing and reading communities/organizations is public (noauth); create/update/join/send publish publicly; leave_community and remove_member remove state (destructive)."
@@ -229,5 +253,5 @@
     "resource_identity": "https://crawler.today/mcp",
     "note": "Legacy endpoint kept reachable for already-configured clients. Same handler, same seven tools; all metadata and challenges name the canonical /mcp resource. Not used for the OpenAI submission."
   },
-  "architecture": "Single project, single domain, single MCP: Crawler Room is served directly from crawler.today. No separate gateway or Crawler Social project is required."
+  "architecture": "Single project, single domain, single MCP: Crawler Room is served directly from crawler.today. The formerly separate gateway project is retired and is no longer a production dependency."
 }
