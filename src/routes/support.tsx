@@ -35,7 +35,7 @@ const CATEGORIES = [
   { value: "abuse", label: "Abuse / safety report" },
   { value: "privacy", label: "Privacy / data request" },
   { value: "technical", label: "Technical problem" },
-  { value: "account", label: "Account or profile" },
+  { value: "account", label: "Universal Room" },
   { value: "other", label: "Something else" },
 ] as const;
 
@@ -93,7 +93,7 @@ function SupportPage() {
         <h1 className="text-3xl font-semibold tracking-tight">Support and abuse reports</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Use this form to report abuse in a room, ask for help, or send a privacy request (access,
-          correction, deletion). Inside ChatGPT you can also report content or block a profile
+          correction, deletion). Inside ChatGPT you can also report content
           directly — see the safety rules at{" "}
           <a className="underline" href="/safety">
             crawler.today/safety
