@@ -519,26 +519,26 @@ check(
   "review.test.ts, submission.test.ts and safety.test.ts present",
 );
 
-const submission = JSON.parse(read("docs/openai-submission-ready.json")) as Record<string, any>;
+const submissionDoc = JSON.parse(read("docs/openai-submission-ready.json")) as Record<string, any>;
 check(
   "submission package carries the 2026 listing fields",
   Boolean(
-    submission["audience"] &&
-      submission["ugc_policy"] &&
-      submission["data_minimization"] &&
-      submission["release_notes"] &&
-      submission["availability"] &&
-      submission["attestations"],
+    submissionDoc["audience"] &&
+      submissionDoc["ugc_policy"] &&
+      submissionDoc["data_minimization"] &&
+      submissionDoc["release_notes"] &&
+      submissionDoc["availability"] &&
+      submissionDoc["attestations"],
   ),
   "audience, ugc_policy, data_minimization, release_notes, availability, attestations",
 );
 
 check(
   "submission package ships 5+ positive and 3+ negative test cases",
-  (submission["test_cases"]?.positive?.length ?? 0) >= 5 &&
-    (submission["test_cases"]?.negative?.length ?? 0) >= 3 &&
-    (submission["starter_prompts"]?.length ?? 0) >= 5,
-  `${submission["test_cases"]?.positive?.length} positive / ${submission["test_cases"]?.negative?.length} negative / ${submission["starter_prompts"]?.length} starter prompts`,
+  (submissionDoc["test_cases"]?.positive?.length ?? 0) >= 5 &&
+    (submissionDoc["test_cases"]?.negative?.length ?? 0) >= 3 &&
+    (submissionDoc["starter_prompts"]?.length ?? 0) >= 5,
+  `${submissionDoc["test_cases"]?.positive?.length} positive / ${submissionDoc["test_cases"]?.negative?.length} negative / ${submissionDoc["starter_prompts"]?.length} starter prompts`,
 );
 
 /* --------------------------------- report ------------------------------------ */
