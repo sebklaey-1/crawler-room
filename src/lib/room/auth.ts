@@ -10,17 +10,13 @@
  * - Tokens are verified with the official Supabase client (`auth.getClaims`),
  *   which validates the ES256 signature against the project's JWKS. No hand
  *   rolled or unverified JWT parsing decides authorisation.
- * - Beyond the signature the token must be live (`exp`), carry a UUID `sub`
- *   and be issued by *this* project's authorization server (`iss`). Resource
- *   binding (`aud` / `room_resource`) and scopes are enforced whenever the
- *   token carries them: a token naming a foreign resource, or declaring
- *   scopes without the required ones, is always rejected. A plain session
- *   token of the same authorization server (no `client_id`, no resource
- *   claim) is accepted, because every action is additionally authorised by
- *   the domain layer against the pseudonymous subject.
-
-
-
+ * - Beyond the signature the token must be live (`exp`), carry a UUID `sub`,
+ *   be issued by *this* project's authorization server (`iss`), carry a
+ *   non-empty `client_id`, name the canonical MCP resource in `aud` or
+ *   `room_resource` (RFC 8707) and grant the declared scopes. There is NO
+ *   weaker fallback: an ordinary browser or anonymous session JWT of the same
+ *   authorization server is rejected, so only tokens minted through the
+ *   OAuth 2.1 flow for this resource can reach the MCP surface.
  * - Tokens are never logged, never returned to the model and never stored.
  * - The raw auth user id is never persisted: only
  *   HMAC-SHA256(secret, "auth:" + sub) is used as the pseudonymous subject.
@@ -211,36 +207,29 @@ export async function verifyAccessToken(token: string, requestOrigin?: string): 
   const exp = typeof claims["exp"] === "number" ? claims["exp"] : 0;
   if (!exp || exp * 1000 <= Date.now()) throw roomError("INVALID_TOKEN");
 
-  // Client binding, when present. Tokens minted through the OAuth 2.1 flow
-  // carry `client_id`; ordinary Supabase session JWTs do not. Both are
-  // accepted — the signature, issuer, subject and expiry above are the
-  // security-relevant checks, and every action is additionally authorised by
-  // the domain layer against the pseudonymous subject.
+  // Client binding. Tokens minted through the OAuth 2.1 flow carry `client_id`;
+  // an ordinary session JWT does not and is rejected here.
   const clientId = typeof claims["client_id"] === "string" ? claims["client_id"].trim() : "";
+  if (!clientId) throw roomError("INVALID_TOKEN");
 
-  // Resource binding (RFC 8707 / MCP) is enforced only when the token actually
-  // carries it. A token that names a *different* resource is always rejected;
-  // a token without resource claims is accepted as a session token of this
-  // authorization server.
+  // Resource binding (RFC 8707 / MCP). The canonical resource must be named in
+  // `aud` or in the `room_resource` claim written by the access token hook.
+  // Any other audience — including the authorization server's default
+  // `authenticated` — is not a resource and never satisfies this check.
   const audiences = claimList(claims["aud"]);
   const roomResource = typeof claims["room_resource"] === "string" ? claims["room_resource"] : "";
-  if (roomResource && roomResource !== resource) throw roomError("INVALID_TOKEN");
-  const foreignResourceAud = audiences.some(
-    (aud) => /^https?:\/\//i.test(aud) && aud.replace(/\/+$/, "") !== resource,
-  );
-  if (foreignResourceAud) throw roomError("INVALID_TOKEN");
-
-  // Granted scopes: hook claim first, otherwise the standard `scope` claim.
-  // Session tokens carry no scopes; they are then treated as fully scoped for
-  // this resource, because the domain layer performs the real authorisation.
-  const declared = claimList(claims["room_scopes"] ?? claims["scope"]);
-  const scopes = declared.length > 0 ? declared : [...REQUIRED_SCOPES];
-  if (declared.length > 0) {
-    for (const required of REQUIRED_SCOPES) {
-      if (!scopes.includes(required)) throw roomError("INVALID_TOKEN");
-    }
+  if (roomResource && roomResource.replace(/\/+$/, "") !== resource)
+    throw roomError("INVALID_TOKEN");
+  const boundByAud = audiences.some((aud) => aud.replace(/\/+$/, "") === resource);
+  if (!boundByAud && roomResource.replace(/\/+$/, "") !== resource) {
+    throw roomError("INVALID_TOKEN");
   }
 
+  // Granted scopes: hook claim first, otherwise the standard `scope` claim.
+  const scopes = claimList(claims["room_scopes"] ?? claims["scope"]);
+  for (const required of REQUIRED_SCOPES) {
+    if (!scopes.includes(required)) throw roomError("INVALID_TOKEN");
+  }
 
   const user: AuthUser = { userId: sub, issuer, clientId, scopes, expiresAt: exp };
 

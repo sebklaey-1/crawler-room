@@ -68,7 +68,7 @@ const DEFAULT_MESSAGES: Record<RoomErrorCode, string> = {
   FORBIDDEN: "Dafür fehlt dir die Berechtigung.",
   ORGANIZATION_REQUIRED: "Dafür wird eine verifizierte Organisation mit Business-Abo benötigt.",
   CAMPAIGN_INVALID: "Die Kampagnendaten sind unvollständig oder unzulässig.",
-  POLICY_VIOLATION: "Dieser Inhalt verstösst gegen die Werberichtlinien von Crawler Room.",
+  POLICY_VIOLATION: "Dieser Inhalt verstösst gegen die Inhaltsrichtlinien von Crawler Room.",
   DUPLICATE_REQUEST: "Diese Anfrage wurde bereits verarbeitet.",
   BILLING_REQUIRED: "Diese Aktion ist derzeit nicht möglich.",
   REVIEW_INVALID: "Die Prüfung konnte nicht bestätigt werden. Bitte starte die Prüfung neu.",

@@ -466,6 +466,7 @@ const legacyAllowed = new Set([
   "src/lib/room/auth.ts",
   "src/lib/room/auth.test.ts",
   "src/lib/room/metadata.test.ts",
+  "src/lib/room/review.test.ts",
   "src/lib/room/surface.test.ts",
 ]);
 
@@ -485,6 +486,71 @@ check(
   "no active source references the retired /api/public/mcp resource",
   strayLegacy.length === 0,
   strayLegacy.length ? `stray: ${strayLegacy.join(", ")}` : "only deprecation-labelled files",
+);
+
+/* --- general-audience UGC policy + review metadata gates --------------------- */
+
+const safety = read("src/lib/room/safety.ts");
+check(
+  "general-audience UGC policy matrix present",
+  [
+    "minor_sexualization",
+    "sexual_content",
+    "graphic_violence",
+    "hate_harassment",
+    "self_harm",
+    "illegal_goods",
+    "scam_credentials",
+    "doxxing",
+  ].every((category) => safety.includes(category)) && safety.includes("assertSafeUgc"),
+  "src/lib/room/safety.ts declares every blocked category",
+);
+
+check(
+  "UGC write guard wired into the single input choke point",
+  read("src/lib/room/mcp.surface.ts").includes("assertSafeUgcInput(result.data)"),
+  "every parsed tool input passes the fail-closed content guard",
+);
+
+check(
+  "review metadata and submission gates are part of the test suite",
+  existsSync(join(ROOT, "src/lib/room/review.test.ts")) &&
+    existsSync(join(ROOT, "src/lib/room/submission.test.ts")) &&
+    existsSync(join(ROOT, "src/lib/room/safety.test.ts")),
+  "review.test.ts, submission.test.ts and safety.test.ts present",
+);
+
+interface SubmissionDoc {
+  audience?: unknown;
+  ugc_policy?: unknown;
+  data_minimization?: unknown;
+  release_notes?: unknown;
+  availability?: unknown;
+  attestations?: unknown;
+  starter_prompts?: unknown[];
+  test_cases?: { positive?: unknown[]; negative?: unknown[] };
+}
+const submissionDoc = JSON.parse(read("docs/openai-submission-ready.json")) as SubmissionDoc;
+const positives = submissionDoc.test_cases?.positive?.length ?? 0;
+const negatives = submissionDoc.test_cases?.negative?.length ?? 0;
+const starters = submissionDoc.starter_prompts?.length ?? 0;
+check(
+  "submission package carries the 2026 listing fields",
+  Boolean(
+    submissionDoc.audience &&
+    submissionDoc.ugc_policy &&
+    submissionDoc.data_minimization &&
+    submissionDoc.release_notes &&
+    submissionDoc.availability &&
+    submissionDoc.attestations,
+  ),
+  "audience, ugc_policy, data_minimization, release_notes, availability, attestations",
+);
+
+check(
+  "submission package ships 5+ positive and 3+ negative test cases",
+  positives >= 5 && negatives >= 3 && starters >= 5,
+  `${positives} positive / ${negatives} negative / ${starters} starter prompts`,
 );
 
 /* --------------------------------- report ------------------------------------ */

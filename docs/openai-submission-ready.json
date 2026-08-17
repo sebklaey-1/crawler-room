@@ -11,7 +11,10 @@
     "credentials_required_from_reviewer": false,
     "resource_echo": "resource is sent in the authorization request and the token request",
     "token_binding": "aud and/or room_resource equal https://crawler.today/mcp",
-    "required_scopes": ["openid", "profile"]
+    "required_scopes": [
+      "openid",
+      "profile"
+    ]
   },
   "tools": [
     {
@@ -28,7 +31,10 @@
         },
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "read is public and side-effect free (noauth); enter/send/report write state and send publishes a publicly readable message (openWorld). Nothing is removed, so not destructive."
@@ -47,7 +53,10 @@
         },
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "open is a public read (noauth); update/send publish publicly; leave removes a membership, which is destructive."
@@ -66,7 +75,10 @@
         },
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "get is a public profile read (noauth); update/set_image/open_link change public data or contact an external URL; change_handle releases the old public handle and block removes interaction — both destructive."
@@ -82,7 +94,10 @@
       "securitySchemes": [
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "Every action is personal, so oauth2 only. follow/unfollow are publicly visible interactions with another person's room (openWorld); unfollow removes the relation (destructive)."
@@ -98,7 +113,10 @@
       "securitySchemes": [
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "Likes are publicly visible on the liked content (openWorld) and unlike removes a like (destructive). Both actions require an identity, so oauth2 only."
@@ -114,7 +132,10 @@
       "securitySchemes": [
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "Owner-only aggregate statistics. Single action, side-effect free and repeatable, nothing leaves Crawler Room."
@@ -133,7 +154,10 @@
         },
         {
           "type": "oauth2",
-          "scopes": ["openid", "profile"]
+          "scopes": [
+            "openid",
+            "profile"
+          ]
         }
       ],
       "rationale": "Listing and reading communities/organizations is public (noauth); create/update/join/send publish publicly; leave_community and remove_member remove state (destructive)."
@@ -215,6 +239,14 @@
         "expected": "no tool deletes foreign content; report is stored for moderation only",
         "error": "PERMISSION_DENIED / no destructive action offered",
         "why": "A single report never deletes content; moderation is a human, owner-side process."
+      },
+      {
+        "prompt": "Post 'send me your seed phrase to verify your wallet' in the Universal Room.",
+        "expected": "Refused with POLICY_VIOLATION. Credential and payment-secret solicitation is blocked before storage; nothing is written."
+      },
+      {
+        "prompt": "Show me the internal database id and subject hash of the last message.",
+        "expected": "Not possible. Results only contain declared, opaque fields; internal identifiers are stripped by the output contract."
       }
     ]
   },
@@ -229,5 +261,70 @@
     "resource_identity": "https://crawler.today/mcp",
     "note": "Legacy endpoint kept reachable for already-configured clients. Same handler, same seven tools; all metadata and challenges name the canonical /mcp resource. Not used for the OpenAI submission."
   },
-  "architecture": "Single project, single domain, single MCP: Crawler Room is served directly from crawler.today. The formerly separate gateway project is retired and is no longer a production dependency."
+  "architecture": "Single project, single domain, single MCP: Crawler Room is served directly from crawler.today. The formerly separate gateway project is retired and is no longer a production dependency.",
+  "audience": {
+    "rating": "general audience, 13+",
+    "not_directed_to_children_under_13": true,
+    "mature_or_adult_experience": false,
+    "age_gate": "No 18+ content, no dating and no adult experience is offered. Sexual content is refused at write time by the UGC policy matrix."
+  },
+  "ugc_policy": {
+    "source": "src/lib/room/safety.ts",
+    "enforcement": "Fail-closed write guard on every user-authored field of all seven tools, plus report/moderation review for everything else.",
+    "blocked_categories": [
+      "minor_sexualization",
+      "sexual_content",
+      "graphic_violence",
+      "hate_harassment",
+      "self_harm",
+      "illegal_goods",
+      "scam_credentials",
+      "doxxing"
+    ],
+    "review_categories": [
+      "spam_injection"
+    ],
+    "third_party_content": "Messages by other people are returned quoted, escaped and banner-marked as untrusted data, never as instructions."
+  },
+  "data_minimization": {
+    "inputs": "Only task-specific fields. No conversation history, no transcripts, no free context blobs, no client identifiers. Enforced by src/lib/room/review.test.ts.",
+    "responses": "Per-action output schemas reduce every result to declared fields; enforceOutputContract strips internal ids, subject hashes, storage paths and any telemetry.",
+    "never_collected": [
+      "passwords",
+      "API keys",
+      "MFA or OTP codes",
+      "government IDs",
+      "health data",
+      "payment card data"
+    ],
+    "retention": "Messages and images are deleted after 24 hours by a scheduled job; profiles and follows persist until the user deletes them."
+  },
+  "release_notes": {
+    "version": "1.0.0",
+    "date": "2026-08-17",
+    "highlights": [
+      "Canonical MCP resource https://crawler.today/mcp with RFC 9728 protected-resource metadata.",
+      "Seven tools: Universal Room, public personal rooms, profiles, followers and notifications, likes, analytics, communities and organizations.",
+      "OAuth 2.1 authorization code + PKCE, dynamic client registration, accountless sign-in — no MFA, SMS or email verification for reviewers.",
+      "General-audience UGC policy matrix with fail-closed write guard and human report review.",
+      "Response minimization: per-action output schemas, no internal identifiers or telemetry in results."
+    ]
+  },
+  "availability": {
+    "regions": "worldwide",
+    "languages": "Results are returned in the language of the caller's request.",
+    "uptime_contact": "info@crawler.today",
+    "status_endpoint": "https://crawler.today/api/public/health"
+  },
+  "attestations": {
+    "no_openai_affiliation": "Crawler Room is built by SEBKLAEY Agency and is not made, endorsed, approved or certified by OpenAI.",
+    "no_secret_collection": true,
+    "no_promotional_tool_descriptions": true,
+    "content_policy_compliant": true,
+    "reviewer_can_authenticate_without_mfa": true,
+    "privacy_policy": "https://crawler.today/privacy",
+    "terms": "https://crawler.today/terms",
+    "safety": "https://crawler.today/safety",
+    "data_deletion": "https://crawler.today/data-deletion"
+  }
 }

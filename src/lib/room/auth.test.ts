@@ -310,19 +310,11 @@ describe("access token claim validation", () => {
     expect(user.scopes).toEqual(["openid", "profile"]);
   });
 
-  it("accepts a plain authorization-server session token without client_id or resource", async () => {
-    stub({ client_id: "", aud: "authenticated", room_resource: undefined, scope: undefined, room_scopes: undefined });
-    const user = await verifyAccessToken("token-session", "http://localhost");
-    expect(user.userId).toBe("00000000-0000-4000-8000-0000000000aa");
-    expect(user.scopes).toEqual(["openid", "profile"]);
-  });
-
   const rejected: Array<[string, Record<string, unknown>]> = [
     ["a foreign issuer", { iss: "https://evil.test/auth/v1" }],
     ["a non-uuid subject", { sub: "not-a-uuid" }],
     ["an expired token", { exp: Math.floor(Date.now() / 1000) - 10 }],
     ["a wrong audience", { aud: ["https://other.test/mcp"], room_resource: undefined }],
-
     ["a token bound to another resource", { room_resource: "https://other.test/mcp" }],
     [
       "a token bound to the retired /api/public/mcp resource",
@@ -332,8 +324,24 @@ describe("access token claim validation", () => {
       },
     ],
     ["a token without the required scopes", { room_scopes: undefined, scope: "openid" }],
+    // No weak fallback: a plain session/anonymous JWT of the same
+    // authorization server carries neither a client_id nor a resource claim.
+    [
+      "a plain authorization-server session token without client_id or resource",
+      {
+        client_id: "",
+        aud: "authenticated",
+        room_resource: undefined,
+        scope: undefined,
+        room_scopes: undefined,
+      },
+    ],
+    [
+      "a token whose only audience is the default «authenticated»",
+      { aud: "authenticated", room_resource: undefined },
+    ],
+    ["a token without any scope claim", { room_scopes: undefined, scope: undefined }],
   ];
-
 
   for (const [label, overrides] of rejected) {
     it(`rejects ${label}`, async () => {

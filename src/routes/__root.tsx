@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { THEME_BOOTSTRAP_SCRIPT, ThemeToggle } from "@/components/theme-toggle";
 import roomIcon from "@/assets/room-icon.png.asset.json";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -115,9 +116,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
       </head>
       <body>
         {children}
@@ -132,6 +134,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeToggle />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>
