@@ -78,10 +78,20 @@ function reasonFor(tool: string): string {
   return parts.join("; ");
 }
 
+function hintsOf(tool: string) {
+  const hints = TOOL_ANNOTATIONS[tool] as Record<string, boolean>;
+  return {
+    readOnly: hints["readOnlyHint"],
+    destructive: hints["destructiveHint"],
+    openWorld: hints["openWorldHint"],
+    idempotent: hints["idempotentHint"],
+  };
+}
+
 function annotationsTable(): string {
   const rows = toolNames().map((tool) => {
-    const hints = TOOL_ANNOTATIONS[tool]!;
-    return `| \`${tool}\` | ${hints.readOnlyHint} | ${hints.destructiveHint} | ${hints.openWorldHint} | ${hints.idempotentHint} | ${reasonFor(tool)} |`;
+    const hints = hintsOf(tool);
+    return `| \`${tool}\` | ${hints.readOnly} | ${hints.destructive} | ${hints.openWorld} | ${hints.idempotent} | ${reasonFor(tool)} |`;
   });
   return [
     "| Tool | readOnlyHint | destructiveHint | openWorldHint | idempotentHint | Derivation |",
@@ -105,14 +115,14 @@ function scopesTable(): string {
 function detailBlock(): string {
   return toolNames()
     .map((tool) => {
-      const hints = TOOL_ANNOTATIONS[tool]!;
+      const hints = hintsOf(tool);
       return [
         `### \`${tool}\``,
         "",
         `- Actions: ${code(actionsOf(tool))}`,
         `- Public without a token: ${code(publicActionsOf(tool))}`,
         `- OAuth scopes: ${code(scopesForTool(tool))}`,
-        `- Annotations: \`readOnlyHint: ${hints.readOnlyHint}\`, \`destructiveHint: ${hints.destructiveHint}\`, \`openWorldHint: ${hints.openWorldHint}\`, \`idempotentHint: ${hints.idempotentHint}\``,
+        `- Annotations: \`readOnlyHint: ${hints.readOnly}\`, \`destructiveHint: ${hints.destructive}\`, \`openWorldHint: ${hints.openWorld}\`, \`idempotentHint: ${hints.idempotent}\``,
         `- Derivation: ${reasonFor(tool)}`,
       ].join("\n");
     })
