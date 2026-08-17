@@ -80,7 +80,7 @@ it is retained for migration history only and the column no longer exists.
 
 | Control                | State                                                                                                                            |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Token verification     | `supabase.auth.getClaims(token)`, ES256, audience/resource bound, timeout, fail-closed                                           |
+| Token verification     | local HS256 verification against the Crawler Room authorization server, audience/resource bound, fail-closed                     |
 | Test stubs             | `x-room-test-user` / `Test-AuthContext` only when `NODE_ENV=test`, otherwise `INTERNAL_ERROR`                                    |
 | Access tokens          | self-issued HS256 JWTs from `https://crawler.today`; no Supabase auth hook in any runtime path                                   |
 | SSRF                   | central `src/lib/room/ssrf.ts`: HTTPS only, private/loopback/link-local blocked, ≤3 redirects, timeout, size cap, MIME allowlist |

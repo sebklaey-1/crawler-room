@@ -31,8 +31,9 @@ linked from the landing page and the consent screen.
 
 ## Authentication
 
-- OAuth 2.1 through the Supabase authorization server; ES256 tokens verified with
-  `supabase.auth.getClaims`. Fail-closed: an unverifiable token is never treated as anonymous.
+- OAuth 2.1 through the Crawler Room authorization server hosted on `crawler.today`;
+  tokens are signed and verified locally (HS256, server-side secret, one accepted `alg`).
+  Fail-closed: an unverifiable token is never treated as anonymous.
 - Public read actions stay anonymous. Every user-specific read, write and management action
   requires a bearer token and answers `AUTH_REQUIRED` plus an RFC 9728 `WWW-Authenticate`
   challenge pointing at the canonical resource.
@@ -48,71 +49,69 @@ linked from the landing page and the consent screen.
 Actions are taken verbatim from `inputSchema.properties.action.enum`; annotations verbatim from
 `tools/list`. "Public" means the action is callable anonymously; everything else needs OAuth.
 
+<!-- generated:tool-detail -->
+
 ### `universal_room`
 
-- Actions: `enter`, `read`, `send`, `report`.
-- Public: `read`. OAuth: `enter`, `send`, `report`.
-- Annotations: `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true`,
-  `idempotentHint: false` — the tool can write a message (not read-only), never deletes other
-  people's content (not destructive), touches a shared public room populated by third parties
-  (open world), and repeating `send` posts another message (not idempotent).
+- Actions: `enter`, `read`, `send`, `report`
+- Public without a token: `read`
+- OAuth scopes: `openid`, `profile`, `room:write`
+- Annotations: `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true`, `idempotentHint: false`
+- Derivation: writes: `enter`, `send`, `report`; publicly visible: `send`
 
 ### `public_room`
 
-- Actions: `mine`, `open`, `update`, `leave`, `send`, `report`.
-- Public: `open`. OAuth: `mine`, `update`, `leave`, `send`, `report`.
-- Annotations: `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true`,
-  `idempotentHint: false` — writes room metadata and messages, only ever affects the caller's own
-  room settings or membership, reads third-party rooms, and repeated sends add messages.
+- Actions: `mine`, `open`, `update`, `leave`, `send`, `report`
+- Public without a token: `open`
+- OAuth scopes: `openid`, `profile`, `room:private`, `room:write`
+- Annotations: `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`, `idempotentHint: false`
+- Derivation: writes: `update`, `leave`, `send`, `report`; publicly visible: `update`, `send`; removes state: `leave`
 
 ### `profile`
 
-- Actions: `get`, `update`, `change_handle`, `set_image`, `open_link`, `block`, `unblock`,
-  `list_blocks`, `report`.
-- Public: `get`. OAuth: everything else.
-- Annotations: `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true`,
-  `idempotentHint: false` — profile edits are writes, they replace only the caller's own fields
-  and never remove other users' data, profiles of other people are open-world reads, and
-  `change_handle` creates a redirect on each change.
+- Actions: `get`, `update`, `change_handle`, `open_link`, `block`, `unblock`, `list_blocks`, `report`
+- Public without a token: `get`
+- OAuth scopes: `openid`, `profile`, `room:write`, `room:private`
+- Annotations: `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`, `idempotentHint: false`
+- Derivation: writes: `update`, `change_handle`, `open_link`, `block`, `unblock`, `report`; publicly visible: `update`, `change_handle`, `open_link`; removes state: `change_handle`, `block`
 
 ### `followers_notifications`
 
-- Actions: `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`,
-  `update_settings`.
-- Public: none. All actions require OAuth.
-- Annotations: `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true`,
-  `idempotentHint: false` — follow/unfollow and settings are writes, they only undo the caller's
-  own relation, follower lists come from third-party data, and listing notifications also marks
-  read state, so a repeat call is not guaranteed to be identical.
+- Actions: `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings`
+- Public without a token: —
+- OAuth scopes: `openid`, `profile`, `room:write`, `room:private`
+- Annotations: `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`, `idempotentHint: false`
+- Derivation: writes: `follow`, `unfollow`, `update_settings`; publicly visible: `follow`, `unfollow`; removes state: `unfollow`
 
 ### `likes`
 
-- Actions: `like`, `unlike`.
-- Public: none. Both actions require OAuth.
-- Annotations: `readOnlyHint: false`, `destructiveHint: false`, `openWorldHint: true`,
-  `idempotentHint: false` — likes are writes on third-party content, removing your own like is
-  not destructive to anyone else's data, and the shared annotation set is kept consistent across
-  writing tools.
+- Actions: `like`, `unlike`
+- Public without a token: —
+- OAuth scopes: `openid`, `profile`, `room:write`
+- Annotations: `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`, `idempotentHint: false`
+- Derivation: writes: `like`, `unlike`; publicly visible: `like`, `unlike`; removes state: `unlike`
 
 ### `analytics`
 
-- Actions: `profile`.
-- Public: none. OAuth required, owner-only.
-- Annotations: `readOnlyHint: true`, `destructiveHint: false`, `openWorldHint: false`,
-  `idempotentHint: true` — the only action reads aggregated counters for the caller's own room,
-  writes nothing, never leaves the caller's own data, and returns the same shape for the same
-  input window.
+- Actions: `profile`
+- Public without a token: —
+- OAuth scopes: `openid`, `profile`, `room:private`
+- Annotations: `readOnlyHint: true`, `destructiveHint: false`, `openWorldHint: false`, `idempotentHint: true`
+- Derivation: read-only, repeatable
 
 ### `communities`
 
-- Actions: `list`, `get`, `create`, `update`, `join`, `leave`, `read`, `send`, `report`.
-- Public: `list`, `get`, `read`. OAuth: everything else.
-- Organisations, organisation members and team roles are not part of the public MVP surface;
-  legacy organisation actions fail closed with a generic `FEATURE_REMOVED` error.
-- Annotations: `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`,
-  `idempotentHint: false` — creates and updates communities, `leave` withdraws the caller's own
-  membership, community content is third-party input, and `create` / `send` produce a new row
-  per call.
+- Actions: `list`, `get`, `create`, `update`, `join`, `leave`, `read`, `send`, `report`
+- Public without a token: `list`, `get`, `read`
+- OAuth scopes: `openid`, `profile`, `room:write`
+- Annotations: `readOnlyHint: false`, `destructiveHint: true`, `openWorldHint: true`, `idempotentHint: false`
+- Derivation: writes: `create`, `update`, `join`, `leave`, `send`, `report`; publicly visible: `create`, `update`, `join`, `leave`, `send`; removes state: `leave`
+
+<!-- /generated:tool-detail -->
+
+Organisations, organisation members and team roles are not part of the public MVP
+surface; legacy organisation actions fail closed with a generic `FEATURE_REMOVED`
+error.
 
 Each tool exposes a narrow `action` enum with Zod-derived `inputSchema` (length limits, enums,
 numeric bounds, trimmed strings, http/https-only URLs) and strict `oneOf` output branches that

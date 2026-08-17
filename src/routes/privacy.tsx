@@ -74,20 +74,23 @@ function PrivacyPage() {
             </li>
             <li>
               <strong>Profile data you choose to publish.</strong> Handle, display name, bio,
-              location, link, avatar and banner image, room name and description, privacy toggles.
-              Anything you publish here is public.
+              link, room name and description, privacy toggles. Profiles carry no images and no
+              location field. Anything you publish here is public.
             </li>
             <li>
-              <strong>Room content.</strong> Text messages and images you send into the Universal
-              Room, personal public rooms and community rooms, plus the alias shown next to them.
+              <strong>Room content.</strong> Text messages you send into the Universal Room,
+              personal public rooms and community rooms, plus the alias shown next to them. Room
+              content is public and is removed after at most 24 hours by the maintenance job;
+              profiles, handles, follows, likes, blocks and notification settings persist until you
+              request deletion.
             </li>
             <li>
               <strong>Social signals.</strong> Follows, likes, blocks, notifications and presence
               timestamps (“last seen”) used to show who is currently in a room.
             </li>
             <li>
-              <strong>Community data.</strong> Community name, slug, description,
-              website, membership and role.
+              <strong>Community data.</strong> Community name, slug, description, website and
+              membership.
             </li>
             <li>
               <strong>Counting-only analytics.</strong> Aggregate event counters per room (for

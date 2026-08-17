@@ -6,7 +6,7 @@ ChatGPT client
    v
 https://crawler.today/mcp        (TanStack server route, edge Worker)
    |  1. transport checks: 256 KiB body cap, content-type, Accept, origin
-   |  2. bearer validation via Supabase auth (getClaims, ES256)
+   |  2. bearer validation against the local OAuth server (HS256, fail-closed)
    |  3. subject -> auth_user_hash = HMAC(secret, "auth:" + sub)
    |  4. action authorisation (public read vs protected action)
    |  5. domain handler
