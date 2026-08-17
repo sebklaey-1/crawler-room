@@ -97,9 +97,9 @@ function DataDeletionPage() {
             identity:
           </p>
           <ul className="list-disc space-y-1 pl-5">
-            <li>your profile (handle, display name, bio, location, link, avatar, banner)</li>
+            <li>your profile (handle, display name, bio, link)</li>
             <li>your personal room and its settings</li>
-            <li>your messages and images in rooms, including the stored image files</li>
+            <li>your messages in rooms, including any image files still stored for you</li>
             <li>your follows, likes, blocks and notifications</li>
             <li>your community memberships</li>
           </ul>

@@ -28,7 +28,7 @@ const AREAS = [
   },
   {
     name: "Social profiles",
-    body: "Banner, profile picture, display name, @handle, bio, location and link — shown as a real card inside ChatGPT.",
+    body: "Display name, @handle, short bio and one link — shown as a clear profile card inside ChatGPT. No images and no location are collected.",
   },
   {
     name: "Followers and notifications",
