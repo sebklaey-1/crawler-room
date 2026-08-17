@@ -466,6 +466,7 @@ const legacyAllowed = new Set([
   "src/lib/room/auth.ts",
   "src/lib/room/auth.test.ts",
   "src/lib/room/metadata.test.ts",
+  "src/lib/room/review.test.ts",
   "src/lib/room/surface.test.ts",
 ]);
 
