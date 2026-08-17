@@ -56,7 +56,7 @@ describe("phase 3 — report surface", () => {
       const properties = propertiesOf(tool(name).inputSchema);
       expect(properties["reason"]?.enum).toEqual([...REPORT_REASONS]);
       expect(properties["details"]?.maxLength).toBe(REPORT_DETAILS_MAX);
-      expect(tool(name).description).toMatch(/nichts automatisch/i);
+      expect(tool(name).description).toMatch(/does not delete, hide or block anything automatically/i);
     }
   });
 

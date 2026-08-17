@@ -45,7 +45,7 @@ export type ReportTargetKind =
 export const REPORT_DETAILS_MAX = 500;
 
 export const REPORT_DETAILS_HINT =
-  "Beschreibe kurz das Problem. Trage hier keine zusätzlichen persönlichen Daten von dir oder anderen ein.";
+  "Describe the problem briefly. Do not add personal data about yourself or anyone else here.";
 
 /** Trimmed free text, max 500 characters. Whitespace-only input is rejected. */
 export function normalizeDetails(raw: unknown): string | null {
