@@ -111,6 +111,33 @@ if (!metaResponse) {
   }
 }
 
+/* ---------------- 2b. compatibility aliases (same document) ---------------- */
+
+for (const [label, url] of [
+  ["root PRM alias", ROOT_METADATA],
+  ["deprecated /api/public/mcp PRM alias", LEGACY_METADATA],
+] as const) {
+  const aliasResponse = await get(url);
+  if (!aliasResponse) fail(label, "not reachable");
+  else if (aliasResponse.status === 404) stale(label, "route not deployed yet");
+  else if (!aliasResponse.ok) fail(label, `HTTP ${aliasResponse.status}`);
+  else {
+    const alias = (await aliasResponse.json().catch(() => null)) as { resource?: string } | null;
+    if (alias?.resource === RESOURCE) pass(label, `advertises ${RESOURCE}`);
+    else fail(label, `advertises «${alias?.resource ?? "nothing"}» instead of ${RESOURCE}`);
+  }
+}
+
+const legacyMcp = await fetch(LEGACY_RESOURCE_URL, {
+  method: "POST",
+  headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
+  body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
+}).catch(() => null);
+if (!legacyMcp) fail("deprecated /api/public/mcp endpoint", "not reachable");
+else if (legacyMcp.status === 404) stale("deprecated /api/public/mcp endpoint", "not deployed yet");
+else if (legacyMcp.ok) pass("deprecated /api/public/mcp endpoint", "still answers tools/list");
+else fail("deprecated /api/public/mcp endpoint", `HTTP ${legacyMcp.status}`);
+
 /* ------------------------------ 3. consent -------------------------------- */
 
 const consent = await get(CONSENT);
