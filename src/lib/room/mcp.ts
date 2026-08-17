@@ -25,9 +25,10 @@ import {
   type AuthUser,
 } from "./auth";
 import { SERVICE_NAME, SERVICE_VERSION } from "./config";
-import { RoomError, toRoomError } from "./errors";
+import { RoomError, roomError, toRoomError } from "./errors";
 import { AUTH_META_KEY, sanitizeClientMeta, type McpMeta } from "./identity";
 import { PUBLIC_ACTIONS, SURFACE_TOOLS, type SurfaceTool, actionEnumOf } from "./mcp.surface";
+import { requiredScope } from "./oauth/scopes";
 import { enforceOutputContract } from "./output";
 import { getDb } from "./store";
 
@@ -143,6 +144,16 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
   const requestId = newRequestId();
   const action = safeAction(params, tool);
   try {
+    // Scope enforcement: a token may only do what the person consented to.
+    // Public read actions need no scope; private reads need `room:private`
+    // and every state change needs `room:write`.
+    if (context.auth && !context.testAuth) {
+      const needed = requiredScope(tool.name, (params?.["arguments"] as { action?: unknown })
+        ?.action);
+      if (needed && !context.auth.scopes.includes(needed)) {
+        throw roomError("INSUFFICIENT_SCOPE");
+      }
+    }
     const meta = await buildMeta(params, context);
     const result = (await tool.handler(params?.["arguments"] ?? {}, meta)) as Record<
       string,
@@ -189,7 +200,9 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
       ms: Date.now() - started,
       requestId,
     });
-    const needsAuth = error.code === "AUTH_REQUIRED" || error.code === "INVALID_TOKEN";
+    const scopeMissing = error.code === "INSUFFICIENT_SCOPE";
+    const needsAuth =
+      error.code === "AUTH_REQUIRED" || error.code === "INVALID_TOKEN" || scopeMissing;
     return {
       content: [{ type: "text", text: error.message }],
       structuredContent: error.toPayload(),
@@ -199,10 +212,12 @@ async function callTool(params: JsonRpcParams, context: RequestContext) {
             _meta: {
               "mcp/www_authenticate": challengeHeader(
                 context.origin,
-                "invalid_token",
-                error.code === "INVALID_TOKEN"
-                  ? "The access token is invalid or expired."
-                  : "Sign in to Crawler Room to use this action.",
+                scopeMissing ? "insufficient_scope" : "invalid_token",
+                scopeMissing
+                  ? "The token does not carry the scope this action requires."
+                  : error.code === "INVALID_TOKEN"
+                    ? "The access token is invalid or expired."
+                    : "Sign in to Crawler Room to use this action.",
               ),
             },
           }

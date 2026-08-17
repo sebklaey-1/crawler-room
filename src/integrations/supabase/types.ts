@@ -1015,6 +1015,192 @@ export type Database = {
         }
         Relationships: []
       }
+      oauth_auth_requests: {
+        Row: {
+          client_id: string
+          code_challenge: string
+          code_challenge_method: string
+          created_at: string
+          expires_at: string
+          id: string
+          redirect_uri: string
+          resource: string
+          scope: string
+          state: string | null
+          status: string
+        }
+        Insert: {
+          client_id: string
+          code_challenge: string
+          code_challenge_method?: string
+          created_at?: string
+          expires_at: string
+          id: string
+          redirect_uri: string
+          resource: string
+          scope: string
+          state?: string | null
+          status?: string
+        }
+        Update: {
+          client_id?: string
+          code_challenge?: string
+          code_challenge_method?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          redirect_uri?: string
+          resource?: string
+          scope?: string
+          state?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_auth_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients"
+            referencedColumns: ["client_id"]
+          },
+        ]
+      }
+      oauth_clients: {
+        Row: {
+          client_id: string
+          client_name: string
+          client_secret_hash: string | null
+          client_uri: string | null
+          created_at: string
+          grant_types: string[]
+          last_used_at: string | null
+          redirect_uris: string[]
+          registration_access_token_hash: string | null
+          response_types: string[]
+          scope: string
+          token_endpoint_auth_method: string
+        }
+        Insert: {
+          client_id: string
+          client_name: string
+          client_secret_hash?: string | null
+          client_uri?: string | null
+          created_at?: string
+          grant_types?: string[]
+          last_used_at?: string | null
+          redirect_uris: string[]
+          registration_access_token_hash?: string | null
+          response_types?: string[]
+          scope?: string
+          token_endpoint_auth_method?: string
+        }
+        Update: {
+          client_id?: string
+          client_name?: string
+          client_secret_hash?: string | null
+          client_uri?: string | null
+          created_at?: string
+          grant_types?: string[]
+          last_used_at?: string | null
+          redirect_uris?: string[]
+          registration_access_token_hash?: string | null
+          response_types?: string[]
+          scope?: string
+          token_endpoint_auth_method?: string
+        }
+        Relationships: []
+      }
+      oauth_codes: {
+        Row: {
+          client_id: string
+          code_challenge: string
+          code_hash: string
+          created_at: string
+          expires_at: string
+          redirect_uri: string
+          resource: string
+          scope: string
+          subject_id: string
+          used_at: string | null
+        }
+        Insert: {
+          client_id: string
+          code_challenge: string
+          code_hash: string
+          created_at?: string
+          expires_at: string
+          redirect_uri: string
+          resource: string
+          scope: string
+          subject_id: string
+          used_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          code_challenge?: string
+          code_hash?: string
+          created_at?: string
+          expires_at?: string
+          redirect_uri?: string
+          resource?: string
+          scope?: string
+          subject_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_codes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients"
+            referencedColumns: ["client_id"]
+          },
+        ]
+      }
+      oauth_refresh_tokens: {
+        Row: {
+          client_id: string
+          created_at: string
+          expires_at: string
+          replaced_by: string | null
+          resource: string
+          revoked_at: string | null
+          scope: string
+          subject_id: string
+          token_hash: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          expires_at: string
+          replaced_by?: string | null
+          resource: string
+          revoked_at?: string | null
+          scope: string
+          subject_id: string
+          token_hash: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          expires_at?: string
+          replaced_by?: string | null
+          resource?: string
+          revoked_at?: string | null
+          scope?: string
+          subject_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_refresh_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "oauth_clients"
+            referencedColumns: ["client_id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           account_id: string
@@ -2015,6 +2201,7 @@ export type Database = {
         Returns: string
       }
       cleanup_expired: { Args: never; Returns: Json }
+      cleanup_oauth_state: { Args: never; Returns: undefined }
       cleanup_scheduler_status: { Args: never; Returns: Json }
       cleanup_support_requests: { Args: never; Returns: Json }
       complete_storage_deletion: {

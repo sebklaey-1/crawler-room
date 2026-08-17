@@ -1,35 +1,39 @@
 /**
  * OAuth 2.1 bearer authentication for the Crawler Room MCP server.
  *
- * The authorization server is the Supabase Auth instance of this project.
- * The MCP endpoint is a *protected resource* (RFC 9728): it never issues,
- * stores or forwards credentials, it only verifies the presented access token
- * and maps it to the pseudonymous identity used by the domain layer.
+ * The authorization server is Crawler Room itself (`src/lib/room/oauth/`), so
+ * the whole flow runs on Lovable Cloud with no platform auth hook and no
+ * external identity provider. The MCP endpoint stays a *protected resource*
+ * (RFC 9728): it never issues, stores or forwards credentials, it only
+ * verifies the presented access token and maps it to the pseudonymous
+ * identity used by the domain layer.
  *
  * SECURITY
- * - Tokens are verified with the official Supabase client (`auth.getClaims`),
- *   which validates the ES256 signature against the project's JWKS. No hand
- *   rolled or unverified JWT parsing decides authorisation.
- * - Beyond the signature the token must be live (`exp`), carry a UUID `sub`,
- *   be issued by *this* project's authorization server (`iss`), carry a
- *   non-empty `client_id`, name the canonical MCP resource in `aud` or
- *   `room_resource` (RFC 8707) and grant the declared scopes. There is NO
- *   weaker fallback: an ordinary browser or anonymous session JWT of the same
- *   authorization server is rejected, so only tokens minted through the
- *   OAuth 2.1 flow for this resource can reach the MCP surface.
+ * - Tokens are verified locally with HMAC-SHA256 against the server-side
+ *   secret `ROOM_OAUTH_SIGNING_SECRET`; only `alg: HS256` is accepted, so
+ *   algorithm confusion and `alg: none` are impossible.
+ * - Beyond the signature the token must be live (`exp`), name *this* issuer,
+ *   carry a non-empty `client_id`, name the canonical MCP resource in `aud`
+ *   (RFC 8707) and grant the base scopes. There is NO weaker fallback: a
+ *   browser session JWT of any kind is rejected, so only tokens minted
+ *   through the OAuth 2.1 flow for this resource reach the MCP surface.
  * - Tokens are never logged, never returned to the model and never stored.
- * - The raw auth user id is never persisted: only
- *   HMAC-SHA256(secret, "auth:" + sub) is used as the pseudonymous subject.
+ * - The raw account id is never persisted: only
+ *   HMAC-SHA256(secret, "auth:" + id) is used as the pseudonymous subject,
+ *   and that digest — not the account id — is the token subject.
  */
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-
 import { requireSecret } from "./config";
 import { hmacSha256Hex } from "./crypto";
 import { roomError } from "./errors";
+import { BASE_SCOPES, parseScope, SUPPORTED_SCOPES } from "./oauth/catalog";
+import { verifyJwt } from "./oauth/jwt";
 import type { Db } from "./store";
 
 export interface AuthUser {
-  /** Verified `sub` claim. Never leaves this module in raw form. */
+  /**
+   * Verified `sub` claim — already the pseudonymous subject digest, never a
+   * raw account identifier.
+   */
   userId: string;
   issuer: string;
   clientId: string;
@@ -46,9 +50,7 @@ interface CacheEntry {
 const tokenCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 60_000;
 const MAX_TOKEN_LENGTH = 8192;
-const VERIFY_TIMEOUT_MS = 5_000;
-const REQUIRED_SCOPES = ["openid", "profile"] as const;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SUBJECT_RE = /^[0-9a-f]{64}$/;
 
 export function bearerToken(request: Request): string | null {
   const header = request.headers.get("authorization") ?? request.headers.get("Authorization");
@@ -62,14 +64,12 @@ export function bearerToken(request: Request): string | null {
 
 /* ------------------------------ configuration ----------------------------- */
 
-function supabaseBase(): string {
-  return (process.env["SUPABASE_URL"] ?? "").replace(/\/+$/, "");
-}
-
-/** Canonical OAuth issuer of this project's authorization server. */
-export function authIssuer(): string {
-  const base = supabaseBase();
-  return base ? `${base}/auth/v1` : "";
+/**
+ * Canonical OAuth issuer: Crawler Room itself. Derived from the canonical
+ * resource, so it can never be pointed at a foreign host by a request header.
+ */
+export function authIssuer(requestOrigin?: string): string {
+  return new URL(canonicalResource(requestOrigin)).origin;
 }
 
 /** The one and only production origin of Crawler Room. */
@@ -122,21 +122,7 @@ export function resourceMetadataUrl(requestOrigin?: string): string {
 /** Compatibility alias served on the root well-known path (same document). */
 export const ROOT_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource";
 
-let verifyClient: SupabaseClient | null = null;
-
-/** Server-side, non-persisting Supabase client used only for verification. */
-function authClient(): SupabaseClient {
-  if (verifyClient) return verifyClient;
-  const url = process.env["SUPABASE_URL"];
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
-  if (!url || !key) throw roomError("INTERNAL_ERROR");
-  verifyClient = createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  });
-  return verifyClient;
-}
-
-/** Test-only seam: lets the suite inject verified claims without a network. */
+/** Test-only seam: lets the suite inject verified claims without signing. */
 type ClaimsVerifier = (token: string) => Promise<Record<string, unknown> | null>;
 let testVerifier: ClaimsVerifier | null = null;
 
@@ -147,31 +133,14 @@ export function __setTestClaimsVerifier(verifier: ClaimsVerifier | null): void {
 }
 
 async function verifiedClaims(token: string): Promise<Record<string, unknown> | null> {
-  if (process.env["NODE_ENV"] === "test") {
-    // Offline by construction: the suite never reaches the network.
-    if (testVerifier) return testVerifier(token);
-    throw roomError("INVALID_TOKEN");
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS);
-  try {
-    const { data, error } = await authClient().auth.getClaims(token);
-    if (error) throw roomError("INVALID_TOKEN");
-    const claims = (data as { claims?: Record<string, unknown> } | null)?.claims;
-    return claims ?? null;
-  } finally {
-    clearTimeout(timer);
-  }
+  if (process.env["NODE_ENV"] === "test" && testVerifier) return testVerifier(token);
+  return (await verifyJwt(token)) as Record<string, unknown> | null;
 }
 
 /* -------------------------------- validation ------------------------------ */
 
 function claimList(value: unknown): string[] {
-  if (typeof value === "string") return value.split(/\s+/).filter(Boolean);
-  if (Array.isArray(value))
-    return value.filter((entry): entry is string => typeof entry === "string");
-  return [];
+  return parseScope(value);
 }
 
 async function cacheKey(token: string): Promise<string> {
@@ -199,35 +168,29 @@ export async function verifyAccessToken(token: string, requestOrigin?: string): 
   if (!claims) throw roomError("INVALID_TOKEN");
 
   const issuer = typeof claims["iss"] === "string" ? claims["iss"] : "";
-  if (!issuer || issuer !== authIssuer()) throw roomError("INVALID_TOKEN");
+  if (!issuer || issuer !== authIssuer(requestOrigin)) throw roomError("INVALID_TOKEN");
 
+  // The subject is the pseudonymous digest minted at consent time — a raw
+  // account id or e-mail can never appear here.
   const sub = typeof claims["sub"] === "string" ? claims["sub"] : "";
-  if (!UUID_RE.test(sub)) throw roomError("INVALID_TOKEN");
+  if (!SUBJECT_RE.test(sub)) throw roomError("INVALID_TOKEN");
 
   const exp = typeof claims["exp"] === "number" ? claims["exp"] : 0;
   if (!exp || exp * 1000 <= Date.now()) throw roomError("INVALID_TOKEN");
 
   // Client binding. Tokens minted through the OAuth 2.1 flow carry `client_id`;
-  // an ordinary session JWT does not and is rejected here.
+  // anything without it is not an MCP access token and is rejected here.
   const clientId = typeof claims["client_id"] === "string" ? claims["client_id"].trim() : "";
   if (!clientId) throw roomError("INVALID_TOKEN");
 
-  // Resource binding (RFC 8707 / MCP). The canonical resource must be named in
-  // `aud` or in the `room_resource` claim written by the access token hook.
-  // Any other audience — including the authorization server's default
-  // `authenticated` — is not a resource and never satisfies this check.
+  // Resource binding (RFC 8707 / MCP): the canonical resource must be the
+  // audience. Any other audience is not a resource and never satisfies this.
   const audiences = claimList(claims["aud"]);
-  const roomResource = typeof claims["room_resource"] === "string" ? claims["room_resource"] : "";
-  if (roomResource && roomResource.replace(/\/+$/, "") !== resource)
-    throw roomError("INVALID_TOKEN");
   const boundByAud = audiences.some((aud) => aud.replace(/\/+$/, "") === resource);
-  if (!boundByAud && roomResource.replace(/\/+$/, "") !== resource) {
-    throw roomError("INVALID_TOKEN");
-  }
+  if (!boundByAud) throw roomError("INVALID_TOKEN");
 
-  // Granted scopes: hook claim first, otherwise the standard `scope` claim.
-  const scopes = claimList(claims["room_scopes"] ?? claims["scope"]);
-  for (const required of REQUIRED_SCOPES) {
+  const scopes = claimList(claims["scope"]);
+  for (const required of BASE_SCOPES) {
     if (!scopes.includes(required)) throw roomError("INVALID_TOKEN");
   }
 
@@ -255,14 +218,16 @@ export async function authSubjectHash(userId: string): Promise<string> {
 }
 
 /**
- * Maps a verified account onto the pseudonymous subject used everywhere else.
+ * Maps a verified token subject onto the pseudonymous identity used
+ * everywhere else. The argument is already the keyed account digest minted at
+ * consent time (`authUserHash`), so no raw account id ever reaches the store.
  *
  * There is deliberately NO automatic takeover of a legacy `openai/subject`
  * identity: an unauthenticated MCP `_meta` value is not proof of ownership.
  * Legacy rows stay untouched; linking them is a controlled manual migration.
  */
-export async function resolveAuthSubject(db: Db, userId: string): Promise<string> {
-  const hash = await authUserHash(userId);
+export async function resolveAuthSubject(db: Db, subjectDigest: string): Promise<string> {
+  const hash = subjectDigest;
 
   const { data: existing, error: readError } = await db
     .from("anonymous_identities")
@@ -301,13 +266,13 @@ export async function resolveAuthSubject(db: Db, userId: string): Promise<string
 
 /** Discovery document for RFC 9728 (OAuth 2.0 Protected Resource Metadata). */
 export function protectedResourceMetadata(requestOrigin?: string) {
-  const issuer = authIssuer();
+  const issuer = authIssuer(requestOrigin);
   const resource = canonicalResource(requestOrigin);
   return {
     resource,
-    authorization_servers: issuer ? [issuer] : [],
+    authorization_servers: [issuer],
     bearer_methods_supported: ["header"],
-    scopes_supported: [...REQUIRED_SCOPES],
+    scopes_supported: [...SUPPORTED_SCOPES],
     resource_name: "Crawler Room",
     resource_documentation: new URL(resource).origin + "/crawler-room",
   };

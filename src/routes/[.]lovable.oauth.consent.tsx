@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 interface ConsentSearch {
-  authorization_id: string | undefined;
+  request_id: string | undefined;
 }
 
 /**
@@ -11,13 +11,12 @@ interface ConsentSearch {
 export const Route = createFileRoute("/.lovable/oauth/consent")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>): ConsentSearch => ({
-    authorization_id:
-      typeof search["authorization_id"] === "string" ? search["authorization_id"] : undefined,
+    request_id: typeof search["request_id"] === "string" ? search["request_id"] : undefined,
   }),
   beforeLoad: ({ search }) => {
     throw redirect({
       to: "/oauth/consent",
-      search: { authorization_id: search.authorization_id },
+      search: { request_id: search.request_id },
       replace: true,
     });
   },
