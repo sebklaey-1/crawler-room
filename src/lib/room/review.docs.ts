@@ -12,7 +12,6 @@
  */
 import { ACTION_MATRIX } from "./actions.matrix";
 import { PUBLIC_ACTIONS, SURFACE_TOOLS, TOOL_ANNOTATIONS } from "./mcp.surface";
-import { scopesForTool } from "./oauth/scopes";
 
 export type GeneratedBlockId = "tool-actions" | "tool-annotations" | "tool-scopes" | "tool-detail";
 

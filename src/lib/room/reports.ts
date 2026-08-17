@@ -18,7 +18,6 @@ import { retentionCutoffIso } from "./config";
 import { sha256Hex } from "./crypto";
 import { roomError } from "./errors";
 import { decodeImageId, decodeMessageId, decodeRoomId } from "./ids";
-import { findRoomByHandle, normalizeHandleInput } from "./personal";
 import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import type { Db } from "./store";
 
@@ -167,44 +166,6 @@ export async function resolveUniversalTarget(
   return targetType === "message"
     ? messageTarget(db, targetId, { roomId })
     : imageTarget(db, targetId, { roomId });
-}
-
-/** Personal public room: the room itself, or content inside that exact room. */
-export async function resolvePublicRoomTarget(
-  db: Db,
-  targetType: "room" | "message" | "image",
-  username: unknown,
-  targetId: unknown,
-): Promise<ResolvedTarget> {
-  const room = await findRoomByHandle(db, normalizeHandleInput(username));
-  if (!room) throw roomError("NOT_FOUND", "Diesen Raum gibt es nicht.");
-  if (targetType === "room") {
-    return {
-      kind: "room",
-      ref: room.roomId,
-      roomId: room.roomId,
-      ownerSubjectHash: room.ownerSubjectHash,
-      snapshot: await snapshotHash(`${room.handle}:${room.roomName ?? ""}`),
-      label: `@${room.handle}`,
-    };
-  }
-  return targetType === "message"
-    ? messageTarget(db, targetId, { roomId: room.roomId })
-    : imageTarget(db, targetId, { roomId: room.roomId });
-}
-
-/** Profile report: addressed by @handle only. */
-export async function resolveProfileTarget(db: Db, username: unknown): Promise<ResolvedTarget> {
-  const room = await findRoomByHandle(db, normalizeHandleInput(username));
-  if (!room) throw roomError("NOT_FOUND", "Dieses Profil gibt es nicht.");
-  return {
-    kind: "profile",
-    ref: room.roomId,
-    roomId: room.roomId,
-    ownerSubjectHash: room.ownerSubjectHash,
-    snapshot: await snapshotHash(`profile:${room.handle}`),
-    label: `@${room.handle}`,
-  };
 }
 
 /**
