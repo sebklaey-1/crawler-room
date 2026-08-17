@@ -130,8 +130,20 @@ async function buildMeta(params: JsonRpcParams, context: RequestContext): Promis
   return meta;
 }
 
+/**
+ * Legacy tool names kept callable so existing clients do not break. The
+ * organisation feature itself is removed; only the community tool is aliased.
+ */
+const LEGACY_TOOL_NAMES: Record<string, string> = {
+  communities_organizations: "communities",
+};
+
 async function callTool(params: JsonRpcParams, context: RequestContext) {
-  const tool = TOOLS.find((entry) => entry.name === params?.["name"]);
+  const requested = params?.["name"];
+  const name =
+    typeof requested === "string" ? (LEGACY_TOOL_NAMES[requested] ?? requested) : requested;
+  const tool = TOOLS.find((entry) => entry.name === name);
+
   if (!tool) {
     return {
       content: [{ type: "text", text: "Unbekanntes Tool." }],
