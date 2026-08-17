@@ -1,11 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 
 import { LegalFooter } from "@/components/legal-footer";
 import { SupportContact } from "@/components/support-contact";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/data-deletion")({
   head: () => ({
@@ -14,12 +10,13 @@ export const Route = createFileRoute("/data-deletion")({
       {
         name: "description",
         content:
-          "Request deletion of your Crawler Room profile, rooms, messages and social data. Verified through your signed-in session; unverified requests go through support.",
+          "How Crawler Room data deletion works: messages expire automatically within 24 hours, and there is no account, profile or stored personal identifier to delete.",
       },
       { property: "og:title", content: "Delete your Crawler Room data" },
       {
         property: "og:description",
-        content: "How to request deletion of your Crawler Room data and what exactly is removed.",
+        content:
+          "Crawler Room has no accounts and no profiles. Messages disappear automatically; anything else is handled through support.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -31,61 +28,6 @@ export const Route = createFileRoute("/data-deletion")({
 });
 
 function DataDeletionPage() {
-  const [token, setToken] = useState<string | null>(null);
-  const [checked, setChecked] = useState(false);
-  const [note, setNote] = useState("");
-  const [pending, setPending] = useState(false);
-  const [result, setResult] = useState<{ reference: string; duplicate?: boolean } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setToken(data.session?.access_token ?? null);
-      setChecked(true);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setToken(session?.access_token ?? null);
-    });
-    return () => {
-      active = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
-
-  async function submit() {
-    if (!token) return;
-    setPending(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/public/data-deletion", {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-        body: JSON.stringify({ note }),
-      });
-      const data = (await response.json()) as {
-        ok?: boolean;
-        reference?: string;
-        duplicate?: boolean;
-        error?: string;
-      };
-      if (!response.ok || !data.ok || !data.reference) {
-        setError(
-          data.error === "sign_in_required"
-            ? "Your session has expired. Please sign in again."
-            : "The request could not be submitted. Please try again later.",
-        );
-        return;
-      }
-      setResult({ reference: data.reference, duplicate: data.duplicate === true });
-    } catch {
-      setError("Network problem. Please try again later.");
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="mx-auto max-w-3xl px-6 py-14">
@@ -93,77 +35,54 @@ function DataDeletionPage() {
 
         <section className="mt-6 space-y-3 text-sm text-muted-foreground">
           <p>
-            A deletion request removes the data that belongs to your pseudonymous Crawler Room
-            identity:
+            Crawler Room is a general-audience service with no accounts, no sign-in and no profiles.
+            There is nothing to log into and nothing to delete from a profile, because none is
+            created. You are identified only by a pseudonym that the service derives on the fly.
           </p>
           <ul className="list-disc space-y-1 pl-5">
-            <li>your profile (handle, display name, bio, link)</li>
-            <li>your personal room and its settings</li>
-            <li>your messages in rooms, including any image files still stored for you</li>
-            <li>your follows, likes, blocks and notifications</li>
-            <li>your community memberships</li>
+            <li>Messages in the Universal Room are deleted automatically within 24 hours.</li>
+            <li>
+              Only the newest messages of the room stay readable; older ones are removed
+              continuously.
+            </li>
+            <li>
+              No email address, no password, no name, no location and no images are stored at any
+              point.
+            </li>
           </ul>
           <p>
-            <strong>What stays:</strong> aggregate counters that contain no identity, moderation and
-            abuse records we must keep to prevent repeat abuse, and copies of public content that
-            other people already saw or quoted. Messages in shared rooms also disappear on their own
-            through the retention limits described in the{" "}
-            <a className="underline" href="/privacy">
-              Privacy Policy
-            </a>
-            .
+            <strong>What stays:</strong> aggregate counters that contain no identity, plus
+            moderation and abuse records we must keep to prevent repeat abuse. Those records hold a
+            one-way keyed hash, never a readable identifier.
           </p>
           <p>
-            Requests are recorded as pending and processed manually. There is no promised processing
-            deadline and nothing is deleted at the moment you press the button.
+            Because there is no account, an early deletion of a specific message cannot be verified
+            automatically. If a message of yours needs to be removed before it expires, write to
+            support and describe it — see the{" "}
+            <a className="underline" href="/privacy">
+              Privacy Policy
+            </a>{" "}
+            for the full picture. Requests are handled manually and there is no promised processing
+            deadline.
+          </p>
+          <p>
+            Users under 13 are not permitted to use Crawler Room. If you believe a child is using
+            the service, contact support and we will remove the content.
           </p>
         </section>
 
         <section className="mt-10 rounded-lg border border-border p-6">
-          <h2 className="text-lg font-semibold">Verified request</h2>
-          {!checked ? (
-            <p className="mt-2 text-sm text-muted-foreground">Checking your session…</p>
-          ) : result ? (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {result.duplicate
-                ? "You already have a pending deletion request. Reference: "
-                : "Your deletion request was recorded. Reference: "}
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono">{result.reference}</code>
-            </p>
-          ) : token ? (
-            <div className="mt-3 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                You are signed in, so this request is verified through your session. Your access
-                token is verified server-side and never stored.
-              </p>
-              <Textarea
-                rows={4}
-                maxLength={1000}
-                placeholder="Optional note (e.g. which handle or room this concerns)"
-                value={note}
-                onChange={(event) => setNote(event.target.value)}
-              />
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
-              <Button variant="destructive" disabled={pending} onClick={() => void submit()}>
-                {pending ? "Sending…" : "Request deletion"}
-              </Button>
-            </div>
-          ) : (
-            <p className="mt-2 text-sm text-muted-foreground">
-              You are not signed in on the web. Sign in through the Crawler Room authorization flow
-              in ChatGPT and open this page again, or send an unverified request through{" "}
-              <a className="underline" href="/support">
-                /support
-              </a>{" "}
-              with the category “privacy/data request”. Unverified requests may require additional
-              proof before anything is deleted.
-            </p>
-          )}
+          <h2 className="text-lg font-semibold">Contact support</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Send us the room, the approximate time and a short description of the message. Do not
+            include personal data in your request.
+          </p>
+          <div className="mt-4">
+            <SupportContact />
+          </div>
         </section>
       </main>
-      <div className="mx-auto max-w-5xl px-6 pb-8">
-        <SupportContact />
-      </div>
+
       <LegalFooter note="Data deletion" />
     </div>
   );

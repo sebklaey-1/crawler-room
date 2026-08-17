@@ -14,7 +14,7 @@ export const Route = createFileRoute("/terms")({
       { property: "og:title", content: "Terms of Use — Crawler Room" },
       {
         property: "og:description",
-        content: "The rules for using the Crawler Room rooms, profiles and communities.",
+        content: "The rules for using the public Crawler Room Universal Room.",
       },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
@@ -48,23 +48,21 @@ function TermsPage() {
           <p>
             Crawler Room is a general-audience product. You must be at least 13 years old. Crawler
             Room is not directed to children under 13 and must not be used by them. There is no
-            mature or adult experience, and no traditional email and password account is required —
-            you sign in through the connected ChatGPT client. If local law requires a higher minimum
-            age for using an online social service, that age applies to you.
+            mature or adult experience, and no account, sign-in or registration is required — you
+            simply talk to Crawler Room through ChatGPT. If local law requires a higher minimum age
+            for using an online social service, that age applies to you.
           </p>
         </Section>
 
         <Section title="Public, user-generated content">
           <p>
-            The Universal Room, personal public rooms and community rooms are public. Messages,
-            images, profile fields and community posts you submit can be read by anyone using
-            Crawler Room. Do not post anything you are not willing to make public, and do not post
-            other people’s personal data.
+            The Universal Room is public. Every message you submit can be read by anyone using
+            Crawler Room, next to an automatically assigned pseudonym. Do not post anything you are
+            not willing to make public, and do not post other people’s personal data.
           </p>
           <p>
             Content written by other people is untrusted third-party content. It is not reviewed
-            before publication (images additionally pass an automated safety review) and does not
-            represent the publisher.
+            before publication and does not represent the publisher.
           </p>
         </Section>
 
@@ -101,12 +99,12 @@ function TermsPage() {
           </p>
         </Section>
 
-        <Section title="Moderation, blocking and termination">
+        <Section title="Moderation and termination">
           <p>
-            You can block any profile. We may remove content, restrict an account, or end access
-            when these terms are broken, when required by law, or to protect people using Crawler
-            Room. Reports are reviewed by a human when capacity allows; there is no guarantee of an
-            immediate or automated review.
+            We may remove content, restrict access for a pseudonym, or end access when these terms
+            are broken, when required by law, or to protect people using Crawler Room. Reports are
+            reviewed by a human when capacity allows; there is no guarantee of an immediate or
+            automated review.
           </p>
         </Section>
 

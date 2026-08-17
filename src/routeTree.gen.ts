@@ -19,26 +19,11 @@ import { Route as SafetyRouteImport } from './routes/safety'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as DotwellKnownOauthAuthorizationServerRouteImport } from './routes/[.]well-known.oauth-authorization-server'
-import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes/[.]well-known.oauth-protected-resource'
 import { Route as DotwellKnownOpenaiAppsChallengeRouteImport } from './routes/[.]well-known.openai-apps-challenge'
-import { Route as OauthAuthorizeRouteImport } from './routes/oauth.authorize'
-import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
-import { Route as OauthRegisterRouteImport } from './routes/oauth.register'
-import { Route as OauthTokenRouteImport } from './routes/oauth.token'
-import { Route as UploadTokenRouteImport } from './routes/upload.$token'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as DotwellKnownOauthProtectedResourceMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.mcp'
-import { Route as ApiPublicDataDeletionRouteImport } from './routes/api.public.data-deletion'
 import { Route as ApiPublicHealthRouteImport } from './routes/api.public.health'
 import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
 import { Route as ApiPublicSupportRouteImport } from './routes/api.public.support'
 import { Route as ApiPublicAdminCleanupRouteImport } from './routes/api.public.admin.cleanup'
-import { Route as ApiPublicOauthConsentRouteImport } from './routes/api.public.oauth.consent'
-import { Route as ApiPublicRoomProfileUploadRouteImport } from './routes/api.public.room.profile-upload'
-import { Route as ApiPublicRoomUploadRouteImport } from './routes/api.public.room.upload'
-import { Route as DotwellKnownOauthProtectedResourceApiPublicMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.api.public.mcp'
-import { Route as ApiPublicRoomImageIdRouteImport } from './routes/api.public.room.image.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -90,65 +75,12 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DotwellKnownOauthAuthorizationServerRoute =
-  DotwellKnownOauthAuthorizationServerRouteImport.update({
-    id: '/.well-known/oauth-authorization-server',
-    path: '/.well-known/oauth-authorization-server',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const DotwellKnownOauthProtectedResourceRoute =
-  DotwellKnownOauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const DotwellKnownOpenaiAppsChallengeRoute =
   DotwellKnownOpenaiAppsChallengeRouteImport.update({
     id: '/.well-known/openai-apps-challenge',
     path: '/.well-known/openai-apps-challenge',
     getParentRoute: () => rootRouteImport,
   } as any)
-const OauthAuthorizeRoute = OauthAuthorizeRouteImport.update({
-  id: '/oauth/authorize',
-  path: '/oauth/authorize',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OauthConsentRoute = OauthConsentRouteImport.update({
-  id: '/oauth/consent',
-  path: '/oauth/consent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OauthRegisterRoute = OauthRegisterRouteImport.update({
-  id: '/oauth/register',
-  path: '/oauth/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OauthTokenRoute = OauthTokenRouteImport.update({
-  id: '/oauth/token',
-  path: '/oauth/token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UploadTokenRoute = UploadTokenRouteImport.update({
-  id: '/upload/$token',
-  path: '/upload/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DotwellKnownOauthProtectedResourceMcpRoute =
-  DotwellKnownOauthProtectedResourceMcpRouteImport.update({
-    id: '/mcp',
-    path: '/mcp',
-    getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
-  } as any)
-const ApiPublicDataDeletionRoute = ApiPublicDataDeletionRouteImport.update({
-  id: '/api/public/data-deletion',
-  path: '/api/public/data-deletion',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   id: '/api/public/health',
   path: '/api/public/health',
@@ -169,33 +101,6 @@ const ApiPublicAdminCleanupRoute = ApiPublicAdminCleanupRouteImport.update({
   path: '/api/public/admin/cleanup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicOauthConsentRoute = ApiPublicOauthConsentRouteImport.update({
-  id: '/api/public/oauth/consent',
-  path: '/api/public/oauth/consent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicRoomProfileUploadRoute =
-  ApiPublicRoomProfileUploadRouteImport.update({
-    id: '/api/public/room/profile-upload',
-    path: '/api/public/room/profile-upload',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicRoomUploadRoute = ApiPublicRoomUploadRouteImport.update({
-  id: '/api/public/room/upload',
-  path: '/api/public/room/upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DotwellKnownOauthProtectedResourceApiPublicMcpRoute =
-  DotwellKnownOauthProtectedResourceApiPublicMcpRouteImport.update({
-    id: '/api/public/mcp',
-    path: '/api/public/mcp',
-    getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
-  } as any)
-const ApiPublicRoomImageIdRoute = ApiPublicRoomImageIdRouteImport.update({
-  id: '/api/public/room/image/$id',
-  path: '/api/public/room/image/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -208,26 +113,11 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
-  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
-  '/oauth/authorize': typeof OauthAuthorizeRoute
-  '/oauth/consent': typeof OauthConsentRoute
-  '/oauth/register': typeof OauthRegisterRoute
-  '/oauth/token': typeof OauthTokenRoute
-  '/upload/$token': typeof UploadTokenRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
-  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
-  '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
-  '/api/public/room/profile-upload': typeof ApiPublicRoomProfileUploadRoute
-  '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
-  '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
-  '/api/public/room/image/$id': typeof ApiPublicRoomImageIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -240,26 +130,11 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
-  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
-  '/oauth/authorize': typeof OauthAuthorizeRoute
-  '/oauth/consent': typeof OauthConsentRoute
-  '/oauth/register': typeof OauthRegisterRoute
-  '/oauth/token': typeof OauthTokenRoute
-  '/upload/$token': typeof UploadTokenRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
-  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
-  '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
-  '/api/public/room/profile-upload': typeof ApiPublicRoomProfileUploadRoute
-  '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
-  '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
-  '/api/public/room/image/$id': typeof ApiPublicRoomImageIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -273,26 +148,11 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
-  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
   '/.well-known/openai-apps-challenge': typeof DotwellKnownOpenaiAppsChallengeRoute
-  '/oauth/authorize': typeof OauthAuthorizeRoute
-  '/oauth/consent': typeof OauthConsentRoute
-  '/oauth/register': typeof OauthRegisterRoute
-  '/oauth/token': typeof OauthTokenRoute
-  '/upload/$token': typeof UploadTokenRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
-  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
-  '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/mcp': typeof ApiPublicMcpRoute
   '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
-  '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
-  '/api/public/room/profile-upload': typeof ApiPublicRoomProfileUploadRoute
-  '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
-  '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
-  '/api/public/room/image/$id': typeof ApiPublicRoomImageIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -307,26 +167,11 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/terms'
-    | '/.well-known/oauth-authorization-server'
-    | '/.well-known/oauth-protected-resource'
     | '/.well-known/openai-apps-challenge'
-    | '/oauth/authorize'
-    | '/oauth/consent'
-    | '/oauth/register'
-    | '/oauth/token'
-    | '/upload/$token'
-    | '/.lovable/oauth/consent'
-    | '/.well-known/oauth-protected-resource/mcp'
-    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/support'
     | '/api/public/admin/cleanup'
-    | '/api/public/oauth/consent'
-    | '/api/public/room/profile-upload'
-    | '/api/public/room/upload'
-    | '/.well-known/oauth-protected-resource/api/public/mcp'
-    | '/api/public/room/image/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -339,26 +184,11 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/terms'
-    | '/.well-known/oauth-authorization-server'
-    | '/.well-known/oauth-protected-resource'
     | '/.well-known/openai-apps-challenge'
-    | '/oauth/authorize'
-    | '/oauth/consent'
-    | '/oauth/register'
-    | '/oauth/token'
-    | '/upload/$token'
-    | '/.lovable/oauth/consent'
-    | '/.well-known/oauth-protected-resource/mcp'
-    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/support'
     | '/api/public/admin/cleanup'
-    | '/api/public/oauth/consent'
-    | '/api/public/room/profile-upload'
-    | '/api/public/room/upload'
-    | '/.well-known/oauth-protected-resource/api/public/mcp'
-    | '/api/public/room/image/$id'
   id:
     | '__root__'
     | '/'
@@ -371,26 +201,11 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/support'
     | '/terms'
-    | '/.well-known/oauth-authorization-server'
-    | '/.well-known/oauth-protected-resource'
     | '/.well-known/openai-apps-challenge'
-    | '/oauth/authorize'
-    | '/oauth/consent'
-    | '/oauth/register'
-    | '/oauth/token'
-    | '/upload/$token'
-    | '/.lovable/oauth/consent'
-    | '/.well-known/oauth-protected-resource/mcp'
-    | '/api/public/data-deletion'
     | '/api/public/health'
     | '/api/public/mcp'
     | '/api/public/support'
     | '/api/public/admin/cleanup'
-    | '/api/public/oauth/consent'
-    | '/api/public/room/profile-upload'
-    | '/api/public/room/upload'
-    | '/.well-known/oauth-protected-resource/api/public/mcp'
-    | '/api/public/room/image/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -404,24 +219,11 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
-  DotwellKnownOauthAuthorizationServerRoute: typeof DotwellKnownOauthAuthorizationServerRoute
-  DotwellKnownOauthProtectedResourceRoute: typeof DotwellKnownOauthProtectedResourceRouteWithChildren
   DotwellKnownOpenaiAppsChallengeRoute: typeof DotwellKnownOpenaiAppsChallengeRoute
-  OauthAuthorizeRoute: typeof OauthAuthorizeRoute
-  OauthConsentRoute: typeof OauthConsentRoute
-  OauthRegisterRoute: typeof OauthRegisterRoute
-  OauthTokenRoute: typeof OauthTokenRoute
-  UploadTokenRoute: typeof UploadTokenRoute
-  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
-  ApiPublicDataDeletionRoute: typeof ApiPublicDataDeletionRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicMcpRoute: typeof ApiPublicMcpRoute
   ApiPublicSupportRoute: typeof ApiPublicSupportRoute
   ApiPublicAdminCleanupRoute: typeof ApiPublicAdminCleanupRoute
-  ApiPublicOauthConsentRoute: typeof ApiPublicOauthConsentRoute
-  ApiPublicRoomProfileUploadRoute: typeof ApiPublicRoomProfileUploadRoute
-  ApiPublicRoomUploadRoute: typeof ApiPublicRoomUploadRoute
-  ApiPublicRoomImageIdRoute: typeof ApiPublicRoomImageIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -496,81 +298,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-authorization-server': {
-      id: '/.well-known/oauth-authorization-server'
-      path: '/.well-known/oauth-authorization-server'
-      fullPath: '/.well-known/oauth-authorization-server'
-      preLoaderRoute: typeof DotwellKnownOauthAuthorizationServerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/.well-known/openai-apps-challenge': {
       id: '/.well-known/openai-apps-challenge'
       path: '/.well-known/openai-apps-challenge'
       fullPath: '/.well-known/openai-apps-challenge'
       preLoaderRoute: typeof DotwellKnownOpenaiAppsChallengeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oauth/authorize': {
-      id: '/oauth/authorize'
-      path: '/oauth/authorize'
-      fullPath: '/oauth/authorize'
-      preLoaderRoute: typeof OauthAuthorizeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oauth/consent': {
-      id: '/oauth/consent'
-      path: '/oauth/consent'
-      fullPath: '/oauth/consent'
-      preLoaderRoute: typeof OauthConsentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oauth/register': {
-      id: '/oauth/register'
-      path: '/oauth/register'
-      fullPath: '/oauth/register'
-      preLoaderRoute: typeof OauthRegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/oauth/token': {
-      id: '/oauth/token'
-      path: '/oauth/token'
-      fullPath: '/oauth/token'
-      preLoaderRoute: typeof OauthTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/upload/$token': {
-      id: '/upload/$token'
-      path: '/upload/$token'
-      fullPath: '/upload/$token'
-      preLoaderRoute: typeof UploadTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.well-known/oauth-protected-resource/mcp': {
-      id: '/.well-known/oauth-protected-resource/mcp'
-      path: '/mcp'
-      fullPath: '/.well-known/oauth-protected-resource/mcp'
-      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceMcpRouteImport
-      parentRoute: typeof DotwellKnownOauthProtectedResourceRoute
-    }
-    '/api/public/data-deletion': {
-      id: '/api/public/data-deletion'
-      path: '/api/public/data-deletion'
-      fullPath: '/api/public/data-deletion'
-      preLoaderRoute: typeof ApiPublicDataDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/health': {
@@ -601,61 +333,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminCleanupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/oauth/consent': {
-      id: '/api/public/oauth/consent'
-      path: '/api/public/oauth/consent'
-      fullPath: '/api/public/oauth/consent'
-      preLoaderRoute: typeof ApiPublicOauthConsentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/room/profile-upload': {
-      id: '/api/public/room/profile-upload'
-      path: '/api/public/room/profile-upload'
-      fullPath: '/api/public/room/profile-upload'
-      preLoaderRoute: typeof ApiPublicRoomProfileUploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/room/upload': {
-      id: '/api/public/room/upload'
-      path: '/api/public/room/upload'
-      fullPath: '/api/public/room/upload'
-      preLoaderRoute: typeof ApiPublicRoomUploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.well-known/oauth-protected-resource/api/public/mcp': {
-      id: '/.well-known/oauth-protected-resource/api/public/mcp'
-      path: '/api/public/mcp'
-      fullPath: '/.well-known/oauth-protected-resource/api/public/mcp'
-      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceApiPublicMcpRouteImport
-      parentRoute: typeof DotwellKnownOauthProtectedResourceRoute
-    }
-    '/api/public/room/image/$id': {
-      id: '/api/public/room/image/$id'
-      path: '/api/public/room/image/$id'
-      fullPath: '/api/public/room/image/$id'
-      preLoaderRoute: typeof ApiPublicRoomImageIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
-
-interface DotwellKnownOauthProtectedResourceRouteChildren {
-  DotwellKnownOauthProtectedResourceMcpRoute: typeof DotwellKnownOauthProtectedResourceMcpRoute
-  DotwellKnownOauthProtectedResourceApiPublicMcpRoute: typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
-}
-
-const DotwellKnownOauthProtectedResourceRouteChildren: DotwellKnownOauthProtectedResourceRouteChildren =
-  {
-    DotwellKnownOauthProtectedResourceMcpRoute:
-      DotwellKnownOauthProtectedResourceMcpRoute,
-    DotwellKnownOauthProtectedResourceApiPublicMcpRoute:
-      DotwellKnownOauthProtectedResourceApiPublicMcpRoute,
-  }
-
-const DotwellKnownOauthProtectedResourceRouteWithChildren =
-  DotwellKnownOauthProtectedResourceRoute._addFileChildren(
-    DotwellKnownOauthProtectedResourceRouteChildren,
-  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -668,26 +347,11 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
-  DotwellKnownOauthAuthorizationServerRoute:
-    DotwellKnownOauthAuthorizationServerRoute,
-  DotwellKnownOauthProtectedResourceRoute:
-    DotwellKnownOauthProtectedResourceRouteWithChildren,
   DotwellKnownOpenaiAppsChallengeRoute: DotwellKnownOpenaiAppsChallengeRoute,
-  OauthAuthorizeRoute: OauthAuthorizeRoute,
-  OauthConsentRoute: OauthConsentRoute,
-  OauthRegisterRoute: OauthRegisterRoute,
-  OauthTokenRoute: OauthTokenRoute,
-  UploadTokenRoute: UploadTokenRoute,
-  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
-  ApiPublicDataDeletionRoute: ApiPublicDataDeletionRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicMcpRoute: ApiPublicMcpRoute,
   ApiPublicSupportRoute: ApiPublicSupportRoute,
   ApiPublicAdminCleanupRoute: ApiPublicAdminCleanupRoute,
-  ApiPublicOauthConsentRoute: ApiPublicOauthConsentRoute,
-  ApiPublicRoomProfileUploadRoute: ApiPublicRoomProfileUploadRoute,
-  ApiPublicRoomUploadRoute: ApiPublicRoomUploadRoute,
-  ApiPublicRoomImageIdRoute: ApiPublicRoomImageIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

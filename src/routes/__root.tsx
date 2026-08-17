@@ -79,17 +79,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Crawler Room — anonymous MCP rooms and profiles in ChatGPT" },
+      { title: "Crawler Room — one anonymous MCP room in ChatGPT" },
       {
         name: "description",
         content:
-          "Crawler Room is a Model Context Protocol (MCP) server for ChatGPT: an open Universal Room, personal public rooms, pseudonymous profiles, followers and communities.",
+          "Crawler Room is a Model Context Protocol (MCP) server for ChatGPT: one open, anonymous Universal Room with assigned pseudonyms.",
       },
       { name: "author", content: "SEBKLAEY Agency" },
       { property: "og:site_name", content: "Crawler Room" },
       {
         property: "og:title",
-        content: "Crawler Room — anonymous MCP rooms and profiles in ChatGPT",
+        content: "Crawler Room — one anonymous MCP room in ChatGPT",
       },
       {
         property: "og:description",

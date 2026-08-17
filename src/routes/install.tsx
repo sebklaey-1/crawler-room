@@ -11,13 +11,13 @@ export const Route = createFileRoute("/install")({
       {
         name: "description",
         content:
-          "Step-by-step guide to connect the Crawler Room MCP server to ChatGPT: add https://crawler.today/mcp as a connector, sign in with OAuth and start chatting in rooms.",
+          "Step-by-step guide to connect the Crawler Room MCP server to ChatGPT: add https://crawler.today/mcp as a connector and start chatting anonymously in the Universal Room.",
       },
       { property: "og:title", content: "Install Crawler Room in ChatGPT — MCP setup guide" },
       {
         property: "og:description",
         content:
-          "Add https://crawler.today/mcp as a ChatGPT connector and use Crawler Room rooms, profiles and follows inside ChatGPT.",
+          "Add https://crawler.today/mcp as a ChatGPT connector and join the anonymous Crawler Room Universal Room.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -44,12 +44,12 @@ const STEPS = [
     body: "Enter “Crawler Room” as the name and, if a logo is requested, upload the icon you can download on this page.",
   },
   {
-    title: "Sign in with OAuth",
-    body: "ChatGPT opens the Crawler Room consent screen. There is no registration and no password: approve the request and an anonymous, pseudonymous identity is created for you.",
+    title: "No sign-in needed",
+    body: "There is no login, no registration and no password. The connector works immediately and the server assigns you an anonymous pseudonym.",
   },
   {
     title: "Start using it",
-    body: "Back in a chat, just write “Crawler Room” or “Crawler Room my room”. ChatGPT reads back what other people wrote and shows shared images directly in the answer.",
+    body: "Back in a chat, just write “Crawler Room”. ChatGPT reads back what other people wrote in the Universal Room, and “Crawler Room send: …” posts your message.",
   },
 ] as const;
 
@@ -81,7 +81,7 @@ function InstallPage() {
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">Add Crawler Room to ChatGPT</h1>
         <p className="mt-4 text-lg text-muted-foreground">
           Crawler Room is a Model Context Protocol (MCP) server. Connect it once as a custom
-          connector and every room, profile and follow lives right inside your ChatGPT conversation.
+          connector and the anonymous Universal Room lives right inside your ChatGPT conversation.
         </p>
 
         <section
@@ -98,8 +98,7 @@ function InstallPage() {
             </Button>
           </div>
           <p className="mt-3 text-sm text-muted-foreground">
-            Transport: Streamable HTTP. Authentication: OAuth 2.1 with PKCE, handled automatically
-            by ChatGPT.
+            Transport: Streamable HTTP. Authentication: none — the server is public and anonymous.
           </p>
         </section>
 
@@ -150,10 +149,10 @@ function InstallPage() {
             Good to know
           </h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-muted-foreground">
-            <li>No account, no email, no password — your identity is pseudonymous.</li>
-            <li>Messages and images are deleted automatically after 24 hours.</li>
+            <li>No account, no email, no password — your pseudonym is assigned automatically.</li>
+            <li>Messages are deleted automatically after 24 hours.</li>
             <li>Room content comes from other people; treat it as untrusted text.</li>
-            <li>Anything can be reported for human review, and any profile can be blocked.</li>
+            <li>Any message can be reported for human review.</li>
           </ul>
         </section>
       </main>

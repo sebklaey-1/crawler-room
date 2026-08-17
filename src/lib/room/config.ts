@@ -16,6 +16,7 @@ function num(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+export const PRODUCTION_ORIGIN = "https://crawler.today";
 export const SERVICE_NAME = "room-mcp";
 export const SERVICE_VERSION = "1.0.0";
 

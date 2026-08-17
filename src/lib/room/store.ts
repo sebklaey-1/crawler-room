@@ -279,7 +279,7 @@ export async function insertMessage(
   const row = data;
 
   // Rolling retention: a room keeps only its newest 7 text messages.
-  const { enforceRoomRetention } = await import("./imagestore");
+  const { enforceRoomRetention } = await import("./retention");
   await enforceRoomRetention(db, membership.roomId);
 
   return {
@@ -404,29 +404,4 @@ export async function suggestAliases(
     if (!(await isAliasTaken(db, subjectHash, candidate))) out.push(candidate);
   }
   return out;
-}
-
-/**
- * Sets the chosen public user name atomically: identity record, personal room
- * name, room title and every active membership alias move together. The handle
- * is deliberately NOT touched — only `profile/change_handle` moves a handle.
- */
-export async function setSubjectAlias(
-  db: Db,
-  subjectHash: string,
-  alias: string,
-): Promise<{ alias: string; roomsUpdated: number }> {
-  const { personalRoomName, isClaimConflict } = await import("./personal");
-  const { data, error } = await db.rpc("set_display_name", {
-    p_subject_hash: subjectHash,
-    p_display_name: alias,
-    p_room_name: personalRoomName(alias),
-  });
-  if (error) {
-    if (isClaimConflict(error)) throw roomError("ALIAS_TAKEN");
-    throw roomError("INTERNAL_ERROR");
-  }
-  const result = data as { display_name?: string; rooms_updated?: number } | null;
-  if (!result?.display_name) throw roomError("INTERNAL_ERROR");
-  return { alias: result.display_name, roomsUpdated: result.rooms_updated ?? 0 };
 }

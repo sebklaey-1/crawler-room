@@ -19,32 +19,28 @@ interface Health {
 
 const AREAS = [
   {
-    name: "Universal Room",
-    body: "One open public room for everyone. Enter, read along and write — messages appear whenever you ask.",
+    name: "One Universal Room",
+    body: "A single open public room for everyone. Enter, read along and write — the whole product, nothing else to learn.",
   },
   {
-    name: "Personal public rooms",
-    body: "Everyone gets one permanent public room named after their handle. Others can open it, read it and write in it.",
+    name: "Automatic pseudonyms",
+    body: "Every visitor is given a pseudonym by the server. No sign-in, no registration, no profile, no name to pick.",
   },
   {
-    name: "Social profiles",
-    body: "Display name, @handle, short bio and one link — shown as a clear profile card inside ChatGPT. No images and no location are collected.",
+    name: "24-hour memory",
+    body: "The room keeps only its newest 7 messages and nothing older than 24 hours. Conversations stay in the moment.",
   },
   {
-    name: "Followers and notifications",
-    body: "Follow rooms you care about. Notifications are pull-based and appear the next time you talk to Crawler Room.",
+    name: "Live presence",
+    body: "See how many people are in the room right now, counted live and shown as a number only.",
   },
   {
-    name: "Likes",
-    body: "Like profiles, messages and images. One like per person and item; your own content is not likeable.",
+    name: "Reporting",
+    body: "Any message can be reported for human review straight from the chat, with rate limits and spam checks on the server.",
   },
   {
-    name: "Analytics",
-    body: "Your own profile statistics as clear text charts — visible only to you, never with visitor identities.",
-  },
-  {
-    name: "Communities",
-    body: "Public community rooms anyone can join — lasting spaces built around shared interests. Start your own, gather followers, and let the conversation keep going even when you step away.",
+    name: "Nothing collected",
+    body: "No accounts, no profiles, no likes, no analytics, no images, no email address and no location — ever.",
   },
 ] as const;
 
@@ -54,31 +50,20 @@ const STEPS = [
     body: "Type “Crawler Room” in ChatGPT. You land in the Universal Room and immediately see what people are saying.",
   },
   {
-    title: "Your own room",
-    body: "Say “Crawler Room my room”. Your permanent public room already exists — you only sign in once for writing.",
+    title: "Write something",
+    body: "Say “Crawler Room send: hi everyone”. Your message appears under your assigned pseudonym.",
   },
   {
-    title: "Your profile",
-    body: "Set a display name, bio, banner and profile picture. Others open it with “Crawler Room open @handle”.",
-  },
-  {
-    title: "Follow and like",
-    body: "Follow rooms, like messages and images. Everything stays pseudonymous.",
-  },
-  {
-    title: "Communities",
-    body: "Create a public community or join one, and gather people around a shared subject.",
+    title: "Keep reading",
+    body: "Ask again any time. ChatGPT reads the newest messages back to you and translates them into your language.",
   },
 ];
 
 const PRIVACY = [
-  "Public reading is anonymous; anything personal needs one secure sign-in inside ChatGPT.",
-  "Your account is only ever stored as a keyed hash — never as an address or a plain identifier.",
-  "Profiles are pseudonymous and public by choice; you decide what a visitor sees.",
-  "Rooms keep only recent content — older messages and images are deleted automatically.",
-  "Images stay private, are stripped of EXIF/GPS data and are published only after a safety review.",
-  "Analytics show counts only — never who visited you.",
-  "Content and profiles can be reported for human review, any profile can be blocked, and every permission is checked on the server.",
+  "No account, no email, no password — identity is a server-side keyed hash you never see.",
+  "Every message is public and disappears after 24 hours at the latest.",
+  "Live presence is a count only — never a list of who is watching.",
+  "Messages can be reported for human review, and every limit is enforced on the server.",
 ];
 
 export function CrawlerRoomLanding() {
@@ -135,19 +120,18 @@ export function CrawlerRoomLanding() {
             className="mb-8 h-24 w-24 rounded-3xl shadow-lg"
           />
           <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            Crawler Room is a Model Context Protocol (MCP) server that connects people through the
-            Universal Room, personal rooms and profiles.
+            Crawler Room is a Model Context Protocol (MCP) server with one open, anonymous Universal
+            Room inside ChatGPT.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            An anonymous social layer that lives entirely inside ChatGPT: open rooms, your own
-            permanent public room, a real profile, followers, likes, analytics and communities. No
-            separate login, completely free.
+            One public room, everyone anonymous under an assigned pseudonym, messages gone after 24
+            hours. No login, no profile, completely free.
           </p>
           <div className="mt-8 rounded-xl border border-border bg-card p-5 font-mono text-sm text-card-foreground">
             <p className="text-muted-foreground">In ChatGPT:</p>
             <p className="mt-2">Crawler Room</p>
-            <p>Crawler Room my room</p>
-            <p>Crawler Room open @handle</p>
+            <p>Crawler Room send: hello everyone</p>
+            <p>Crawler Room read the latest messages</p>
           </div>
         </section>
 
@@ -183,14 +167,13 @@ export function CrawlerRoomLanding() {
             ))}
           </ul>
           <p className="mt-6 text-sm text-muted-foreground">
-            Messages, images and bios from other people are third-party content. Never share
-            personal data there.
+            Messages from other people are third-party content. Never share personal data there.
           </p>
         </section>
       </main>
 
       <LegalFooter
-        note={`Crawler Room ${data?.version ? `v${data.version}` : ""} — anonymous rooms, profiles and communities`}
+        note={`Crawler Room ${data?.version ? `v${data.version}` : ""} — one anonymous Universal Room`}
       />
     </div>
   );

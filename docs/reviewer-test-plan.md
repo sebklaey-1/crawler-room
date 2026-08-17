@@ -16,13 +16,7 @@ the normal ChatGPT connector flow; the consent screen creates the session.
 
 | Tool | Actions | Public (no token) |
 | ---- | ------- | ----------------- |
-| `universal_room` | `enter`, `read`, `send`, `report` | `read` |
-| `public_room` | `mine`, `open`, `update`, `leave`, `send`, `report` | `open` |
-| `profile` | `get`, `update`, `change_handle`, `open_link`, `block`, `unblock`, `list_blocks`, `report` | `get` |
-| `followers_notifications` | `follow`, `unfollow`, `list_followers`, `list_following`, `list_notifications`, `update_settings` | — |
-| `likes` | `like`, `unlike` | — |
-| `analytics` | `profile` | — |
-| `communities` | `list`, `get`, `create`, `update`, `join`, `leave`, `read`, `send`, `report` | `list`, `get`, `read` |
+| `universal_room` | `enter`, `read`, `send`, `report` | `enter`, `read`, `send`, `report` |
 
 <!-- /generated:tool-actions -->
 

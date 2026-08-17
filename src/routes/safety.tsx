@@ -40,8 +40,8 @@ function SafetyPage() {
       <main className="mx-auto max-w-3xl px-6 py-14">
         <h1 className="text-3xl font-semibold tracking-tight">Safety and content rules</h1>
         <p className="mt-3 text-sm text-muted-foreground">
-          Crawler Room is a general-audience product. Everything you post in a room or on your
-          profile is public, so the rules below are strict on purpose.
+          Crawler Room is a general-audience product. Everything you post in the Universal Room is
+          public, so the rules below are strict on purpose.
         </p>
 
         <Section title="General audience">
@@ -93,22 +93,13 @@ function SafetyPage() {
           </p>
         </Section>
 
-        <Section title="Images">
-          <p>
-            Images are stored privately, stripped of EXIF and location data and published only after
-            an automated safety review. Rejected images are deleted together with their file. A room
-            keeps only its newest three approved images.
-          </p>
-        </Section>
-
         <Section title="How to protect yourself and report">
           <ul className="list-disc space-y-2 pl-5">
             <li>
-              <strong>Report in chat:</strong> ask Crawler Room to report a message, an image, a
-              profile, a room or a community (for example “Crawler Room report this message as
-              harassment”). You pick a fixed reason and may add up to 500 characters of context —
-              please do not add extra personal data there. You get back an opaque case reference
-              only.
+              <strong>Report in chat:</strong> ask Crawler Room to report a message (for example
+              “Crawler Room report this message as harassment”). You pick a fixed reason and may add
+              up to 500 characters of context — please do not add extra personal data there. You get
+              back an opaque case reference only.
             </li>
             <li>
               <strong>A report never removes anything automatically.</strong> Each case runs through{" "}
@@ -116,18 +107,12 @@ function SafetyPage() {
               Reporting the same target twice simply returns the case you already filed.
             </li>
             <li>
-              <strong>Block and unblock:</strong> ask Crawler Room to block or unblock a profile, or
-              to list who you block. A block works in both directions for personal rooms: neither
-              side can open, message or follow the other room. It does not delete content that is
-              already public and it does not change the Universal Room or community rooms.
-            </li>
-            <li>
               <strong>Without ChatGPT:</strong> use the web form at{" "}
               <a className="underline" href="/support">
                 crawler.today/support
               </a>{" "}
-              with the category “abuse/safety report”. Include the public handle and what happened.
-              You will get an opaque case reference.
+              with the category “abuse/safety report”. Describe what happened. You will get an
+              opaque case reference.
             </li>
             <li>
               Reports are reviewed by a person. Review capacity is limited, so a report does not

@@ -34,25 +34,11 @@ export const Route = createFileRoute("/api/public/admin/cleanup")({
 
         const runId = await startMaintenanceRun(db);
         try {
-          const { sweepImages } = await import("@/lib/room/imagestore");
           const { data, error } = await db.rpc("cleanup_expired");
           if (error) throw error;
-          const images = await sweepImages(db);
-          const counters = {
-            ...(typeof data === "object" && data ? (data as Record<string, number>) : {}),
-            images_purged: images.purged,
-            images_retention: images.retention,
-            queue_removed: images.queue,
-            queue_failed: images.queueFailed,
-          };
-          await finishMaintenanceRun(
-            db,
-            runId,
-            images.queueFailed > 0 ? "failed" : "ok",
-            counters,
-            images.queueFailed > 0 ? "storage_retry_pending" : undefined,
-          );
-          return json({ ok: true, result: data ?? {}, images });
+          const counters = typeof data === "object" && data ? (data as Record<string, number>) : {};
+          await finishMaintenanceRun(db, runId, "ok", counters);
+          return json({ ok: true, result: data ?? {} });
         } catch {
           await finishMaintenanceRun(db, runId, "failed", {}, "cleanup_failed");
           return json({ ok: false, error: "cleanup_failed" }, 500);
