@@ -191,7 +191,7 @@ describe("phase 3 — untrusted content rendering", () => {
       },
       tabs: { messages: [{ alias: "Bob", text: INJECTION, likes: 0 }], images: [] },
     });
-    expect(card).toContain("![Banner von @anna](https://cdn.test/b.png)");
+    expect(card).not.toContain("https://cdn.test/b.png");
     expect(card).not.toContain("http://evil.test/a.png");
     expect(card).not.toContain("javascript:");
     expect(card).not.toMatch(/\[Bern\]\(/);

@@ -102,7 +102,7 @@ describe("content safety and rendering", () => {
     expect(validateMessage("  hallo  ", { maxLength: 500, maxLinks: 2 })).toBe("hallo");
   });
 
-  it("renders profile cards with real image markdown", () => {
+  it("renders profile cards without any images", () => {
     const card = profileCard({
       profile: {
         handle: "sam",
@@ -116,8 +116,9 @@ describe("content safety and rendering", () => {
       },
       tabs: { messages: [], images: [] },
     });
-    expect(card).toContain("![Banner von @sam](https://img/banner.jpg)");
-    expect(card).toContain("![Profilbild von @sam](https://img/avatar.jpg)");
+    expect(card).not.toContain("https://img/banner.jpg");
+    expect(card).not.toContain("https://img/avatar.jpg");
+    expect(card).toContain("**@sam**");
   });
 
   it("hides private profiles from visitors", () => {
