@@ -68,8 +68,14 @@ export const Route = createFileRoute("/api/public/oauth/consent")({
         }
         const decision = body.decision === "approve" ? "approve" : "deny";
 
-        const subject = await webSessionHash(sessionToken(request));
-        if (!subject) {
+        // The durable anchor wins over the ephemeral browser session, so a new
+        // anonymous session never forks a second identity for the same person.
+        const sessionSubject = await webSessionHash(sessionToken(request));
+        const anchored = await resolveAnchoredSubject(
+          request.headers.get("cookie"),
+          sessionSubject,
+        );
+        if (!anchored) {
           return json(
             { error: "login_required", error_description: "Die Verbindung ist abgelaufen." },
             401,
@@ -77,14 +83,19 @@ export const Route = createFileRoute("/api/public/oauth/consent")({
         }
 
         try {
-          const result = await decideAuthorization(body.request_id, decision, subject);
+          const result = await decideAuthorization(
+            body.request_id,
+            decision,
+            anchored.subjectHash,
+          );
           if (isOAuthFailure(result)) {
             return json(
               { error: result.error, error_description: result.error_description },
               result.status,
+              anchored.setCookie,
             );
           }
-          return json(result);
+          return json(result, 200, anchored.setCookie);
         } catch (error) {
           return json(
             { error: "server_error", error_description: toRoomError(error).message },
