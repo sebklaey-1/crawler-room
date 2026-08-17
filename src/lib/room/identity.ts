@@ -1,28 +1,19 @@
 /**
  * Pseudonymous identity of the calling person.
  *
+ * Crawler Room has no accounts, no sign-in and no profiles. Every caller is
+ * identified only by the pseudonymous subject the MCP client provides
+ * (`openai/subject`), hashed with a server secret. From that hash a stable
+ * pseudonym (alias) is derived.
+ *
  * SECURITY:
  * - Identity is NEVER a tool input; it comes from the transport layer only.
- * - Authenticated calls carry a server-injected `room/auth` entry in `_meta`
- *   that the MCP transport builds from a validated OAuth bearer token. Any
- *   `room/*` key sent by a client is stripped before the handler sees it.
- * - `openai/subject` alone never authorises anything and never migrates an
- *   existing identity: it is not a proof of ownership.
- * - Raw subjects and user ids are never stored; only HMAC-SHA256 digests.
+ * - Raw subjects are never stored; only HMAC-SHA256 digests.
  */
 import { requireSecret } from "./config";
 import { hmacSha256Hex } from "./crypto";
-import { roomError } from "./errors";
 
 export type McpMeta = Record<string, unknown> | undefined;
-
-/** Key of the server-injected authentication context inside `_meta`. */
-export const AUTH_META_KEY = "room/auth";
-
-export interface AuthMeta {
-  /** Pseudonymous subject only — the raw auth user id never reaches handlers. */
-  subjectHash: string;
-}
 
 export interface Identity {
   subjectHash: string;
@@ -40,14 +31,6 @@ export function readSubject(meta: McpMeta): string | null {
   return readMetaString(meta, "openai/subject");
 }
 
-export function readAuthMeta(meta: McpMeta): AuthMeta | null {
-  const value = meta?.[AUTH_META_KEY];
-  if (!value || typeof value !== "object") return null;
-  const { subjectHash } = value as Partial<AuthMeta>;
-  if (typeof subjectHash !== "string" || !subjectHash) return null;
-  return { subjectHash };
-}
-
 /** Strips every server-controlled `room/*` key from client supplied `_meta`. */
 export function sanitizeClientMeta(meta: McpMeta): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -58,22 +41,19 @@ export function sanitizeClientMeta(meta: McpMeta): Record<string, unknown> {
   return out;
 }
 
-/** Identity of an authenticated caller. Throws AUTH_REQUIRED when signed out. */
+/**
+ * Identity of the caller. Never throws: without a subject the session is used,
+ * and without both a per-request pseudonym is created.
+ */
 export async function resolveIdentity(meta: McpMeta): Promise<Identity> {
-  const auth = readAuthMeta(meta);
-  if (!auth) throw roomError("AUTH_REQUIRED");
-
   const secret = requireSecret("SUBJECT_HASH_SECRET");
   const session = readMetaString(meta, "openai/session");
+  const subject = readSubject(meta) ?? (session ? `session:${session}` : null);
+  const seed = subject ?? `ephemeral:${crypto.randomUUID()}`;
 
   return {
-    subjectHash: auth.subjectHash,
+    subjectHash: await hmacSha256Hex(secret, seed),
     sessionHash: session ? await hmacSha256Hex(secret, session) : null,
     locale: readMetaString(meta, "openai/locale"),
   };
-}
-
-/** True when the caller presented a valid access token. */
-export function isAuthenticated(meta: McpMeta): boolean {
-  return readAuthMeta(meta) !== null;
 }
