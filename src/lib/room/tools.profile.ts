@@ -19,7 +19,6 @@ import {
   isBlocked,
   likeCountsFor,
   profileAnalytics,
-  profileImageUrls,
   publicMetrics,
   recordEvent,
   removeLike,
@@ -35,7 +34,7 @@ import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import { getDb, touchPresence, type Db } from "./store";
 
 export const PROFILE_DISPLAY_INSTRUCTION =
-  "PFLICHT: Gib den mitgelieferten Markdown-Text der Antwort unverändert und vollständig aus. Vorhandene Bilder immer als ![alt](url) rendern — niemals als Link, Codeblock oder Beschreibung, URLs nie kürzen oder verändern. Fehlt ein Banner oder Profilbild, lasse die Zeile komplett weg: niemals «Banner: —» oder «Profilbild: —» oder ähnliche Platzhalter ausgeben und nicht erwähnen, dass ein Bild fehlt. Reihenfolge: Banner, Profilbild, Anzeigename, @handle, Bio, Link/Beitritt, Kennzahlen-Tabelle (followers · following · likes · people here now), dann Nachrichten und Bilder. Übersetze nur Bio, Nachrichten und Alt-Texte in die Sprache der Person; Zahlen, Handles und Bild-URLs bleiben unverändert. Beim eigenen Profil biete Bearbeiten an (Name, Bio, Link, Bilder, Handle, Sichtbarkeit).";
+  "PFLICHT: Gib den mitgelieferten Markdown-Text der Antwort unverändert und vollständig aus. Profile enthalten keine Bilder: gib niemals Bilder, Bild-URLs, Banner- oder Profilbild-Zeilen aus und biete kein Setzen oder Ändern von Bildern an. Reihenfolge: Anzeigename, @handle, Bio, Link/Beitritt, Kennzahlen-Tabelle (followers · following · likes · people here now), dann Nachrichten. Übersetze nur Bio und Nachrichten in die Sprache der Person; Zahlen und Handles bleiben unverändert. Beim eigenen Profil biete Bearbeiten an (Name, Bio, Link, Handle, Sichtbarkeit).";
 
 
 /* -------------------------------- helpers -------------------------------- */
@@ -73,33 +72,7 @@ async function profileMessages(db: Db, profile: ProfileRow, viewerHash: string) 
   );
 }
 
-async function profileImages(db: Db, profile: ProfileRow, viewerHash: string) {
-  const rows = await listApprovedImages(db, profile.roomId, IMAGE_RETENTION);
-  const aliases = await aliasesFor(
-    db,
-    rows.map((row) => row.sender_membership_id),
-  );
-  const likes = await likeCountsFor(
-    db,
-    "image",
-    rows.map((row) => String(row.id)),
-    viewerHash,
-  );
-  return Promise.all(
-    rows.map(async (row) => ({
-      id: await encodeImageId(row.id),
-      alias: aliases[row.sender_membership_id] ?? "Unbekannt",
-      alt_text: row.alt_text ?? "",
-      created_at: new Date(row.created_at).toISOString(),
-      url: await publicImageUrl(row.id),
-      likes: likes[String(row.id)]?.likes ?? 0,
-      liked_by_me: likes[String(row.id)]?.liked_by_me ?? false,
-    })),
-  );
-}
-
 async function serializeProfile(db: Db, profile: ProfileRow, viewerHash: string) {
-  const media = await profileImageUrls(db, profile);
   const metrics = await publicMetrics(db, profile, viewerHash);
   return {
     handle: profile.handle,
@@ -109,7 +82,6 @@ async function serializeProfile(db: Db, profile: ProfileRow, viewerHash: string)
     joined_at: profile.createdAt,
     visibility: profile.visibility,
     is_owner: profile.ownerSubjectHash === viewerHash,
-    ...media,
     ...metrics,
   };
 }
@@ -165,12 +137,11 @@ export async function handleGetProfile(input: unknown, meta: McpMeta) {
     redirected_from: redirectedFrom,
     tabs: {
       messages: await profileMessages(db, profile, identity.subjectHash),
-      images: await profileImages(db, profile, identity.subjectHash),
       followers: profile.showFollowerCount ? await listFollowers(db, profile.roomId, 50) : [],
       following: isOwner ? await listFollowedRooms(db, profile.ownerSubjectHash) : [],
     },
     edit_hint: isOwner
-      ? "Du kannst Anzeigename, Bio, Link, Profilbild, Banner, Handle und Sichtbarkeit ändern."
+      ? "Du kannst Anzeigename, Bio, Link, Handle und Sichtbarkeit ändern."
       : null,
     display_instruction: PROFILE_DISPLAY_INSTRUCTION,
   };
@@ -238,38 +209,6 @@ export async function handleChangeHandle(input: unknown, meta: McpMeta) {
     }
     throw error;
   }
-}
-
-export async function handleSetProfileImage(input: unknown, meta: McpMeta) {
-  const identity = await resolveIdentity(meta);
-  const db = await getDb();
-  const payload = payloadOf<{
-    kind?: string;
-    remove?: boolean;
-    image_url?: string | null;
-  }>(input);
-  const kind = payload.kind === "banner" ? "banner" : "avatar";
-
-  await enforceRateLimit(db, identity.subjectHash, "profile_image", WINDOWS.join(10));
-
-  if (payload.remove === true || payload.image_url === null) {
-    const result = await removeProfileImage(db, identity.subjectHash, kind);
-    return { ...result, message: kind === "banner" ? "Banner entfernt." : "Profilbild entfernt." };
-  }
-
-  if (typeof payload.image_url !== "string" || !payload.image_url.trim()) {
-    throw roomError(
-      "INVALID_INPUT",
-      "Bitte nenne eine öffentlich abrufbare https-Bild-URL oder setze remove: true.",
-    );
-  }
-
-  const result = await setProfileImageFromUrl(db, identity.subjectHash, kind, payload.image_url);
-  return {
-    ...result,
-    message: kind === "banner" ? "Banner aktualisiert." : "Profilbild aktualisiert.",
-    display_instruction: "Zeige das neue Bild als Markdown ![](url) in der Antwort.",
-  };
 }
 
 
@@ -462,7 +401,6 @@ export async function publicProfileView(db: Db, username: unknown) {
     authenticated: false,
     tabs: {
       messages: await profileMessages(db, profile, ""),
-      images: await profileImages(db, profile, ""),
       followers: profile.showFollowerCount ? await listFollowers(db, profile.roomId, 50) : [],
       following: [],
     },

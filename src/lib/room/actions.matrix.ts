@@ -53,8 +53,6 @@ export const ACTION_MATRIX: Record<string, Record<string, ActionEffect>> = {
     // for the same owner and redirects to them; it never becomes claimable by
     // anyone else. Destructive only in the sense that the public name changes.
     change_handle: PUBLIC_DESTRUCTIVE,
-    // Fetches an external image URL and publishes the result.
-    set_image: PUBLIC_WRITE,
     // Follows an external link target and counts the click.
     open_link: PUBLIC_WRITE,
     // Blocking removes the mutual interaction possibility.

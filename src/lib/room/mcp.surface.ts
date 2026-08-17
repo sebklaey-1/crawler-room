@@ -49,7 +49,6 @@ import {
   handleGetProfile,
   handleLikeContent,
   handleProfileAnalytics,
-  handleSetProfileImage,
   handleTrackProfileLink,
   handleUnlikeContent,
   handleUpdateProfile,
@@ -607,7 +606,6 @@ const profileInput = z
       "get",
       "update",
       "change_handle",
-      "set_image",
       "open_link",
       "block",
       "unblock",
@@ -623,9 +621,6 @@ const profileInput = z
     show_follower_count: z.boolean().optional(),
     show_likes: z.boolean().optional(),
     handle: handleField(64).optional(),
-    kind: z.enum(["avatar", "banner"]).optional(),
-    image_url: imageUrlField.nullable().optional(),
-    remove: z.boolean().optional(),
     reason: reasonField.optional(),
     details: detailsField.optional(),
   })
@@ -660,18 +655,6 @@ async function profileHandler(input: unknown, meta: McpMeta): Promise<Json> {
         "change_handle",
         (await handleChangeHandle(
           { handle: need(data.handle, "Bitte nenne das gewünschte @handle.") },
-          meta,
-        )) as Json,
-      );
-    case "set_image":
-      return tag(
-        "set_image",
-        (await handleSetProfileImage(
-          {
-            kind: data.kind ?? "avatar",
-            ...(data.image_url !== undefined ? { image_url: data.image_url } : {}),
-            ...(data.remove !== undefined ? { remove: data.remove } : {}),
-          },
           meta,
         )) as Json,
       );
@@ -1316,7 +1299,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     name: "profile",
     title: "Profile",
     description:
-      "Reads and edits public Crawler Room profiles. Use action=get to load the public profile of a @handle, action=update to change your own display name, bio, link and visibility settings, action=change_handle to replace your own @handle, action=set_image to set or remove your own avatar or banner with a public https image_url, action=open_link to resolve the profile link and count the click, action=block and action=unblock to control who may interact with you, action=list_blocks to list the people you block, action=report to report a profile. Handles and display names are globally unique; changing the display name does not change the @handle. Only your own profile is editable and ownership is checked on the server. Blocking applies in both directions for profile views, following and personal-room messages. " +
+      "Reads and edits public Crawler Room profiles. Use action=get to load the public profile of a @handle, action=update to change your own display name, bio, link and visibility settings, action=change_handle to replace your own @handle, action=open_link to resolve the profile link and count the click, action=block and action=unblock to control who may interact with you, action=list_blocks to list the people you block, action=report to report a profile. Handles and display names are globally unique; changing the display name does not change the @handle. Only your own profile is editable and ownership is checked on the server. Blocking applies in both directions for profile views, following and personal-room messages. " +
       REPORT_DESCRIPTION,
     inputSchema: inputSchemaFor(profileInput, {
       username: "@handle of another person's profile; used by get, block, unblock and report.",
@@ -1324,9 +1307,6 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       bio: "New public biography text of your own profile.",
       external_url: "Public https link shown on your own profile.",
       handle: "New @handle for action=change_handle.",
-      kind: "Which image to set for action=set_image: avatar or banner.",
-      image_url: "Public https URL of the image to fetch for action=set_image.",
-      remove: "Set true with action=set_image to remove the current image.",
     }),
     outputSchema: outputFor(
       {
@@ -1342,7 +1322,6 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         ],
         update: ["profile", "message", "display_instruction"],
         change_handle: ["handle", "suggestions", "profile", "message"],
-        set_image: ["profile", "message", "display_instruction"],
         open_link: ["url", "message"],
         block: ["blocked", "handle", "message"],
         unblock: ["unblocked", "handle", "message"],
