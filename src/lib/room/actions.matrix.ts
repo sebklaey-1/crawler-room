@@ -80,24 +80,20 @@ export const ACTION_MATRIX: Record<string, Record<string, ActionEffect>> = {
   analytics: {
     profile: READ,
   },
-  communities_organizations: {
-    list_communities: READ,
-    get_community: READ,
-    create_community: PUBLIC_WRITE,
-    update_community: PUBLIC_WRITE,
-    join_community: PUBLIC_WRITE,
-    leave_community: PUBLIC_DESTRUCTIVE,
-    read_community: READ,
-    send_community: PUBLIC_WRITE,
-    list_organizations: READ,
-    get_organization: READ,
-    create_organization: PUBLIC_WRITE,
-    update_organization: PUBLIC_WRITE,
-    list_members: READ,
-    add_member: PUBLIC_WRITE,
-    remove_member: PUBLIC_DESTRUCTIVE,
+  // Communities only. Organisations, organisation members and team roles are
+  // not part of the public MVP surface (see docs/organizations-deferred.md).
+  communities: {
+    list: READ,
+    get: READ,
+    create: PUBLIC_WRITE,
+    update: PUBLIC_WRITE,
+    join: PUBLIC_WRITE,
+    leave: PUBLIC_DESTRUCTIVE,
+    read: READ,
+    send: PUBLIC_WRITE,
     report: WRITE,
   },
+
 };
 
 export interface ToolAnnotations extends Record<string, unknown> {
