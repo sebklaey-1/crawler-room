@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { resolveAnchoredSubject } from "@/lib/room/anchor";
 import { toRoomError } from "@/lib/room/errors";
 import { consentDetails, decideAuthorization, isOAuthFailure } from "@/lib/room/oauth/server";
 import { webSessionHash } from "@/lib/room/websession";
