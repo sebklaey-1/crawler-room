@@ -1,0 +1,1 @@
+DELETE FROM public.oauth_clients WHERE client_name = 'probe-test-fix';
