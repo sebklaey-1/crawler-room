@@ -41,6 +41,7 @@ export async function issueToken(
   subjectHash: string,
   ttlSeconds: number,
   nonce: string,
+  extra?: { roomId?: string; kind?: string },
 ): Promise<string> {
   const payload: Payload = {
     p: purpose,
@@ -48,10 +49,13 @@ export async function issueToken(
     s: subjectHash.slice(0, 32),
     e: Math.floor(Date.now() / 1000) + ttlSeconds,
     n: nonce,
+    ...(extra?.roomId ? { r: extra.roomId } : {}),
+    ...(extra?.kind ? { k: extra.kind } : {}),
   };
   const body = base64UrlEncode(JSON.stringify(payload));
   return `${body}.${await sign(body)}`;
 }
+
 
 export async function verifyToken(
   token: unknown,
