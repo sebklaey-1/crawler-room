@@ -218,14 +218,16 @@ export async function authSubjectHash(userId: string): Promise<string> {
 }
 
 /**
- * Maps a verified account onto the pseudonymous subject used everywhere else.
+ * Maps a verified token subject onto the pseudonymous identity used
+ * everywhere else. The argument is already the keyed account digest minted at
+ * consent time (`authUserHash`), so no raw account id ever reaches the store.
  *
  * There is deliberately NO automatic takeover of a legacy `openai/subject`
  * identity: an unauthenticated MCP `_meta` value is not proof of ownership.
  * Legacy rows stay untouched; linking them is a controlled manual migration.
  */
-export async function resolveAuthSubject(db: Db, userId: string): Promise<string> {
-  const hash = await authUserHash(userId);
+export async function resolveAuthSubject(db: Db, subjectDigest: string): Promise<string> {
+  const hash = subjectDigest;
 
   const { data: existing, error: readError } = await db
     .from("anonymous_identities")
