@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { LegalFooter } from "@/components/legal-footer";
@@ -69,7 +69,13 @@ function InstallPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="mx-auto max-w-3xl px-6 py-16">
-        <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <span aria-hidden>←</span> Back
+        </Link>
+        <p className="mt-6 text-sm font-medium uppercase tracking-wide text-muted-foreground">
           Install Beta — v1.0.0
         </p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">Add Crawler Room to ChatGPT</h1>
