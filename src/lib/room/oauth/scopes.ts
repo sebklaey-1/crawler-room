@@ -8,43 +8,37 @@
  * - every other read needs `room:private`,
  * - every state-changing action needs `room:write`.
  *
- * A token therefore cannot write just because it can read: the two capabilities
- * are separate scopes and the consent screen shows them separately.
+ * A token therefore cannot write just because it can read: the two
+ * capabilities are separate scopes and the consent screen shows them apart.
  */
 import { ACTION_MATRIX } from "../actions.matrix";
 import { isPublicAction } from "../mcp.surface";
-
-export const SCOPE_OPENID = "openid";
-export const SCOPE_PROFILE = "profile";
-export const SCOPE_PRIVATE = "room:private";
-export const SCOPE_WRITE = "room:write";
-
-/** Every scope this authorization server is willing to issue. */
-export const SUPPORTED_SCOPES = [
-  SCOPE_OPENID,
-  SCOPE_PROFILE,
+import {
+  BASE_SCOPES,
+  parseScope,
   SCOPE_PRIVATE,
   SCOPE_WRITE,
-] as const;
+  SUPPORTED_SCOPES,
+} from "./catalog";
+
+export {
+  BASE_SCOPES,
+  parseScope,
+  SCOPE_OPENID,
+  SCOPE_PRIVATE,
+  SCOPE_PROFILE,
+  SCOPE_WRITE,
+  SUPPORTED_SCOPES,
+} from "./catalog";
 
 /** Default grant when a client requests nothing specific. */
-export const DEFAULT_SCOPES = [...SUPPORTED_SCOPES];
-
-/** Scopes that must always be present in an MCP access token. */
-export const BASE_SCOPES = [SCOPE_OPENID, SCOPE_PROFILE] as const;
-
-export function parseScope(value: unknown): string[] {
-  if (typeof value === "string") return value.split(/\s+/).filter(Boolean);
-  if (Array.isArray(value))
-    return value.filter((entry): entry is string => typeof entry === "string");
-  return [];
-}
+export const DEFAULT_SCOPES: string[] = [...SUPPORTED_SCOPES];
 
 /** Intersection of the requested scopes with what this server supports. */
 export function negotiateScopes(requested: unknown): string[] {
   const wanted = parseScope(requested);
   if (wanted.length === 0) return [...DEFAULT_SCOPES];
-  const granted = SUPPORTED_SCOPES.filter((scope) => wanted.includes(scope));
+  const granted: string[] = SUPPORTED_SCOPES.filter((scope) => wanted.includes(scope));
   for (const base of BASE_SCOPES) if (!granted.includes(base)) granted.unshift(base);
   return [...new Set(granted)];
 }
@@ -72,8 +66,8 @@ export function scopesForTool(tool: string): string[] {
 }
 
 export const SCOPE_DESCRIPTIONS: Record<string, string> = {
-  [SCOPE_OPENID]: "Deine anonyme Crawler-Room-Verbindung bestätigen",
-  [SCOPE_PROFILE]: "Dein öffentliches Crawler Room-Basisprofil teilen",
-  [SCOPE_PRIVATE]: "Deine privaten Räume, Benachrichtigungen und Analytics lesen",
-  [SCOPE_WRITE]: "In deinem Namen schreiben, folgen, liken und verwalten",
+  openid: "Deine anonyme Crawler-Room-Verbindung bestätigen",
+  profile: "Dein öffentliches Crawler Room-Basisprofil teilen",
+  "room:private": "Deine privaten Räume, Benachrichtigungen und Analytics lesen",
+  "room:write": "In deinem Namen schreiben, folgen, liken und verwalten",
 };
