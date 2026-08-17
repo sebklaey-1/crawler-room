@@ -1,35 +1,39 @@
 /**
  * OAuth 2.1 bearer authentication for the Crawler Room MCP server.
  *
- * The authorization server is the Supabase Auth instance of this project.
- * The MCP endpoint is a *protected resource* (RFC 9728): it never issues,
- * stores or forwards credentials, it only verifies the presented access token
- * and maps it to the pseudonymous identity used by the domain layer.
+ * The authorization server is Crawler Room itself (`src/lib/room/oauth/`), so
+ * the whole flow runs on Lovable Cloud with no platform auth hook and no
+ * external identity provider. The MCP endpoint stays a *protected resource*
+ * (RFC 9728): it never issues, stores or forwards credentials, it only
+ * verifies the presented access token and maps it to the pseudonymous
+ * identity used by the domain layer.
  *
  * SECURITY
- * - Tokens are verified with the official Supabase client (`auth.getClaims`),
- *   which validates the ES256 signature against the project's JWKS. No hand
- *   rolled or unverified JWT parsing decides authorisation.
- * - Beyond the signature the token must be live (`exp`), carry a UUID `sub`,
- *   be issued by *this* project's authorization server (`iss`), carry a
- *   non-empty `client_id`, name the canonical MCP resource in `aud` or
- *   `room_resource` (RFC 8707) and grant the declared scopes. There is NO
- *   weaker fallback: an ordinary browser or anonymous session JWT of the same
- *   authorization server is rejected, so only tokens minted through the
- *   OAuth 2.1 flow for this resource can reach the MCP surface.
+ * - Tokens are verified locally with HMAC-SHA256 against the server-side
+ *   secret `ROOM_OAUTH_SIGNING_SECRET`; only `alg: HS256` is accepted, so
+ *   algorithm confusion and `alg: none` are impossible.
+ * - Beyond the signature the token must be live (`exp`), name *this* issuer,
+ *   carry a non-empty `client_id`, name the canonical MCP resource in `aud`
+ *   (RFC 8707) and grant the base scopes. There is NO weaker fallback: a
+ *   browser session JWT of any kind is rejected, so only tokens minted
+ *   through the OAuth 2.1 flow for this resource reach the MCP surface.
  * - Tokens are never logged, never returned to the model and never stored.
- * - The raw auth user id is never persisted: only
- *   HMAC-SHA256(secret, "auth:" + sub) is used as the pseudonymous subject.
+ * - The raw account id is never persisted: only
+ *   HMAC-SHA256(secret, "auth:" + id) is used as the pseudonymous subject,
+ *   and that digest — not the account id — is the token subject.
  */
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-
 import { requireSecret } from "./config";
 import { hmacSha256Hex } from "./crypto";
 import { roomError } from "./errors";
+import { BASE_SCOPES, parseScope, SUPPORTED_SCOPES } from "./oauth/catalog";
+import { verifyJwt } from "./oauth/jwt";
 import type { Db } from "./store";
 
 export interface AuthUser {
-  /** Verified `sub` claim. Never leaves this module in raw form. */
+  /**
+   * Verified `sub` claim — already the pseudonymous subject digest, never a
+   * raw account identifier.
+   */
   userId: string;
   issuer: string;
   clientId: string;
@@ -46,9 +50,7 @@ interface CacheEntry {
 const tokenCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 60_000;
 const MAX_TOKEN_LENGTH = 8192;
-const VERIFY_TIMEOUT_MS = 5_000;
-const REQUIRED_SCOPES = ["openid", "profile"] as const;
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SUBJECT_RE = /^[0-9a-f]{64}$/;
 
 export function bearerToken(request: Request): string | null {
   const header = request.headers.get("authorization") ?? request.headers.get("Authorization");
