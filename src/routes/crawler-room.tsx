@@ -15,13 +15,13 @@ export const Route = createFileRoute("/crawler-room")({
       {
         name: "description",
         content:
-          "Documentation for the Crawler Room MCP server on crawler.today: Universal Room, personal public rooms, profiles, followers, likes, analytics, communities, retention and support.",
+          "Documentation for the Crawler Room MCP server on crawler.today: the anonymous Universal Room, pseudonyms, retention and support.",
       },
       { property: "og:title", content: "Crawler Room documentation" },
       {
         property: "og:description",
         content:
-          "How Crawler Room works inside ChatGPT: rooms, profiles, safety, retention and the canonical MCP resource https://crawler.today/mcp.",
+          "How Crawler Room works inside ChatGPT: the anonymous Universal Room, safety, retention and the MCP resource https://crawler.today/mcp.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

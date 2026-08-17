@@ -155,11 +155,11 @@ function SupportPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="handle">Public handle or room this is about (optional)</Label>
+              <Label htmlFor="handle">Pseudonym this is about (optional)</Label>
               <Input
                 id="handle"
                 maxLength={64}
-                placeholder="@handle"
+                placeholder="pseudonym"
                 value={handle}
                 onChange={(event) => setHandle(event.target.value)}
               />
