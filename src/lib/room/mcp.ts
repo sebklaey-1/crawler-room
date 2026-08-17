@@ -537,7 +537,15 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
     const batch = await runBatch(payload, makeContext);
     if (batch.challenge) return unauthorized(origin, "invalid_token");
     if (!batch.responses.length) return emptyResponse(202);
-    const extra = batch.authRequired ? { "WWW-Authenticate": challengeHeader(origin, "invalid_token", "Sign in to Crawler Room to use this action.") } : {};
+    const extra = batch.authRequired
+      ? {
+          "WWW-Authenticate": challengeHeader(
+            origin,
+            "invalid_token",
+            "Sign in to Crawler Room to use this action.",
+          ),
+        }
+      : {};
     return sse ? sseResponse(batch.responses, extra) : jsonResponse(batch.responses, 200, extra);
   }
 
@@ -548,7 +556,15 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
 
   // MCP clients start the OAuth flow when a tool call answers 401 with a
   // `WWW-Authenticate` challenge pointing at the resource metadata.
-  const extra = context.authRequired ? { "WWW-Authenticate": challengeHeader(origin, "invalid_token", "Sign in to Crawler Room to use this action.") } : {};
+  const extra = context.authRequired
+    ? {
+        "WWW-Authenticate": challengeHeader(
+          origin,
+          "invalid_token",
+          "Sign in to Crawler Room to use this action.",
+        ),
+      }
+    : {};
   if (context.authRequired && !sse) return jsonResponse(response, 401, extra);
   return sse ? sseResponse(response, extra) : jsonResponse(response, 200, extra);
 }

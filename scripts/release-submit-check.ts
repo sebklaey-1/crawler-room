@@ -218,7 +218,9 @@ async function liveToolContract(): Promise<{ ok: boolean; detail: string }> {
     if (!response.ok) return { ok: false, detail: `tools/list returned ${response.status}` };
     const text = await response.text();
     const json = JSON.parse(text.startsWith("data:") ? text.slice(text.indexOf("{")) : text) as {
-      result?: { tools?: Array<{ name: string; annotations?: unknown; securitySchemes?: unknown }> };
+      result?: {
+        tools?: Array<{ name: string; annotations?: unknown; securitySchemes?: unknown }>;
+      };
     };
     const tools = json.result?.tools ?? [];
     const names = tools.map((tool) => tool.name);
@@ -246,7 +248,11 @@ async function liveToolContract(): Promise<{ ok: boolean; detail: string }> {
 }
 
 const toolContract = await liveToolContract();
-item("live tools/list contract (7 tools, annotations, securitySchemes)", toolContract.ok, toolContract.detail);
+item(
+  "live tools/list contract (7 tools, annotations, securitySchemes)",
+  toolContract.ok,
+  toolContract.detail,
+);
 
 async function unauthChallenge(): Promise<{ ok: boolean; detail: string }> {
   try {
@@ -299,7 +305,6 @@ item(
     ? "confirmed — issued OAuth tokens carry the canonical resource"
     : "manual — enable Authentication → Hooks → Custom Access Token → public.custom_access_token_hook, then set ROOM_SUBMIT_TOKEN_HOOK_ACTIVE",
 );
-
 
 /* --------------------- 5. portal metadata and reviewer assets ---------------- */
 

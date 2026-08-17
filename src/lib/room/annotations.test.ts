@@ -91,7 +91,11 @@ describe("action/side-effect matrix", () => {
 
 describe("submission package", () => {
   const pkg = JSON.parse(readFileSync("docs/openai-submission-ready.json", "utf8")) as {
-    tools: Array<{ name: string; annotations: Record<string, boolean>; securitySchemes: unknown[] }>;
+    tools: Array<{
+      name: string;
+      annotations: Record<string, boolean>;
+      securitySchemes: unknown[];
+    }>;
     starter_prompts: string[];
     test_cases: { positive: unknown[]; negative: unknown[] };
   };

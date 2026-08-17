@@ -129,7 +129,8 @@ check(
 );
 check(
   "six to ten realistic starter prompts",
-  (submissionPkg.starter_prompts ?? []).length >= 6 && (submissionPkg.starter_prompts ?? []).length <= 10,
+  (submissionPkg.starter_prompts ?? []).length >= 6 &&
+    (submissionPkg.starter_prompts ?? []).length <= 10,
   `${(submissionPkg.starter_prompts ?? []).length} prompts`,
 );
 check(
@@ -152,12 +153,11 @@ check(
 );
 check(
   "challenge carries resource_metadata, error and error_description",
-  auth.includes('`Bearer resource_metadata=') &&
+  auth.includes("`Bearer resource_metadata=") &&
     auth.includes('error_description="') &&
     /challengeHeader\(\s*origin,\s*"invalid_token",/.test(read("src/lib/room/mcp.ts")),
   "reauth challenge is spec complete",
 );
-
 
 /* ------------------------------ 3. legal routes ------------------------------ */
 

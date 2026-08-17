@@ -224,7 +224,6 @@ export const TOOL_ANNOTATIONS: Record<string, Json> = Object.fromEntries(
   Object.keys(ACTION_MATRIX).map((tool) => [tool, annotationsFor(tool) as Json]),
 );
 
-
 function parse<T extends z.ZodTypeAny>(schema: T, input: unknown): z.infer<T> {
   const result = schema.safeParse(input ?? {});
   if (!result.success) {

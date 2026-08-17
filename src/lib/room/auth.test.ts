@@ -314,22 +314,15 @@ describe("access token claim validation", () => {
     ["a non-uuid subject", { sub: "not-a-uuid" }],
     ["an expired token", { exp: Math.floor(Date.now() / 1000) - 10 }],
     ["a plain web session without client_id", { client_id: "" }],
-    [
-      "a wrong audience",
-      { aud: ["https://other.test/api/public/mcp"], room_resource: undefined },
-    ],
+    ["a wrong audience", { aud: ["https://other.test/api/public/mcp"], room_resource: undefined }],
 
     ["a token bound to another resource", { room_resource: "https://other.test/api/public/mcp" }],
     [
       "an unbound authorization-server token (aud=authenticated, no resource)",
       { aud: "authenticated", room_resource: undefined, scope: "openid profile" },
     ],
-    [
-      "a token without the required scopes",
-      { room_scopes: undefined, scope: "openid" },
-    ],
+    ["a token without the required scopes", { room_scopes: undefined, scope: "openid" }],
   ];
-
 
   for (const [label, overrides] of rejected) {
     it(`rejects ${label}`, async () => {

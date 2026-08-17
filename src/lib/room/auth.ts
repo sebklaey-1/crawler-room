@@ -232,7 +232,6 @@ export async function verifyAccessToken(token: string, requestOrigin?: string): 
     if (!scopes.includes(required)) throw roomError("INVALID_TOKEN");
   }
 
-
   const user: AuthUser = { userId: sub, issuer, clientId, scopes, expiresAt: exp };
 
   const ttl = Math.min(CACHE_TTL_MS, Math.max(0, exp * 1000 - Date.now()));
