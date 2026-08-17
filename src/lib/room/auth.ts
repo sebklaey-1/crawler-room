@@ -122,21 +122,7 @@ export function resourceMetadataUrl(requestOrigin?: string): string {
 /** Compatibility alias served on the root well-known path (same document). */
 export const ROOT_RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource";
 
-let verifyClient: SupabaseClient | null = null;
-
-/** Server-side, non-persisting Supabase client used only for verification. */
-function authClient(): SupabaseClient {
-  if (verifyClient) return verifyClient;
-  const url = process.env["SUPABASE_URL"];
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
-  if (!url || !key) throw roomError("INTERNAL_ERROR");
-  verifyClient = createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-  });
-  return verifyClient;
-}
-
-/** Test-only seam: lets the suite inject verified claims without a network. */
+/** Test-only seam: lets the suite inject verified claims without signing. */
 type ClaimsVerifier = (token: string) => Promise<Record<string, unknown> | null>;
 let testVerifier: ClaimsVerifier | null = null;
 
@@ -147,31 +133,14 @@ export function __setTestClaimsVerifier(verifier: ClaimsVerifier | null): void {
 }
 
 async function verifiedClaims(token: string): Promise<Record<string, unknown> | null> {
-  if (process.env["NODE_ENV"] === "test") {
-    // Offline by construction: the suite never reaches the network.
-    if (testVerifier) return testVerifier(token);
-    throw roomError("INVALID_TOKEN");
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS);
-  try {
-    const { data, error } = await authClient().auth.getClaims(token);
-    if (error) throw roomError("INVALID_TOKEN");
-    const claims = (data as { claims?: Record<string, unknown> } | null)?.claims;
-    return claims ?? null;
-  } finally {
-    clearTimeout(timer);
-  }
+  if (process.env["NODE_ENV"] === "test" && testVerifier) return testVerifier(token);
+  return (await verifyJwt(token)) as Record<string, unknown> | null;
 }
 
 /* -------------------------------- validation ------------------------------ */
 
 function claimList(value: unknown): string[] {
-  if (typeof value === "string") return value.split(/\s+/).filter(Boolean);
-  if (Array.isArray(value))
-    return value.filter((entry): entry is string => typeof entry === "string");
-  return [];
+  return parseScope(value);
 }
 
 async function cacheKey(token: string): Promise<string> {
@@ -199,35 +168,29 @@ export async function verifyAccessToken(token: string, requestOrigin?: string): 
   if (!claims) throw roomError("INVALID_TOKEN");
 
   const issuer = typeof claims["iss"] === "string" ? claims["iss"] : "";
-  if (!issuer || issuer !== authIssuer()) throw roomError("INVALID_TOKEN");
+  if (!issuer || issuer !== authIssuer(requestOrigin)) throw roomError("INVALID_TOKEN");
 
+  // The subject is the pseudonymous digest minted at consent time — a raw
+  // account id or e-mail can never appear here.
   const sub = typeof claims["sub"] === "string" ? claims["sub"] : "";
-  if (!UUID_RE.test(sub)) throw roomError("INVALID_TOKEN");
+  if (!SUBJECT_RE.test(sub)) throw roomError("INVALID_TOKEN");
 
   const exp = typeof claims["exp"] === "number" ? claims["exp"] : 0;
   if (!exp || exp * 1000 <= Date.now()) throw roomError("INVALID_TOKEN");
 
   // Client binding. Tokens minted through the OAuth 2.1 flow carry `client_id`;
-  // an ordinary session JWT does not and is rejected here.
+  // anything without it is not an MCP access token and is rejected here.
   const clientId = typeof claims["client_id"] === "string" ? claims["client_id"].trim() : "";
   if (!clientId) throw roomError("INVALID_TOKEN");
 
-  // Resource binding (RFC 8707 / MCP). The canonical resource must be named in
-  // `aud` or in the `room_resource` claim written by the access token hook.
-  // Any other audience — including the authorization server's default
-  // `authenticated` — is not a resource and never satisfies this check.
+  // Resource binding (RFC 8707 / MCP): the canonical resource must be the
+  // audience. Any other audience is not a resource and never satisfies this.
   const audiences = claimList(claims["aud"]);
-  const roomResource = typeof claims["room_resource"] === "string" ? claims["room_resource"] : "";
-  if (roomResource && roomResource.replace(/\/+$/, "") !== resource)
-    throw roomError("INVALID_TOKEN");
   const boundByAud = audiences.some((aud) => aud.replace(/\/+$/, "") === resource);
-  if (!boundByAud && roomResource.replace(/\/+$/, "") !== resource) {
-    throw roomError("INVALID_TOKEN");
-  }
+  if (!boundByAud) throw roomError("INVALID_TOKEN");
 
-  // Granted scopes: hook claim first, otherwise the standard `scope` claim.
-  const scopes = claimList(claims["room_scopes"] ?? claims["scope"]);
-  for (const required of REQUIRED_SCOPES) {
+  const scopes = claimList(claims["scope"]);
+  for (const required of BASE_SCOPES) {
     if (!scopes.includes(required)) throw roomError("INVALID_TOKEN");
   }
 
