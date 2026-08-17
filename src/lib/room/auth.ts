@@ -77,7 +77,14 @@ export function authIssuer(): string {
 /** The one and only production origin of Crawler Room. */
 export const PRODUCTION_ORIGIN = "https://crawler.today";
 /** The one and only production MCP resource identifier. */
-export const PRODUCTION_MCP_RESOURCE = `${PRODUCTION_ORIGIN}/api/public/mcp`;
+export const PRODUCTION_MCP_RESOURCE = `${PRODUCTION_ORIGIN}/mcp`;
+/**
+ * DEPRECATED compatibility endpoint. The old path stays reachable so existing
+ * clients keep working, but it has NO resource identity of its own: every
+ * challenge, metadata document and server info emitted there names the
+ * canonical resource above.
+ */
+export const DEPRECATED_MCP_PATH = "/api/public/mcp";
 
 /**
  * Canonical MCP resource identifier.
@@ -95,7 +102,7 @@ export function canonicalResource(requestOrigin?: string): string {
     return configured;
   }
   if (process.env["NODE_ENV"] === "test" && requestOrigin) {
-    return `${requestOrigin.replace(/\/+$/, "")}/api/public/mcp`;
+    return `${requestOrigin.replace(/\/+$/, "")}/mcp`;
   }
   return PRODUCTION_MCP_RESOURCE;
 }
@@ -104,8 +111,8 @@ export function canonicalResource(requestOrigin?: string): string {
  * RFC 9728 metadata URL of the protected resource.
  *
  * The well-known suffix is inserted *between host and resource path*, so a
- * resource with the path `/api/public/mcp` is described by
- * `/.well-known/oauth-protected-resource/api/public/mcp`. Only that URL is
+ * resource with the path `/mcp` is described by
+ * `/.well-known/oauth-protected-resource/mcp`. Only that URL is
  * ever advertised in a challenge.
  */
 export function resourceMetadataUrl(requestOrigin?: string): string {

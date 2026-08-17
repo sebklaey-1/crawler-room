@@ -2,7 +2,9 @@
  * Shared RFC 9728 response for both metadata routes.
  *
  * The canonical (challenge-advertised) location is the path-specific
- * `/.well-known/oauth-protected-resource/api/public/mcp`. The bare root path
+ * `/.well-known/oauth-protected-resource/mcp`. The bare root path (and the
+ * deprecated `/api/public/mcp` variant) stay available as compatibility
+ * aliases
  * stays available as a compatibility alias and serves the *identical*
  * document, so a client that guesses the root form still discovers the same
  * `resource` value.
