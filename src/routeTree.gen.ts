@@ -26,6 +26,7 @@ import { Route as OauthAuthorizeRouteImport } from './routes/oauth.authorize'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as OauthRegisterRouteImport } from './routes/oauth.register'
 import { Route as OauthTokenRouteImport } from './routes/oauth.token'
+import { Route as UploadTokenRouteImport } from './routes/upload.$token'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as DotwellKnownOauthProtectedResourceMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.mcp'
 import { Route as ApiPublicDataDeletionRouteImport } from './routes/api.public.data-deletion'
@@ -34,6 +35,7 @@ import { Route as ApiPublicMcpRouteImport } from './routes/api.public.mcp'
 import { Route as ApiPublicSupportRouteImport } from './routes/api.public.support'
 import { Route as ApiPublicAdminCleanupRouteImport } from './routes/api.public.admin.cleanup'
 import { Route as ApiPublicOauthConsentRouteImport } from './routes/api.public.oauth.consent'
+import { Route as ApiPublicRoomProfileUploadRouteImport } from './routes/api.public.room.profile-upload'
 import { Route as ApiPublicRoomUploadRouteImport } from './routes/api.public.room.upload'
 import { Route as DotwellKnownOauthProtectedResourceApiPublicMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.api.public.mcp'
 import { Route as ApiPublicRoomImageIdRouteImport } from './routes/api.public.room.image.$id'
@@ -126,6 +128,11 @@ const OauthTokenRoute = OauthTokenRouteImport.update({
   path: '/oauth/token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UploadTokenRoute = UploadTokenRouteImport.update({
+  id: '/upload/$token',
+  path: '/upload/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   id: '/.lovable/oauth/consent',
   path: '/.lovable/oauth/consent',
@@ -167,6 +174,12 @@ const ApiPublicOauthConsentRoute = ApiPublicOauthConsentRouteImport.update({
   path: '/api/public/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRoomProfileUploadRoute =
+  ApiPublicRoomProfileUploadRouteImport.update({
+    id: '/api/public/room/profile-upload',
+    path: '/api/public/room/profile-upload',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicRoomUploadRoute = ApiPublicRoomUploadRouteImport.update({
   id: '/api/public/room/upload',
   path: '/api/public/room/upload',
@@ -202,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/oauth/consent': typeof OauthConsentRoute
   '/oauth/register': typeof OauthRegisterRoute
   '/oauth/token': typeof OauthTokenRoute
+  '/upload/$token': typeof UploadTokenRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
@@ -210,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
+  '/api/public/room/profile-upload': typeof ApiPublicRoomProfileUploadRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
   '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
   '/api/public/room/image/$id': typeof ApiPublicRoomImageIdRoute
@@ -232,6 +247,7 @@ export interface FileRoutesByTo {
   '/oauth/consent': typeof OauthConsentRoute
   '/oauth/register': typeof OauthRegisterRoute
   '/oauth/token': typeof OauthTokenRoute
+  '/upload/$token': typeof UploadTokenRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
@@ -240,6 +256,7 @@ export interface FileRoutesByTo {
   '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
+  '/api/public/room/profile-upload': typeof ApiPublicRoomProfileUploadRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
   '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
   '/api/public/room/image/$id': typeof ApiPublicRoomImageIdRoute
@@ -263,6 +280,7 @@ export interface FileRoutesById {
   '/oauth/consent': typeof OauthConsentRoute
   '/oauth/register': typeof OauthRegisterRoute
   '/oauth/token': typeof OauthTokenRoute
+  '/upload/$token': typeof UploadTokenRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/api/public/data-deletion': typeof ApiPublicDataDeletionRoute
@@ -271,6 +289,7 @@ export interface FileRoutesById {
   '/api/public/support': typeof ApiPublicSupportRoute
   '/api/public/admin/cleanup': typeof ApiPublicAdminCleanupRoute
   '/api/public/oauth/consent': typeof ApiPublicOauthConsentRoute
+  '/api/public/room/profile-upload': typeof ApiPublicRoomProfileUploadRoute
   '/api/public/room/upload': typeof ApiPublicRoomUploadRoute
   '/.well-known/oauth-protected-resource/api/public/mcp': typeof DotwellKnownOauthProtectedResourceApiPublicMcpRoute
   '/api/public/room/image/$id': typeof ApiPublicRoomImageIdRoute
@@ -295,6 +314,7 @@ export interface FileRouteTypes {
     | '/oauth/consent'
     | '/oauth/register'
     | '/oauth/token'
+    | '/upload/$token'
     | '/.lovable/oauth/consent'
     | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
@@ -303,6 +323,7 @@ export interface FileRouteTypes {
     | '/api/public/support'
     | '/api/public/admin/cleanup'
     | '/api/public/oauth/consent'
+    | '/api/public/room/profile-upload'
     | '/api/public/room/upload'
     | '/.well-known/oauth-protected-resource/api/public/mcp'
     | '/api/public/room/image/$id'
@@ -325,6 +346,7 @@ export interface FileRouteTypes {
     | '/oauth/consent'
     | '/oauth/register'
     | '/oauth/token'
+    | '/upload/$token'
     | '/.lovable/oauth/consent'
     | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
@@ -333,6 +355,7 @@ export interface FileRouteTypes {
     | '/api/public/support'
     | '/api/public/admin/cleanup'
     | '/api/public/oauth/consent'
+    | '/api/public/room/profile-upload'
     | '/api/public/room/upload'
     | '/.well-known/oauth-protected-resource/api/public/mcp'
     | '/api/public/room/image/$id'
@@ -355,6 +378,7 @@ export interface FileRouteTypes {
     | '/oauth/consent'
     | '/oauth/register'
     | '/oauth/token'
+    | '/upload/$token'
     | '/.lovable/oauth/consent'
     | '/.well-known/oauth-protected-resource/mcp'
     | '/api/public/data-deletion'
@@ -363,6 +387,7 @@ export interface FileRouteTypes {
     | '/api/public/support'
     | '/api/public/admin/cleanup'
     | '/api/public/oauth/consent'
+    | '/api/public/room/profile-upload'
     | '/api/public/room/upload'
     | '/.well-known/oauth-protected-resource/api/public/mcp'
     | '/api/public/room/image/$id'
@@ -386,6 +411,7 @@ export interface RootRouteChildren {
   OauthConsentRoute: typeof OauthConsentRoute
   OauthRegisterRoute: typeof OauthRegisterRoute
   OauthTokenRoute: typeof OauthTokenRoute
+  UploadTokenRoute: typeof UploadTokenRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicDataDeletionRoute: typeof ApiPublicDataDeletionRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -393,6 +419,7 @@ export interface RootRouteChildren {
   ApiPublicSupportRoute: typeof ApiPublicSupportRoute
   ApiPublicAdminCleanupRoute: typeof ApiPublicAdminCleanupRoute
   ApiPublicOauthConsentRoute: typeof ApiPublicOauthConsentRoute
+  ApiPublicRoomProfileUploadRoute: typeof ApiPublicRoomProfileUploadRoute
   ApiPublicRoomUploadRoute: typeof ApiPublicRoomUploadRoute
   ApiPublicRoomImageIdRoute: typeof ApiPublicRoomImageIdRoute
 }
@@ -518,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/upload/$token': {
+      id: '/upload/$token'
+      path: '/upload/$token'
+      fullPath: '/upload/$token'
+      preLoaderRoute: typeof UploadTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.lovable/oauth/consent': {
       id: '/.lovable/oauth/consent'
       path: '/.lovable/oauth/consent'
@@ -572,6 +606,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/oauth/consent'
       fullPath: '/api/public/oauth/consent'
       preLoaderRoute: typeof ApiPublicOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/room/profile-upload': {
+      id: '/api/public/room/profile-upload'
+      path: '/api/public/room/profile-upload'
+      fullPath: '/api/public/room/profile-upload'
+      preLoaderRoute: typeof ApiPublicRoomProfileUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/room/upload': {
@@ -636,6 +677,7 @@ const rootRouteChildren: RootRouteChildren = {
   OauthConsentRoute: OauthConsentRoute,
   OauthRegisterRoute: OauthRegisterRoute,
   OauthTokenRoute: OauthTokenRoute,
+  UploadTokenRoute: UploadTokenRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicDataDeletionRoute: ApiPublicDataDeletionRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
@@ -643,6 +685,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSupportRoute: ApiPublicSupportRoute,
   ApiPublicAdminCleanupRoute: ApiPublicAdminCleanupRoute,
   ApiPublicOauthConsentRoute: ApiPublicOauthConsentRoute,
+  ApiPublicRoomProfileUploadRoute: ApiPublicRoomProfileUploadRoute,
   ApiPublicRoomUploadRoute: ApiPublicRoomUploadRoute,
   ApiPublicRoomImageIdRoute: ApiPublicRoomImageIdRoute,
 }

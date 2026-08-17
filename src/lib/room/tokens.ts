@@ -8,7 +8,7 @@
 import { requireSecret } from "./config";
 import { base64UrlDecode, base64UrlEncode, hmacSha256Hex, safeEqual } from "./crypto";
 
-export type TokenPurpose = "upload" | "review";
+export type TokenPurpose = "upload" | "review" | "profile_upload";
 
 interface Payload {
   p: TokenPurpose;
@@ -16,6 +16,9 @@ interface Payload {
   s: string;
   e: number;
   n: string;
+  /** Optional extra binding: personal room id and profile image kind. */
+  r?: string;
+  k?: string;
 }
 
 export interface TokenClaims {
@@ -23,7 +26,10 @@ export interface TokenClaims {
   imageId: number;
   subjectHash: string;
   nonce: string;
+  roomId?: string;
+  kind?: string;
 }
+
 
 async function sign(body: string): Promise<string> {
   return (await hmacSha256Hex(requireSecret("MESSAGE_ID_SECRET"), `token:${body}`)).slice(0, 32);
@@ -35,6 +41,7 @@ export async function issueToken(
   subjectHash: string,
   ttlSeconds: number,
   nonce: string,
+  extra?: { roomId?: string; kind?: string },
 ): Promise<string> {
   const payload: Payload = {
     p: purpose,
@@ -42,10 +49,13 @@ export async function issueToken(
     s: subjectHash.slice(0, 32),
     e: Math.floor(Date.now() / 1000) + ttlSeconds,
     n: nonce,
+    ...(extra?.roomId ? { r: extra.roomId } : {}),
+    ...(extra?.kind ? { k: extra.kind } : {}),
   };
   const body = base64UrlEncode(JSON.stringify(payload));
   return `${body}.${await sign(body)}`;
 }
+
 
 export async function verifyToken(
   token: unknown,
@@ -67,7 +77,15 @@ export async function verifyToken(
   if (typeof payload.e !== "number" || payload.e * 1000 < Date.now()) return null;
   if (typeof payload.i !== "number" || typeof payload.s !== "string") return null;
 
-  return { purpose: payload.p, imageId: payload.i, subjectHash: payload.s, nonce: payload.n };
+  return {
+    purpose: payload.p,
+    imageId: payload.i,
+    subjectHash: payload.s,
+    nonce: payload.n,
+    ...(typeof payload.r === "string" ? { roomId: payload.r } : {}),
+    ...(typeof payload.k === "string" ? { kind: payload.k } : {}),
+  };
+
 }
 
 export function subjectFingerprint(subjectHash: string): string {

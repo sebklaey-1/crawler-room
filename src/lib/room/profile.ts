@@ -371,11 +371,45 @@ export async function setProfileImageFromUrl(
     );
   }
 
+  return storeProfileImage(db, await getOwnProfile(db, subjectHash), kind, bytes);
+}
+
+/**
+ * Stores raw image bytes (e.g. a file the person uploaded in the chat client)
+ * as avatar or banner. Same validation and metadata stripping as the URL path.
+ */
+export async function setProfileImageFromBytes(
+  db: Db,
+  subjectHash: string,
+  kind: ProfileImageKind,
+  bytes: Uint8Array,
+) {
+  return storeProfileImage(db, await getOwnProfile(db, subjectHash), kind, bytes);
+}
+
+/** Same as above, addressed by personal room id (used by the upload endpoint). */
+export async function setProfileImageForRoom(
+  db: Db,
+  roomId: string,
+  kind: ProfileImageKind,
+  bytes: Uint8Array,
+) {
+  const profile = await loadByColumn(db, "room_id", roomId);
+  if (!profile) throw roomError("ROOM_UNAVAILABLE");
+  return storeProfileImage(db, profile, kind, bytes);
+}
+
+async function storeProfileImage(
+  db: Db,
+  profile: ProfileRow,
+  kind: ProfileImageKind,
+  bytes: Uint8Array,
+) {
+  const limits = imageConfig();
   const sanitized = sanitizeImage(bytes);
   if (!sanitized) throw roomError("IMAGE_TYPE_UNSUPPORTED");
   if (sanitized.bytes.byteLength > limits.maxImageBytes) throw roomError("IMAGE_TOO_LARGE");
 
-  const profile = await getOwnProfile(db, subjectHash);
   const extension =
     sanitized.mime === "image/png" ? "png" : sanitized.mime === "image/webp" ? "webp" : "jpg";
   const path = `profiles/${profile.roomId}/${kind}-${Date.now()}.${extension}`;
@@ -386,12 +420,13 @@ export async function setProfileImageFromUrl(
   const { error } = await db
     .from("user_rooms")
     .update({ [column]: path })
-    .eq("owner_subject_hash", subjectHash);
+    .eq("room_id", profile.roomId);
   if (error) throw roomError("INTERNAL_ERROR");
   if (previous) await removeStorageObjects(db, [previous]);
 
   return { kind, url: await publicProfileImageUrl(profile.roomId, kind) };
 }
+
 
 export async function removeProfileImage(db: Db, subjectHash: string, kind: ProfileImageKind) {
   const profile = await getOwnProfile(db, subjectHash);

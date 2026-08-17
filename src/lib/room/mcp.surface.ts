@@ -626,6 +626,7 @@ const profileInput = z
     handle: handleField(64).optional(),
     kind: z.enum(["avatar", "banner"]).optional(),
     image_url: imageUrlField.nullable().optional(),
+    image_data: z.string().max(15_000_000).optional(),
     remove: z.boolean().optional(),
     reason: reasonField.optional(),
     details: detailsField.optional(),
@@ -671,6 +672,7 @@ async function profileHandler(input: unknown, meta: McpMeta): Promise<Json> {
           {
             kind: data.kind ?? "avatar",
             ...(data.image_url !== undefined ? { image_url: data.image_url } : {}),
+            ...(data.image_data !== undefined ? { image_data: data.image_data } : {}),
             ...(data.remove !== undefined ? { remove: data.remove } : {}),
           },
           meta,
@@ -1337,7 +1339,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     name: "profile",
     title: "Profile",
     description:
-      "Reads and edits public Crawler Room profiles. Use action=get to load the public profile of a @handle, action=update to change your own display name, bio, location, link and visibility settings, action=change_handle to replace your own @handle, action=set_image to set or remove your own avatar or banner from an https image URL, action=open_link to resolve the profile link and count the click, action=block and action=unblock to control who may interact with you, action=list_blocks to list the people you block, action=report to report a profile. Handles and display names are globally unique; changing the display name does not change the @handle. Only your own profile is editable and ownership is checked on the server. Blocking applies in both directions for profile views, following and personal-room messages. " +
+      "Reads and edits public Crawler Room profiles. Use action=get to load the public profile of a @handle, action=update to change your own display name, bio, location, link and visibility settings, action=change_handle to replace your own @handle, action=set_image to set or remove your own avatar or banner — pass image_url for a public https image, image_data for uploaded file bytes, or neither to receive a one-time upload_url the person opens to upload the picture directly, action=open_link to resolve the profile link and count the click, action=block and action=unblock to control who may interact with you, action=list_blocks to list the people you block, action=report to report a profile. Handles and display names are globally unique; changing the display name does not change the @handle. Only your own profile is editable and ownership is checked on the server. Blocking applies in both directions for profile views, following and personal-room messages. " +
       REPORT_DESCRIPTION,
     inputSchema: inputSchemaFor(profileInput, {
       username: "@handle of another person's profile; used by get, block, unblock and report.",
@@ -1348,6 +1350,8 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
       handle: "New @handle for action=change_handle.",
       kind: "Which image to set for action=set_image: avatar or banner.",
       image_url: "Public https URL of the image to fetch for action=set_image.",
+      image_data:
+        "Base64 or data-URL image bytes for action=set_image, used when the person supplied a file instead of a public URL. If neither image_url nor image_data is given, the server returns a one-time upload_url the person can open to upload the picture directly.",
       remove: "Set true with action=set_image to remove the current image.",
     }),
     outputSchema: outputFor(
@@ -1364,7 +1368,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         ],
         update: ["profile", "message", "display_instruction"],
         change_handle: ["handle", "suggestions", "profile", "message"],
-        set_image: ["profile", "message", "display_instruction"],
+        set_image: ["profile", "message", "display_instruction", "upload_url"],
         open_link: ["url", "message"],
         block: ["blocked", "handle", "message"],
         unblock: ["unblocked", "handle", "message"],
@@ -1391,6 +1395,7 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
         },
         total: { type: "integer" },
         url: { type: ["string", "null"] },
+        upload_url: { type: "string" },
         edit_hint: { type: ["string", "null"] },
         message: { type: "string" },
         display_instruction: { type: "string" },
