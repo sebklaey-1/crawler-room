@@ -16,7 +16,8 @@
     "test:watch": "vitest",
     "release:check": "bun run scripts/release-check.ts",
     "release:check:submit": "bun run scripts/release-submit-check.ts",
-    "verify:domain": "bun run scripts/verify-production-domain.ts"
+    "verify:domain": "bun run scripts/verify-production-domain.ts",
+    "docs:review": "bun run scripts/generate-review-docs.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

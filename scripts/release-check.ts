@@ -627,6 +627,69 @@ check(
   "no worldwide or legally cleared availability is asserted",
 );
 
+/* --- generated review documentation must not be stale ---------------------- */
+
+{
+  const { applyGeneratedBlocks, blocksIn, GENERATED_DOCS } = await import(
+    "../src/lib/room/review.docs"
+  );
+  const stale: string[] = [];
+  for (const doc of GENERATED_DOCS) {
+    const current = read(doc);
+    if (blocksIn(current).length === 0 || applyGeneratedBlocks(current) !== current) {
+      stale.push(doc);
+    }
+  }
+  check(
+    "review documents are generated from the action matrix",
+    stale.length === 0,
+    stale.join(", ") || "checklist, plugin submission, submission package, reviewer test plan",
+  );
+}
+
+const REVIEW_ARTEFACTS = [
+  "docs/openai-review-checklist.md",
+  "docs/openai-plugin-submission.md",
+  "docs/openai-submission-ready.md",
+  "docs/openai-submission-ready.json",
+  "docs/reviewer-test-plan.md",
+];
+const retired = REVIEW_ARTEFACTS.filter((doc) =>
+  /\bset_image\b|\bimage_data\b|\bupload_url\b/.test(read(doc)),
+);
+check(
+  "no review document names a retired action or field",
+  retired.length === 0,
+  retired.join(", ") || "set_image / image_data / upload_url are gone",
+);
+
+const cryptoClaims = REVIEW_ARTEFACTS.concat([
+  "docs/threat-model.md",
+  "docs/data-flow.md",
+]).filter((doc) => /ES256|JWKS|getClaims/.test(read(doc)));
+check(
+  "token verification is described exactly as implemented",
+  cryptoClaims.length === 0,
+  cryptoClaims.join(", ") || "locally issued and verified HS256 tokens, no auth hook",
+);
+
+check(
+  "submission package states readiness without claiming approval",
+  (submissionDoc as { review_status?: string }).review_status ===
+    "code/review package ready; portal/external blockers outstanding",
+  "no approval or certification is asserted",
+);
+
+const consent = read("src/components/oauth-consent.tsx");
+check(
+  "consent screen discloses public visibility, retention, legal links and no OpenAI tie",
+  /öffentlich und pseudonym/i.test(consent) &&
+    consent.includes("24 Stunden") &&
+    consent.includes("LEGAL_LINKS") &&
+    /nicht von OpenAI/i.test(consent),
+  "pre-consent transparency block is present",
+);
+
 /* --------------------------------- report ------------------------------------ */
 
 let failed = 0;
