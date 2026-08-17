@@ -35,7 +35,7 @@ import { enforceRateLimit, WINDOWS } from "./ratelimit";
 import { getDb, touchPresence, type Db } from "./store";
 
 export const PROFILE_DISPLAY_INSTRUCTION =
-  "PFLICHT: Gib den mitgelieferten Markdown-Text der Antwort unverändert und vollständig aus. Vorhandene Bilder immer als ![alt](url) rendern — niemals als Link, Codeblock oder Beschreibung, URLs nie kürzen oder verändern. Fehlt ein Banner oder Profilbild, lasse die Zeile komplett weg: niemals «Banner: —» oder «Profilbild: —» oder ähnliche Platzhalter ausgeben und nicht erwähnen, dass ein Bild fehlt. Reihenfolge: Banner, Profilbild, Anzeigename, @handle, Bio, Ort/Link/Beitritt, Kennzahlen-Tabelle (followers · following · likes · people here now), dann Nachrichten und Bilder. Übersetze nur Bio, Nachrichten und Alt-Texte in die Sprache der Person; Zahlen, Handles und Bild-URLs bleiben unverändert. Beim eigenen Profil biete Bearbeiten an (Name, Bio, Ort, Link, Bilder, Handle, Sichtbarkeit).";
+  "PFLICHT: Gib den mitgelieferten Markdown-Text der Antwort unverändert und vollständig aus. Vorhandene Bilder immer als ![alt](url) rendern — niemals als Link, Codeblock oder Beschreibung, URLs nie kürzen oder verändern. Fehlt ein Banner oder Profilbild, lasse die Zeile komplett weg: niemals «Banner: —» oder «Profilbild: —» oder ähnliche Platzhalter ausgeben und nicht erwähnen, dass ein Bild fehlt. Reihenfolge: Banner, Profilbild, Anzeigename, @handle, Bio, Link/Beitritt, Kennzahlen-Tabelle (followers · following · likes · people here now), dann Nachrichten und Bilder. Übersetze nur Bio, Nachrichten und Alt-Texte in die Sprache der Person; Zahlen, Handles und Bild-URLs bleiben unverändert. Beim eigenen Profil biete Bearbeiten an (Name, Bio, Link, Bilder, Handle, Sichtbarkeit).";
 
 
 /* -------------------------------- helpers -------------------------------- */
@@ -105,7 +105,6 @@ async function serializeProfile(db: Db, profile: ProfileRow, viewerHash: string)
     handle: profile.handle,
     display_name: profile.roomName,
     bio: profile.bio ?? "",
-    location: profile.location ?? "",
     external_url: profile.externalUrl ?? "",
     joined_at: profile.createdAt,
     visibility: profile.visibility,
@@ -171,7 +170,7 @@ export async function handleGetProfile(input: unknown, meta: McpMeta) {
       following: isOwner ? await listFollowedRooms(db, profile.ownerSubjectHash) : [],
     },
     edit_hint: isOwner
-      ? "Du kannst Anzeigename, Bio, Ort, Link, Profilbild, Banner, Handle und Sichtbarkeit ändern."
+      ? "Du kannst Anzeigename, Bio, Link, Profilbild, Banner, Handle und Sichtbarkeit ändern."
       : null,
     display_instruction: PROFILE_DISPLAY_INSTRUCTION,
   };
@@ -187,7 +186,6 @@ export async function handleUpdateProfile(input: unknown, meta: McpMeta) {
   const patch = payloadOf<{
     display_name?: string;
     bio?: string | null;
-    location?: string | null;
     external_url?: string | null;
     profile_visibility?: string;
     show_online_status?: boolean;
@@ -197,7 +195,6 @@ export async function handleUpdateProfile(input: unknown, meta: McpMeta) {
   const profile = await updateProfile(db, identity.subjectHash, {
     display_name: patch.display_name,
     bio: patch.bio ?? undefined,
-    location: patch.location ?? undefined,
     external_url: patch.external_url ?? undefined,
     profile_visibility:
       patch.profile_visibility === "private" || patch.profile_visibility === "public"

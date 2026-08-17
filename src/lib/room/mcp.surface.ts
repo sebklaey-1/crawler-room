@@ -617,7 +617,6 @@ const profileInput = z
     username: handleField(64).optional(),
     display_name: name(80).optional(),
     bio: text(280).optional(),
-    location: text(60).optional(),
     external_url: websiteField.optional(),
     profile_visibility: z.enum(["public", "private"]).optional(),
     show_online_status: z.boolean().optional(),
@@ -1317,13 +1316,12 @@ export const SURFACE_TOOLS: SurfaceTool[] = [
     name: "profile",
     title: "Profile",
     description:
-      "Reads and edits public Crawler Room profiles. Use action=get to load the public profile of a @handle, action=update to change your own display name, bio, location, link and visibility settings, action=change_handle to replace your own @handle, action=set_image to set or remove your own avatar or banner with a public https image_url, action=open_link to resolve the profile link and count the click, action=block and action=unblock to control who may interact with you, action=list_blocks to list the people you block, action=report to report a profile. Handles and display names are globally unique; changing the display name does not change the @handle. Only your own profile is editable and ownership is checked on the server. Blocking applies in both directions for profile views, following and personal-room messages. " +
+      "Reads and edits public Crawler Room profiles. Use action=get to load the public profile of a @handle, action=update to change your own display name, bio, link and visibility settings, action=change_handle to replace your own @handle, action=set_image to set or remove your own avatar or banner with a public https image_url, action=open_link to resolve the profile link and count the click, action=block and action=unblock to control who may interact with you, action=list_blocks to list the people you block, action=report to report a profile. Handles and display names are globally unique; changing the display name does not change the @handle. Only your own profile is editable and ownership is checked on the server. Blocking applies in both directions for profile views, following and personal-room messages. " +
       REPORT_DESCRIPTION,
     inputSchema: inputSchemaFor(profileInput, {
       username: "@handle of another person's profile; used by get, block, unblock and report.",
       display_name: "New public display name of your own profile.",
       bio: "New public biography text of your own profile.",
-      location: "New public location text of your own profile.",
       external_url: "Public https link shown on your own profile.",
       handle: "New @handle for action=change_handle.",
       kind: "Which image to set for action=set_image: avatar or banner.",

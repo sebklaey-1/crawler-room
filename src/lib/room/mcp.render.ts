@@ -3,7 +3,7 @@
  * The assistant is instructed to output these strings verbatim so that banner,
  * avatar and charts appear as real images / text graphics.
  *
- * Everything a person typed — display name, bio, location, link, message text,
+ * Everything a person typed — display name, bio, link, message text,
  * alt text, alias — is untrusted UGC and is escaped before it is rendered.
  * Only server-issued signed image URLs are emitted as active Markdown images.
  */
@@ -40,7 +40,6 @@ export function profileCard(result: SummaryResult): string {
 
   const externalUrl = safeUrl(p.external_url);
   const meta = [
-    p.location ? `📍 ${sanitizeUgcText(p.location, 60)}` : null,
     externalUrl ? `🔗 ${externalUrl}` : null,
     p.joined_at ? `📅 seit ${String(p.joined_at).slice(0, 10)}` : null,
   ].filter(Boolean);
