@@ -36,12 +36,15 @@ The app does **not** proxy or mirror those documents.
      (`/.lovable/oauth/consent` stays available as a redirect alias)
    - Dynamic client registration: enabled
    - Site URL: `https://crawler.today`
-3. **Custom Access Token Hook (optional)** — Authentication → Hooks → _Custom
-   Access Token_: selecting `public.custom_access_token_hook` narrows `aud` to
-   the canonical resource and adds `room_resource` / `room_scopes`. Token
-   verification does **not** depend on it: OAuth tokens issued by the
-   authorization server always carry a non-empty `client_id`, which is the
-   binding that separates them from ordinary web sessions.
+3. **Custom Access Token Hook (REQUIRED)** — Authentication → Hooks → _Custom
+   Access Token_: select `public.custom_access_token_hook` and enable it. It
+   narrows `aud` to the canonical resource and adds `room_resource` /
+   `room_scopes` for tokens that carry a non-empty `client_id`. Token
+   verification **depends on it**: `verifyAccessToken()` accepts only tokens
+   bound to `https://crawler.today/api/public/mcp` and carrying the scopes
+   `openid` and `profile`. Without the active hook no client can connect. This
+   toggle is dashboard-only; `bun run release:check:submit` treats it as a
+   fail-closed blocker until `ROOM_SUBMIT_TOKEN_HOOK_ACTIVE` is confirmed.
 
 4. **Redirect allow-list** — add the callback URL that the MCP client (ChatGPT)
    displays while connecting. Use exactly the value the client shows; do not
@@ -71,11 +74,11 @@ is **not** `SECURITY DEFINER`; only `supabase_auth_admin` may execute it.
 ## Threat model
 
 - **A normal web access token cannot call the MCP server.** Verification
-  requires a non-empty `client_id`, which only tokens issued through the OAuth
-  server to a registered client carry. Browser sessions have none, so a stolen
-  or copied app session token is rejected with `INVALID_TOKEN`. When the
-  optional hook is active, `room_resource` must additionally match the
-  canonical resource; a token bound to another resource is always rejected.
+  requires a non-empty `client_id` *and* strict binding to the canonical
+  resource (`aud` or `room_resource`). The authorization server's default
+  audience `authenticated` is not accepted, so a stolen or copied app session
+  token is always rejected with `INVALID_TOKEN`. A token bound to another
+  resource, or missing the required scopes, is rejected as well.
 - **Token verification is signature-based.** `supabase.auth.getClaims(token)`
   validates the ES256 signature against the project's JWKS. Nothing is trusted
   from an unverified JWT payload. Issuer, `sub` (UUID), and `exp` are checked
