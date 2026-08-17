@@ -84,6 +84,7 @@ import {
 } from "./reports";
 import { listBlocks, unblockPerson } from "./profile";
 import { quoteUgcLine, sanitizeUgcLabel, sanitizeUgcText, ugcBlock } from "./ugc";
+import { assertSafeUgcInput } from "./safety";
 import { findRoomByHandle, normalizeHandleInput } from "./personal";
 import { profileCard, analyticsCard } from "./mcp.render";
 import type { ImageView, LabelledEntry, MessageView, RoomView, SummaryResult } from "./viewtypes";
@@ -232,6 +233,9 @@ function parse<T extends z.ZodTypeAny>(schema: T, input: unknown): z.infer<T> {
       `Ungültige Angaben: ${result.error.issues[0]?.message ?? "unbekannt"}`,
     );
   }
+  // Fail closed on unambiguous policy violations before any storage or
+  // moderation path is reached (see safety.ts for the canonical matrix).
+  assertSafeUgcInput(result.data);
   return result.data;
 }
 
